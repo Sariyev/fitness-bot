@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: fitbot
+      POSTGRES_PASSWORD: fitbot_password
+      POSTGRES_DB: fitness_bot
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fitbot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: bot
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      DEBUG: ${DEBUG:-false}
+      WEBAPP_URL: ${WEBAPP_URL:-}
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: fitbot
+      DB_PASSWORD: fitbot_password
+      DB_NAME: fitness_bot
+      DB_SSLMODE: disable
+
+  admin:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: admin
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      ADMIN_PORT: 8080
+      ADMIN_API_KEY: ${ADMIN_API_KEY}
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: fitbot
+      DB_PASSWORD: fitbot_password
+      DB_NAME: fitness_bot
+      DB_SSLMODE: disable
+
+  webapp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: webapp
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8081:8081"
+    environment:
+      WEBAPP_PORT: 8081
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: fitbot
+      DB_PASSWORD: fitbot_password
+      DB_NAME: fitness_bot
+      DB_SSLMODE: disable
+
+volumes:
+  postgres_data:
