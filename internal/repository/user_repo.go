@@ -19,6 +19,7 @@ func (r *userRepo) Create(ctx context.Context, user *models.User) error {
 	return r.pool.QueryRow(ctx,
 		`INSERT INTO users (telegram_id, username, first_name, last_name, language_code, is_registered)
 		 VALUES ($1, $2, $3, $4, $5, $6)
+		 ON CONFLICT (telegram_id) DO UPDATE SET username = EXCLUDED.username
 		 RETURNING id, created_at, updated_at`,
 		user.TelegramID, user.Username, user.FirstName, user.LastName, user.LanguageCode, user.IsRegistered,
 	).Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt)
