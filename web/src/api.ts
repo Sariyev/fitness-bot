@@ -4,6 +4,9 @@ import type {
   LessonWithProgress,
   LessonDetail,
   SubscriptionStatus,
+  PaymentStatus,
+  PaymentResult,
+  UserProfile,
 } from './types'
 
 function getInitData(): string {
@@ -55,5 +58,17 @@ export const api = {
 
   getSubscriptionStatus(): Promise<SubscriptionStatus> {
     return request('/app/api/subscription/status')
+  },
+
+  getPaymentStatus(): Promise<PaymentStatus> {
+    return request('/app/api/payment/status')
+  },
+
+  processPayment(): Promise<PaymentResult> {
+    return request('/app/api/payment/pay', { method: 'POST' })
+  },
+
+  getProfile(): Promise<UserProfile> {
+    return request('/app/api/profile')
   },
 }

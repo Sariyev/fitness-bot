@@ -15,14 +15,14 @@ type Router struct {
 	userSvc    *service.UserService
 	convSvc    *service.ConversationService
 	questSvc   *service.QuestionnaireService
-	subSvc     *service.SubscriptionService
+	paymentSvc *service.PaymentService
 	moduleSvc  *service.ModuleService
 	scoreSvc   *service.ScoreService
 	webAppURL  string
 
 	regHandler     *RegistrationHandler
 	quizHandler    *QuestionnaireHandler
-	subHandler     *SubscriptionHandler
+	payHandler     *PaymentHandler
 	modHandler     *ModuleHandler
 	scoreHandler   *ScoreHandler
 	profileHandler *ProfileHandler
@@ -32,27 +32,27 @@ func NewRouter(
 	userSvc *service.UserService,
 	convSvc *service.ConversationService,
 	questSvc *service.QuestionnaireService,
-	subSvc *service.SubscriptionService,
+	paymentSvc *service.PaymentService,
 	moduleSvc *service.ModuleService,
 	scoreSvc *service.ScoreService,
 	webAppURL string,
 ) *Router {
 	r := &Router{
-		userSvc:   userSvc,
-		convSvc:   convSvc,
-		questSvc:  questSvc,
-		subSvc:    subSvc,
-		moduleSvc: moduleSvc,
-		scoreSvc:  scoreSvc,
-		webAppURL: webAppURL,
+		userSvc:    userSvc,
+		convSvc:    convSvc,
+		questSvc:   questSvc,
+		paymentSvc: paymentSvc,
+		moduleSvc:  moduleSvc,
+		scoreSvc:   scoreSvc,
+		webAppURL:  webAppURL,
 	}
 
 	r.regHandler = NewRegistrationHandler(userSvc, convSvc, questSvc)
 	r.quizHandler = NewQuestionnaireHandler(convSvc, questSvc)
-	r.subHandler = NewSubscriptionHandler(convSvc, subSvc)
-	r.modHandler = NewModuleHandler(convSvc, moduleSvc, subSvc, scoreSvc)
+	r.payHandler = NewPaymentHandler(convSvc, paymentSvc)
+	r.modHandler = NewModuleHandler(convSvc, moduleSvc, scoreSvc)
 	r.scoreHandler = NewScoreHandler(convSvc, scoreSvc)
-	r.profileHandler = NewProfileHandler(userSvc, subSvc)
+	r.profileHandler = NewProfileHandler(userSvc)
 
 	return r
 }
@@ -100,11 +100,11 @@ func (r *Router) handleCommand(ctx context.Context, bot *tgbotapi.BotAPI, msg *t
 			return
 		}
 		r.modHandler.HandleModuleList(ctx, bot, msg.Chat.ID, user)
-	case "subscribe":
+	case "buy":
 		if !r.requireRegistration(bot, msg.Chat.ID, user) {
 			return
 		}
-		r.subHandler.HandleShowPlans(ctx, bot, msg.Chat.ID, user)
+		r.payHandler.HandleBuy(ctx, bot, msg.Chat.ID, user)
 	case "app":
 		if !r.requireRegistration(bot, msg.Chat.ID, user) {
 			return
@@ -133,7 +133,7 @@ func (r *Router) handleMessage(ctx context.Context, bot *tgbotapi.BotAPI, msg *t
 	case service.IsFlowActive(state.State, "quiz:"):
 		r.quizHandler.HandleMessage(ctx, bot, msg, user, state)
 	case service.IsFlowActive(state.State, "sub:"):
-		r.subHandler.HandleMessage(ctx, bot, msg, user, state)
+		r.payHandler.HandleMessage(ctx, bot, msg, user, state)
 	case service.IsFlowActive(state.State, "mod:"):
 		r.modHandler.HandleMessage(ctx, bot, msg, user, state)
 	case service.IsFlowActive(state.State, "score:"):
@@ -166,7 +166,7 @@ func (r *Router) handleCallback(ctx context.Context, bot *tgbotapi.BotAPI, cb *t
 		r.regHandler.HandleFitnessCallback(ctx, bot, chatID, user, value)
 	case strings.HasPrefix(data, "goal:"):
 		value := strings.TrimPrefix(data, "goal:")
-		r.regHandler.HandleGoalCallback(ctx, bot, chatID, user, value)
+		r.regHandler.HandleGoalCallback(ctx, bot, chatID, cb.Message.MessageID, user, value)
 
 	// Questionnaire callbacks
 	case strings.HasPrefix(data, "quiz_ans:"):
@@ -190,9 +190,9 @@ func (r *Router) handleCallback(ctx context.Context, bot *tgbotapi.BotAPI, cb *t
 	case strings.HasPrefix(data, "back_cats:"):
 		r.modHandler.HandleCallback(ctx, bot, chatID, user, data)
 
-	// Subscription callbacks
-	case strings.HasPrefix(data, "plan:"):
-		r.subHandler.HandleCallback(ctx, bot, chatID, user, data)
+	// Payment callbacks
+	case strings.HasPrefix(data, "pay:"):
+		r.payHandler.HandleCallback(ctx, bot, chatID, user, data)
 
 	// Score callbacks
 	case strings.HasPrefix(data, "score:"):
@@ -218,11 +218,11 @@ func (r *Router) handleStart(ctx context.Context, bot *tgbotapi.BotAPI, msg *tgb
 		}
 	}
 
-	text := "Добро пожаловать назад, " + user.FirstName + "!\n\n" +
-		"Выберите раздел:\n" +
-		"/modules — Модули обучения\n" +
+	text := "С возвращением, " + user.FirstName + "! 💪\n\n" +
+		"Чем займёмся сегодня?\n\n" +
+		"/modules — Модули и тренировки\n" +
 		"/app — Открыть приложение\n" +
-		"/subscribe — Подписка\n" +
+		"/buy — Оплатить доступ\n" +
 		"/profile — Мой профиль\n" +
 		"/help — Помощь"
 	send(bot, msg.Chat.ID, text)

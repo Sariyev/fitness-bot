@@ -4,6 +4,7 @@ import (
 	"fitness-bot/internal/config"
 	"fitness-bot/internal/database"
 	webapphandler "fitness-bot/internal/handler/webapp"
+	"fitness-bot/internal/payment"
 	"fitness-bot/internal/repository"
 	"fitness-bot/internal/service"
 	"log"
@@ -31,20 +32,21 @@ func main() {
 
 	// Repositories
 	userRepo := repository.NewUserRepo(db.Pool)
-	subRepo := repository.NewSubscriptionRepo(db.Pool)
 	moduleRepo := repository.NewModuleRepo(db.Pool)
+	paymentRepo := repository.NewPaymentRepo(db.Pool)
 
 	// Services
 	userSvc := service.NewUserService(userRepo)
-	subSvc := service.NewSubscriptionService(subRepo, nil) // no payment provider needed for webapp
 	moduleSvc := service.NewModuleService(moduleRepo)
+	paymentProvider := payment.NewDummyProvider()
+	paymentSvc := service.NewPaymentService(paymentRepo, userRepo, paymentProvider, 5000)
 
 	// WebApp router
 	router := webapphandler.NewRouter(
 		cfg.TelegramToken,
 		userSvc,
 		moduleSvc,
-		subSvc,
+		paymentSvc,
 		"./static",
 	)
 

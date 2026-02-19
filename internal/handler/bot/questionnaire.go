@@ -138,10 +138,10 @@ func (h *QuestionnaireHandler) completeQuestionnaire(ctx context.Context, bot *t
 	h.convSvc.ClearState(ctx, user.TelegramID)
 
 	text := "✅ Тест завершён!\n\n" +
-		"На основе ваших ответов мы подготовили персональные рекомендации.\n" +
-		"Для доступа к полным программам оформите подписку.\n\n" +
-		"/subscribe — Оформить подписку\n" +
-		"/modules — Доступные модули"
+		"На основе твоих ответов я подготовлю персональные рекомендации.\n" +
+		"Для полного доступа к программам оплати доступ.\n\n" +
+		"/buy — Оплатить доступ\n" +
+		"/modules — Перейти к модулям"
 	send(bot, chatID, text)
 }
 

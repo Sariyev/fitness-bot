@@ -44,16 +44,7 @@ type QuestionnaireRepository interface {
 	GetUserSubmissions(ctx context.Context, userID int64, questionnaireID int) ([]models.QuestionnaireSubmission, error)
 }
 
-type SubscriptionRepository interface {
-	ListActivePlans(ctx context.Context) ([]models.SubscriptionPlan, error)
-	GetPlanByID(ctx context.Context, id int) (*models.SubscriptionPlan, error)
-	CreatePlan(ctx context.Context, plan *models.SubscriptionPlan) error
-	UpdatePlan(ctx context.Context, plan *models.SubscriptionPlan) error
-
-	GetActiveSubscription(ctx context.Context, userID int64) (*models.Subscription, error)
-	CreateSubscription(ctx context.Context, sub *models.Subscription) error
-	ExpireSubscription(ctx context.Context, subID int64) error
-
+type PaymentRepository interface {
 	CreatePayment(ctx context.Context, p *models.Payment) error
 	UpdatePayment(ctx context.Context, p *models.Payment) error
 	GetPaymentByID(ctx context.Context, id int64) (*models.Payment, error)

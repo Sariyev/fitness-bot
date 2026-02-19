@@ -27,7 +27,6 @@ func main() {
 	// Repositories
 	userRepo := repository.NewUserRepo(db.Pool)
 	questRepo := repository.NewQuestionnaireRepo(db.Pool)
-	subRepo := repository.NewSubscriptionRepo(db.Pool)
 	moduleRepo := repository.NewModuleRepo(db.Pool)
 	scoreRepo := repository.NewScoreRepo(db.Pool)
 
@@ -36,7 +35,6 @@ func main() {
 		cfg.AdminAPIKey,
 		moduleRepo,
 		questRepo,
-		subRepo,
 		userRepo,
 		scoreRepo,
 	)

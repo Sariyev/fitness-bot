@@ -29,9 +29,10 @@ const (
 	// Questionnaire
 	StateQuizInProgress = "quiz:in_progress"
 
-	// Subscription
-	StateSubChoosePlan   = "sub:choose_plan"
-	StateSubAwaitPayment = "sub:await_payment"
+	// Payment
+	StatePayShowProduct  = "sub:show_product"
+	StatePayAwaitConfirm = "sub:await_confirm"
+	StatePayProcessing   = "sub:processing"
 
 	// Module browsing
 	StateModBrowse         = "mod:browse"
@@ -45,12 +46,13 @@ const (
 )
 
 type RegistrationData struct {
-	Age          int     `json:"age,omitempty"`
-	HeightCm     int     `json:"height_cm,omitempty"`
-	WeightKg     float64 `json:"weight_kg,omitempty"`
-	Gender       string  `json:"gender,omitempty"`
-	FitnessLevel string  `json:"fitness_level,omitempty"`
-	Goal         string  `json:"goal,omitempty"`
+	Age          int      `json:"age,omitempty"`
+	HeightCm     int      `json:"height_cm,omitempty"`
+	WeightKg     float64  `json:"weight_kg,omitempty"`
+	Gender       string   `json:"gender,omitempty"`
+	FitnessLevel string   `json:"fitness_level,omitempty"`
+	Goals        []string `json:"goals,omitempty"`
+	GoalMsgID    int      `json:"goal_msg_id,omitempty"`
 }
 
 type QuizFlowData struct {
@@ -60,8 +62,8 @@ type QuizFlowData struct {
 	TotalQuestions  int   `json:"total_questions"`
 }
 
-type SubscriptionFlowData struct {
-	PlanID int `json:"plan_id,omitempty"`
+type PaymentFlowData struct {
+	MessageID int `json:"message_id,omitempty"`
 }
 
 type ModuleBrowseData struct {

@@ -3,6 +3,8 @@ import ModulesView from './views/ModulesView.vue'
 import CategoriesView from './views/CategoriesView.vue'
 import LessonsView from './views/LessonsView.vue'
 import LessonView from './views/LessonView.vue'
+import PaymentView from './views/PaymentView.vue'
+import ProfileView from './views/ProfileView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -29,6 +31,16 @@ const router = createRouter({
       name: 'lesson',
       component: LessonView,
       props: true,
+    },
+    {
+      path: '/payment',
+      name: 'payment',
+      component: PaymentView,
+    },
+    {
+      path: '/profile',
+      name: 'profile',
+      component: ProfileView,
     },
   ],
 })

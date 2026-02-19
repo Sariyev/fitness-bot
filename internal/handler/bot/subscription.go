@@ -4,89 +4,120 @@ import (
 	"context"
 	"fitness-bot/internal/models"
 	"fitness-bot/internal/service"
-	"fmt"
 	"log"
-	"strconv"
-	"strings"
 	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-type SubscriptionHandler struct {
-	convSvc *service.ConversationService
-	subSvc  *service.SubscriptionService
+type PaymentHandler struct {
+	convSvc    *service.ConversationService
+	paymentSvc *service.PaymentService
 }
 
-func NewSubscriptionHandler(convSvc *service.ConversationService, subSvc *service.SubscriptionService) *SubscriptionHandler {
-	return &SubscriptionHandler{convSvc: convSvc, subSvc: subSvc}
+func NewPaymentHandler(convSvc *service.ConversationService, paymentSvc *service.PaymentService) *PaymentHandler {
+	return &PaymentHandler{convSvc: convSvc, paymentSvc: paymentSvc}
 }
 
-func (h *SubscriptionHandler) HandleShowPlans(ctx context.Context, bot *tgbotapi.BotAPI, chatID int64, user *models.User) {
-	// Check if already subscribed
-	active, _ := h.subSvc.HasActiveSubscription(ctx, user.ID)
-	if active {
-		sub, _ := h.subSvc.GetActiveSubscription(ctx, user.ID)
-		if sub != nil {
-			send(bot, chatID, fmt.Sprintf(
-				"✅ У вас активная подписка!\n\nДействует до: %s\n\n/modules — Перейти к модулям",
-				sub.ExpiresAt.Format("02.01.2006"),
-			))
-			return
-		}
-	}
-
-	plans, err := h.subSvc.ListPlans(ctx)
-	if err != nil || len(plans) == 0 {
-		send(bot, chatID, "Планы подписки временно недоступны.")
+// Step 1: /buy → Show product card
+func (h *PaymentHandler) HandleBuy(ctx context.Context, bot *tgbotapi.BotAPI, chatID int64, user *models.User) {
+	if user.IsPaid {
+		send(bot, chatID, "✅ У тебя уже есть полный доступ! Пользуйся на здоровье 💪\n\n/modules — Перейти к модулям")
 		return
 	}
 
-	text := "💳 Выберите план подписки:\n\n"
-	var rows [][]tgbotapi.InlineKeyboardButton
-	for _, p := range plans {
-		text += fmt.Sprintf("• %s — %d ₸ (%d дней)\n  %s\n\n", p.Name, p.PriceKZT, p.DurationDays, p.Description)
-		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData(
-				fmt.Sprintf("%s — %d ₸", p.Name, p.PriceKZT),
-				fmt.Sprintf("plan:%d", p.ID),
-			),
-		))
-	}
+	text := "🏋️ *Полный доступ к платформе*\n\n" +
+		"Что входит:\n" +
+		"🏥 ЛФК — упражнения при грыже, протрузиях, сколиозе и др.\n" +
+		"💪 Тренировки — программы по группам мышц с видео\n" +
+		"🥗 Питание — рецепты и планы питания\n\n" +
+		"💰 *Стоимость: 5 000 ₸* (разовая оплата)"
 
-	keyboard := tgbotapi.NewInlineKeyboardMarkup(rows...)
-	sendWithKeyboard(bot, chatID, text, keyboard)
+	keyboard := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("💳 Оплатить", "pay:start"),
+		),
+	)
+	msg := tgbotapi.NewMessage(chatID, text)
+	msg.ParseMode = "Markdown"
+	msg.ReplyMarkup = keyboard
+	bot.Send(msg)
 }
 
-func (h *SubscriptionHandler) HandleCallback(ctx context.Context, bot *tgbotapi.BotAPI, chatID int64, user *models.User, data string) {
-	if !strings.HasPrefix(data, "plan:") {
+// Step 2-4: Handle callback buttons
+func (h *PaymentHandler) HandleCallback(ctx context.Context, bot *tgbotapi.BotAPI, chatID int64, user *models.User, data string) {
+	switch data {
+	case "pay:start":
+		h.showConfirmation(ctx, bot, chatID, user)
+	case "pay:confirm":
+		h.processPayment(ctx, bot, chatID, user)
+	case "pay:cancel":
+		h.convSvc.ClearState(ctx, user.TelegramID)
+		send(bot, chatID, "Оплата отменена. Когда будешь готов — /buy")
+	}
+}
+
+// Step 2: Confirmation screen
+func (h *PaymentHandler) showConfirmation(ctx context.Context, bot *tgbotapi.BotAPI, chatID int64, user *models.User) {
+	if user.IsPaid {
+		send(bot, chatID, "✅ У тебя уже есть полный доступ!")
 		return
 	}
 
-	planIDStr := strings.TrimPrefix(data, "plan:")
-	planID, err := strconv.Atoi(planIDStr)
+	text := "📋 *Подтверждение оплаты*\n\n" +
+		"Полный доступ к платформе\n" +
+		"Сумма: *5 000 ₸*\n\n" +
+		"Подтвердить оплату?"
+
+	keyboard := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("✅ Подтвердить", "pay:confirm"),
+			tgbotapi.NewInlineKeyboardButtonData("❌ Отмена", "pay:cancel"),
+		),
+	)
+	msg := tgbotapi.NewMessage(chatID, text)
+	msg.ParseMode = "Markdown"
+	msg.ReplyMarkup = keyboard
+	bot.Send(msg)
+}
+
+// Step 3-4: Process payment with loading animation
+func (h *PaymentHandler) processPayment(ctx context.Context, bot *tgbotapi.BotAPI, chatID int64, user *models.User) {
+	if user.IsPaid {
+		send(bot, chatID, "✅ У тебя уже есть полный доступ!")
+		return
+	}
+
+	// Step 3: Show processing message
+	processingMsg := tgbotapi.NewMessage(chatID, "⏳ Обработка платежа...")
+	resp, err := bot.Send(processingMsg)
 	if err != nil {
+		send(bot, chatID, "Ошибка. Попробуй позже: /buy")
 		return
 	}
 
-	sub, err := h.subSvc.Subscribe(ctx, user.ID, planID)
+	// Simulate payment processing delay
+	time.Sleep(2 * time.Second)
+
+	// Process actual payment
+	err = h.paymentSvc.ProcessPayment(ctx, user)
 	if err != nil {
-		log.Printf("Error subscribing user %d: %v", user.ID, err)
-		send(bot, chatID, "Произошла ошибка при оформлении подписки. Попробуйте позже.")
+		log.Printf("Error processing payment for user %d: %v", user.ID, err)
+		edit := tgbotapi.NewEditMessageText(chatID, resp.MessageID, "❌ Ошибка при оплате. Попробуй позже: /buy")
+		bot.Send(edit)
 		return
 	}
 
 	h.convSvc.ClearState(ctx, user.TelegramID)
 
-	send(bot, chatID, fmt.Sprintf(
-		"✅ Подписка оформлена!\n\n"+
-			"Действует до: %s\n\n"+
-			"/modules — Перейти к модулям",
-		sub.ExpiresAt.Format("02.01.2006"),
-	))
+	// Step 4: Edit processing message → success
+	successText := "✅ Оплата прошла успешно!\n\n" +
+		"Полный доступ ко всем модулям открыт. Приятных тренировок! 💪\n\n" +
+		"/modules — Перейти к модулям"
+	edit := tgbotapi.NewEditMessageText(chatID, resp.MessageID, successText)
+	bot.Send(edit)
 }
 
-func (h *SubscriptionHandler) HandleMessage(ctx context.Context, bot *tgbotapi.BotAPI, msg *tgbotapi.Message, user *models.User, state *models.ConversationState) {
-	_ = time.Now()
-	send(bot, msg.Chat.ID, "Пожалуйста, используйте кнопки для выбора плана подписки.")
+func (h *PaymentHandler) HandleMessage(ctx context.Context, bot *tgbotapi.BotAPI, msg *tgbotapi.Message, user *models.User, state *models.ConversationState) {
+	send(bot, msg.Chat.ID, "Используй кнопки для оплаты или /buy для начала.")
 }

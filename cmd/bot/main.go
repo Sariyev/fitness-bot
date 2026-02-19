@@ -39,7 +39,7 @@ func main() {
 	userRepo := repository.NewUserRepo(db.Pool)
 	convRepo := repository.NewConversationRepo(db.Pool)
 	questRepo := repository.NewQuestionnaireRepo(db.Pool)
-	subRepo := repository.NewSubscriptionRepo(db.Pool)
+	paymentRepo := repository.NewPaymentRepo(db.Pool)
 	moduleRepo := repository.NewModuleRepo(db.Pool)
 	scoreRepo := repository.NewScoreRepo(db.Pool)
 
@@ -50,7 +50,7 @@ func main() {
 	userSvc := service.NewUserService(userRepo)
 	convSvc := service.NewConversationService(convRepo)
 	questSvc := service.NewQuestionnaireService(questRepo)
-	subSvc := service.NewSubscriptionService(subRepo, paymentProvider)
+	paymentSvc := service.NewPaymentService(paymentRepo, userRepo, paymentProvider, 5000)
 	moduleSvc := service.NewModuleService(moduleRepo)
 	scoreSvc := service.NewScoreService(scoreRepo)
 
@@ -64,7 +64,7 @@ func main() {
 	log.Printf("Bot started: @%s", bot.Self.UserName)
 
 	// Router
-	router := bothandler.NewRouter(userSvc, convSvc, questSvc, subSvc, moduleSvc, scoreSvc, cfg.WebAppURL)
+	router := bothandler.NewRouter(userSvc, convSvc, questSvc, paymentSvc, moduleSvc, scoreSvc, cfg.WebAppURL)
 
 	// Graceful shutdown
 	ctx, cancel := context.WithCancel(context.Background())

@@ -1,11 +1,5 @@
 BEGIN;
 
--- Subscription plans
-INSERT INTO subscription_plans (slug, name, description, price_kzt, duration_days) VALUES
-    ('monthly', 'Месячная подписка', 'Доступ ко всем модулям на 30 дней', 5000, 30),
-    ('quarterly', 'Квартальная подписка', 'Доступ ко всем модулям на 90 дней', 12000, 90),
-    ('yearly', 'Годовая подписка', 'Доступ ко всем модулям на 365 дней', 40000, 365);
-
 -- Modules
 INSERT INTO modules (slug, name, description, icon, requires_subscription, sort_order) VALUES
     ('lfk', 'ЛФК', 'Лечебная физическая культура — упражнения при проблемах с позвоночником и суставами', '🏥', TRUE, 1),
@@ -44,11 +38,7 @@ INSERT INTO questions (questionnaire_id, text, question_type, sort_order, is_req
     ((SELECT id FROM questionnaires WHERE slug = 'health_test'),
      'Как часто вы занимаетесь физической активностью?', 'single_choice', 1, TRUE, '{}'),
     ((SELECT id FROM questionnaires WHERE slug = 'health_test'),
-     'Есть ли у вас проблемы со здоровьем?', 'multiple_choice', 2, TRUE, '{}'),
-    ((SELECT id FROM questionnaires WHERE slug = 'health_test'),
-     'Оцените ваш текущий уровень энергии', 'scale', 3, TRUE, '{"min": 1, "max": 10, "min_label": "Очень низкий", "max_label": "Очень высокий"}'),
-    ((SELECT id FROM questionnaires WHERE slug = 'health_test'),
-     'Опишите ваши ожидания от программы', 'text', 4, FALSE, '{}');
+     'Есть ли у вас проблемы со здоровьем?', 'multiple_choice', 2, TRUE, '{}');
 
 -- Options for question 1
 INSERT INTO question_options (question_id, text, value, sort_order)

@@ -18,12 +18,11 @@ const moduleTTL = time.Hour
 type ModuleHandler struct {
 	convSvc  *service.ConversationService
 	modSvc   *service.ModuleService
-	subSvc   *service.SubscriptionService
 	scoreSvc *service.ScoreService
 }
 
-func NewModuleHandler(convSvc *service.ConversationService, modSvc *service.ModuleService, subSvc *service.SubscriptionService, scoreSvc *service.ScoreService) *ModuleHandler {
-	return &ModuleHandler{convSvc: convSvc, modSvc: modSvc, subSvc: subSvc, scoreSvc: scoreSvc}
+func NewModuleHandler(convSvc *service.ConversationService, modSvc *service.ModuleService, scoreSvc *service.ScoreService) *ModuleHandler {
+	return &ModuleHandler{convSvc: convSvc, modSvc: modSvc, scoreSvc: scoreSvc}
 }
 
 func (h *ModuleHandler) HandleModuleList(ctx context.Context, bot *tgbotapi.BotAPI, chatID int64, user *models.User) {
@@ -79,13 +78,10 @@ func (h *ModuleHandler) handleModuleSelect(ctx context.Context, bot *tgbotapi.Bo
 		return
 	}
 
-	// Check subscription
-	if module.RequiresSubscription {
-		active, _ := h.subSvc.HasActiveSubscription(ctx, user.ID)
-		if !active {
-			send(bot, chatID, "⚠️ Для доступа к этому модулю нужна подписка.\n\n/subscribe — Оформить подписку")
-			return
-		}
+	// Check payment
+	if module.RequiresSubscription && !user.IsPaid {
+		send(bot, chatID, "⚠️ Для доступа к этому модулю нужна оплата.\n\n/buy — Оплатить доступ")
+		return
 	}
 
 	h.showCategories(ctx, bot, chatID, user, moduleID)

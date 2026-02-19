@@ -14,8 +14,8 @@ import (
 type WebAppRouter struct {
 	mux        *http.ServeMux
 	moduleSvc  *service.ModuleService
-	subSvc     *service.SubscriptionService
 	userSvc    *service.UserService
+	paymentSvc *service.PaymentService
 	botToken   string
 	staticDir  string
 }
@@ -24,16 +24,16 @@ func NewRouter(
 	botToken string,
 	userSvc *service.UserService,
 	moduleSvc *service.ModuleService,
-	subSvc *service.SubscriptionService,
+	paymentSvc *service.PaymentService,
 	staticDir string,
 ) *WebAppRouter {
 	r := &WebAppRouter{
-		mux:       http.NewServeMux(),
-		moduleSvc: moduleSvc,
-		subSvc:    subSvc,
-		userSvc:   userSvc,
-		botToken:  botToken,
-		staticDir: staticDir,
+		mux:        http.NewServeMux(),
+		moduleSvc:  moduleSvc,
+		userSvc:    userSvc,
+		paymentSvc: paymentSvc,
+		botToken:   botToken,
+		staticDir:  staticDir,
 	}
 
 	r.setupRoutes()
@@ -57,8 +57,10 @@ func (r *WebAppRouter) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 func (r *WebAppRouter) setupRoutes() {
 	auth := AuthMiddleware(r.botToken, r.userSvc)
 
-	moduleHandler := NewModuleHandler(r.moduleSvc, r.subSvc)
+	moduleHandler := NewModuleHandler(r.moduleSvc)
 	progressHandler := NewProgressHandler(r.moduleSvc)
+	paymentHandler := NewPaymentHandler(r.paymentSvc)
+	profileHandler := NewProfileHandler(r.userSvc)
 
 	// API routes (authenticated)
 	r.mux.Handle("/app/api/modules", auth(http.HandlerFunc(moduleHandler.ListModules)))
@@ -72,7 +74,10 @@ func (r *WebAppRouter) setupRoutes() {
 			moduleHandler.HandleLessonRoutes(w, req)
 		}
 	})))
-	r.mux.Handle("/app/api/subscription/status", auth(http.HandlerFunc(moduleHandler.SubscriptionStatus)))
+	r.mux.Handle("/app/api/subscription/status", auth(http.HandlerFunc(moduleHandler.PaymentStatus)))
+	r.mux.Handle("/app/api/payment/status", auth(http.HandlerFunc(paymentHandler.Status)))
+	r.mux.Handle("/app/api/payment/pay", auth(http.HandlerFunc(paymentHandler.Pay)))
+	r.mux.Handle("/app/api/profile", auth(http.HandlerFunc(profileHandler.GetProfile)))
 
 	// SPA serving - serve static files, fallback to index.html
 	r.mux.HandleFunc("/", r.serveSPA)

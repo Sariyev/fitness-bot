@@ -8,19 +8,17 @@ import (
 )
 
 type Router struct {
-	mux       *http.ServeMux
-	apiKey    string
-	moduleH   *ModuleAdminHandler
-	questH    *QuestionnaireAdminHandler
-	subH      *SubscriptionAdminHandler
-	userH     *UserAdminHandler
+	mux     *http.ServeMux
+	apiKey  string
+	moduleH *ModuleAdminHandler
+	questH  *QuestionnaireAdminHandler
+	userH   *UserAdminHandler
 }
 
 func NewRouter(
 	apiKey string,
 	moduleRepo repository.ModuleRepository,
 	questRepo repository.QuestionnaireRepository,
-	subRepo repository.SubscriptionRepository,
 	userRepo repository.UserRepository,
 	scoreRepo repository.ScoreRepository,
 ) *Router {
@@ -29,7 +27,6 @@ func NewRouter(
 		apiKey:  apiKey,
 		moduleH: NewModuleAdminHandler(moduleRepo),
 		questH:  NewQuestionnaireAdminHandler(questRepo),
-		subH:    NewSubscriptionAdminHandler(subRepo),
 		userH:   NewUserAdminHandler(userRepo, scoreRepo),
 	}
 	r.routes()
@@ -47,9 +44,6 @@ func (r *Router) routes() {
 	r.mux.HandleFunc("/api/questionnaires/", r.auth(r.questH.HandleQuestionnaireByID))
 	r.mux.HandleFunc("/api/questions/", r.auth(r.questH.HandleQuestionByID))
 	r.mux.HandleFunc("/api/options/", r.auth(r.questH.HandleOptionByID))
-
-	r.mux.HandleFunc("/api/subscription-plans", r.auth(r.subH.HandlePlans))
-	r.mux.HandleFunc("/api/subscription-plans/", r.auth(r.subH.HandlePlanByID))
 
 	r.mux.HandleFunc("/api/users", r.auth(r.userH.HandleUsers))
 	r.mux.HandleFunc("/api/users/", r.auth(r.userH.HandleUserByID))

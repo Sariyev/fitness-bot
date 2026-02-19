@@ -10,11 +10,10 @@ import (
 
 type ModuleHandler struct {
 	moduleSvc *service.ModuleService
-	subSvc    *service.SubscriptionService
 }
 
-func NewModuleHandler(moduleSvc *service.ModuleService, subSvc *service.SubscriptionService) *ModuleHandler {
-	return &ModuleHandler{moduleSvc: moduleSvc, subSvc: subSvc}
+func NewModuleHandler(moduleSvc *service.ModuleService) *ModuleHandler {
+	return &ModuleHandler{moduleSvc: moduleSvc}
 }
 
 // GET /app/api/modules
@@ -221,7 +220,7 @@ func (h *ModuleHandler) HandleLessonRoutes(w http.ResponseWriter, r *http.Reques
 }
 
 // GET /app/api/subscription/status
-func (h *ModuleHandler) SubscriptionStatus(w http.ResponseWriter, r *http.Request) {
+func (h *ModuleHandler) PaymentStatus(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		jsonError(w, http.StatusMethodNotAllowed, "method not allowed")
 		return
@@ -233,11 +232,5 @@ func (h *ModuleHandler) SubscriptionStatus(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	active, err := h.subSvc.HasActiveSubscription(r.Context(), user.ID)
-	if err != nil {
-		jsonError(w, http.StatusInternalServerError, "failed to check subscription")
-		return
-	}
-
-	jsonResponse(w, http.StatusOK, map[string]bool{"active": active})
+	jsonResponse(w, http.StatusOK, map[string]bool{"active": user.IsPaid})
 }

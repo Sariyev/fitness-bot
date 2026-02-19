@@ -55,3 +55,26 @@ export interface LessonDetail {
 export interface SubscriptionStatus {
   active: boolean
 }
+
+export interface PaymentStatus {
+  is_paid: boolean
+  price_kzt: number
+}
+
+export interface PaymentResult {
+  success: boolean
+  message: string
+}
+
+export interface UserProfile {
+  first_name: string
+  last_name: string
+  username: string
+  age: number
+  height_cm: number
+  weight_kg: number
+  gender: string
+  fitness_level: string
+  goals: string[]
+  is_paid: boolean
+}

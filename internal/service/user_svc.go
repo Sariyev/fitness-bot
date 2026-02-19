@@ -4,6 +4,7 @@ import (
 	"context"
 	"fitness-bot/internal/models"
 	"fitness-bot/internal/repository"
+	"strings"
 
 	"github.com/jackc/pgx/v4"
 )
@@ -46,7 +47,7 @@ func (s *UserService) CreateProfile(ctx context.Context, userID int64, data mode
 		WeightKg:     data.WeightKg,
 		HeightCm:     data.HeightCm,
 		FitnessLevel: data.FitnessLevel,
-		Goal:         data.Goal,
+		Goal:         strings.Join(data.Goals, ","),
 	}
 	if err := s.repo.CreateProfile(ctx, profile); err != nil {
 		return err

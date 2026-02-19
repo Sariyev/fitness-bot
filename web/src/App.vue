@@ -3,28 +3,42 @@
     <div v-if="loading" class="loading">
       <div class="spinner"></div>
     </div>
-    <div v-else-if="!subscribed" class="no-subscription">
-      <div class="no-sub-content">
-        <h2>Требуется подписка</h2>
-        <p>Для доступа к модулям необходима активная подписка.</p>
-        <p>Используйте команду <strong>/subscribe</strong> в боте.</p>
-        <button class="btn" @click="closeApp">Закрыть</button>
+    <template v-else>
+      <nav class="bottom-nav" v-if="showNav">
+        <router-link to="/" class="nav-item" :class="{ active: $route.name === 'modules' }">
+          <span class="nav-icon">📚</span>
+          <span class="nav-label">Модули</span>
+        </router-link>
+        <router-link to="/payment" class="nav-item" :class="{ active: $route.name === 'payment' }">
+          <span class="nav-icon">💳</span>
+          <span class="nav-label">Оплата</span>
+        </router-link>
+        <router-link to="/profile" class="nav-item" :class="{ active: $route.name === 'profile' }">
+          <span class="nav-icon">👤</span>
+          <span class="nav-label">Профиль</span>
+        </router-link>
+      </nav>
+      <div class="content" :class="{ 'with-nav': showNav }">
+        <router-view />
       </div>
-    </div>
-    <router-view v-else />
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { api } from './api'
 
+const router = useRouter()
+const route = useRoute()
 const loading = ref(true)
-const subscribed = ref(false)
+const paid = ref(false)
 
-function closeApp() {
-  window.Telegram?.WebApp?.close()
-}
+const showNav = computed(() => {
+  const navRoutes = ['modules', 'payment', 'profile']
+  return navRoutes.includes(route.name as string)
+})
 
 onMounted(async () => {
   const tg = window.Telegram?.WebApp
@@ -35,11 +49,16 @@ onMounted(async () => {
 
   try {
     const status = await api.getSubscriptionStatus()
-    subscribed.value = status.active
+    paid.value = status.active
   } catch {
-    subscribed.value = false
+    paid.value = false
   } finally {
     loading.value = false
+  }
+
+  // Redirect unpaid users to payment page (unless already on payment/profile)
+  if (!paid.value && route.name !== 'payment' && route.name !== 'profile') {
+    router.replace('/payment')
   }
 })
 </script>
@@ -70,7 +89,14 @@ body {
 
 .app {
   min-height: 100vh;
+}
+
+.content {
   padding: 16px;
+}
+
+.content.with-nav {
+  padding-bottom: 72px;
 }
 
 .loading {
@@ -93,25 +119,40 @@ body {
   to { transform: rotate(360deg); }
 }
 
-.no-subscription {
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
   display: flex;
-  justify-content: center;
+  background: var(--bg-color);
+  border-top: 1px solid var(--secondary-bg);
+  padding: 8px 0;
+  padding-bottom: max(8px, env(safe-area-inset-bottom));
+  z-index: 100;
+}
+
+.nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  min-height: 60vh;
-}
-
-.no-sub-content {
-  text-align: center;
-  padding: 24px;
-}
-
-.no-sub-content h2 {
-  margin-bottom: 12px;
-}
-
-.no-sub-content p {
+  text-decoration: none;
   color: var(--hint-color);
-  margin-bottom: 8px;
+  font-size: 11px;
+  gap: 2px;
+}
+
+.nav-item.active {
+  color: var(--button-color);
+}
+
+.nav-icon {
+  font-size: 20px;
+}
+
+.nav-label {
+  font-size: 11px;
 }
 
 .btn {
