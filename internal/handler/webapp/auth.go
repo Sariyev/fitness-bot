@@ -12,6 +12,8 @@ import (
 	"sort"
 	"strings"
 
+	"log"
+
 	"fitness-bot/internal/models"
 	"fitness-bot/internal/service"
 )
@@ -103,13 +105,16 @@ func AuthMiddleware(botToken string, userSvc *service.UserService) func(http.Han
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			initData := r.Header.Get("X-Telegram-Init-Data")
+			log.Printf("[AUTH] %s %s | initData length: %d", r.Method, r.URL.Path, len(initData))
 			if initData == "" {
+				log.Printf("[AUTH] REJECTED: missing init data for %s", r.URL.Path)
 				http.Error(w, `{"error":"missing init data"}`, http.StatusUnauthorized)
 				return
 			}
 
 			parsed, err := ValidateInitData(initData, botToken)
 			if err != nil {
+				log.Printf("[AUTH] REJECTED: %v for %s", err, r.URL.Path)
 				http.Error(w, `{"error":"invalid init data"}`, http.StatusUnauthorized)
 				return
 			}
