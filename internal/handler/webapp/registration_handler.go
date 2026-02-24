@@ -81,10 +81,6 @@ func (h *RegistrationHandler) Register(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, http.StatusBadRequest, "invalid fitness level")
 		return
 	}
-	if len(req.Goals) == 0 {
-		jsonError(w, http.StatusBadRequest, "at least one goal required")
-		return
-	}
 	for _, g := range req.Goals {
 		if !validGoals[g] {
 			jsonError(w, http.StatusBadRequest, "invalid goal: "+g)

@@ -80,7 +80,7 @@ function canProceed(): boolean {
   switch (currentSlide.value) {
     case 4: return formData.gender !== ''
     case 5: return formData.fitnessLevel !== ''
-    case 6: return formData.goals.length > 0
+    case 6: return true
     default: return true
   }
 }
@@ -88,8 +88,7 @@ function canProceed(): boolean {
 function next() {
   if (!canProceed()) {
     hapticNotification('error')
-    if (currentSlide.value === 6) error.value = 'Выбери хотя бы одну цель'
-    else if (currentSlide.value === 4) error.value = 'Выбери пол'
+    if (currentSlide.value === 4) error.value = 'Выбери пол'
     else if (currentSlide.value === 5) error.value = 'Выбери уровень'
     return
   }
