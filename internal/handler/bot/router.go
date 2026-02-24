@@ -202,9 +202,36 @@ func (r *Router) handleCallback(ctx context.Context, bot *tgbotapi.BotAPI, cb *t
 	}
 }
 
+func (r *Router) sendOnboardingButton(bot *tgbotapi.BotAPI, chatID int64, user *models.User) {
+	if r.webAppURL == "" {
+		// Fallback to text registration if no webapp URL
+		r.regHandler.StartRegistration(context.Background(), bot, chatID, user)
+		return
+	}
+	text := "Привет, " + user.FirstName + "! 👋\n\n" +
+		"Я — Андрей, твой персональный тренер. " +
+		"Помогу тебе привести тело в форму и улучшить здоровье. 💪\n\n" +
+		"Нажми кнопку ниже, чтобы начать:"
+	m := tgbotapi.NewMessage(chatID, text)
+	m.ReplyMarkup = webAppReplyKeyboard{
+		Keyboard: [][]webAppKeyboardButton{
+			{{Text: "📱 Начать", WebApp: &webAppInfo{URL: r.webAppURL + "/onboarding"}}},
+		},
+		ResizeKeyboard:  true,
+		OneTimeKeyboard: false,
+	}
+	bot.Send(m)
+}
+
 func (r *Router) handleStart(ctx context.Context, bot *tgbotapi.BotAPI, msg *tgbotapi.Message, user *models.User) {
 	if !user.IsRegistered {
-		r.regHandler.StartRegistration(ctx, bot, msg.Chat.ID, user)
+		// Check if user has in-progress text registration (fallback)
+		state, _ := r.convSvc.GetState(ctx, user.TelegramID)
+		if state != nil && service.IsFlowActive(state.State, "reg:") {
+			send(bot, msg.Chat.ID, "Продолжаем регистрацию! Ответь на текущий вопрос выше или нажми /start заново.")
+			return
+		}
+		r.sendOnboardingButton(bot, msg.Chat.ID, user)
 		return
 	}
 

@@ -1,32 +1,28 @@
 <template>
   <div class="lesson-view">
-    <div v-if="loading" class="loading">
-      <div class="spinner"></div>
+    <div v-if="loading" class="skeleton-list">
+      <SkeletonCard v-for="i in 3" :key="i" />
     </div>
     <template v-else-if="lesson">
       <h1 class="page-title">{{ lesson.title }}</h1>
       <p v-if="lesson.description" class="lesson-desc">{{ lesson.description }}</p>
 
       <div class="content-list">
-        <ContentBlock
-          v-for="item in lesson.content"
+        <div
+          v-for="(item, index) in lesson.content"
           :key="item.id"
-          :content="item"
-        />
+          class="content-item"
+          :style="{ animationDelay: index * 80 + 'ms' }"
+        >
+          <ContentBlock :content="item" />
+        </div>
       </div>
 
-      <div v-if="lesson.status !== 'completed'" class="complete-section">
-        <button
-          class="btn complete-btn"
-          :disabled="completing"
-          @click="markComplete"
-        >
-          {{ completing ? 'Сохранение...' : 'Завершить занятие' }}
-        </button>
+      <div v-if="lesson.status === 'completed'" class="completed-badge">
+        <span>✅ Занятие пройдено</span>
       </div>
-      <div v-else class="completed-badge">
-        <span>✓ Занятие пройдено</span>
-      </div>
+
+      <ConfettiCanvas :active="showConfetti" />
     </template>
     <div v-else class="empty">
       <p>Занятие не найдено</p>
@@ -38,14 +34,19 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '../api'
+import { useTelegram } from '../composables/useTelegram'
 import type { LessonDetail } from '../types'
 import ContentBlock from '../components/ContentBlock.vue'
+import SkeletonCard from '../components/SkeletonCard.vue'
+import ConfettiCanvas from '../components/ConfettiCanvas.vue'
 
 const props = defineProps<{ id: string }>()
 const router = useRouter()
+const { hapticNotification, showMainButton, hideMainButton } = useTelegram()
 const lesson = ref<LessonDetail | null>(null)
 const loading = ref(true)
 const completing = ref(false)
+const showConfetti = ref(false)
 
 async function markComplete() {
   if (!lesson.value || completing.value) return
@@ -54,10 +55,12 @@ async function markComplete() {
   try {
     await api.completeLesson(lesson.value.id)
     lesson.value.status = 'completed'
-    window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred('success')
+    hapticNotification('success')
+    showConfetti.value = true
+    hideMainButton()
   } catch (e) {
     console.error('Failed to complete lesson:', e)
-    window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred('error')
+    hapticNotification('error')
   } finally {
     completing.value = false
   }
@@ -66,6 +69,8 @@ async function markComplete() {
 function goBack() {
   router.back()
 }
+
+const markCompleteRef = markComplete
 
 onMounted(async () => {
   const backBtn = window.Telegram?.WebApp?.BackButton
@@ -78,9 +83,12 @@ onMounted(async () => {
     const data = await api.getLesson(Number(props.id))
     lesson.value = data
 
-    // Auto-mark as started
     if (data.status === 'not_started') {
       api.startLesson(data.id).catch(() => {})
+    }
+
+    if (data.status !== 'completed') {
+      showMainButton('Завершить занятие ✅', markCompleteRef)
     }
   } catch (e) {
     console.error('Failed to load lesson:', e)
@@ -91,6 +99,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   window.Telegram?.WebApp?.BackButton?.offClick(goBack)
+  hideMainButton()
 })
 </script>
 
@@ -107,26 +116,21 @@ onUnmounted(() => {
   margin-bottom: 20px;
 }
 
+.skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
 .content-list {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-.complete-section {
-  margin-top: 24px;
-  padding-bottom: 24px;
-}
-
-.complete-btn {
-  width: 100%;
-  padding: 14px;
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.complete-btn:disabled {
-  opacity: 0.6;
+.content-item {
+  opacity: 0;
+  animation: fadeSlideUp 0.4s ease forwards;
 }
 
 .completed-badge {

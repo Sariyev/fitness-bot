@@ -61,6 +61,7 @@ func (r *WebAppRouter) setupRoutes() {
 	progressHandler := NewProgressHandler(r.moduleSvc)
 	paymentHandler := NewPaymentHandler(r.paymentSvc)
 	profileHandler := NewProfileHandler(r.userSvc)
+	registrationHandler := NewRegistrationHandler(r.userSvc)
 
 	// API routes (authenticated)
 	r.mux.Handle("/app/api/modules", auth(http.HandlerFunc(moduleHandler.ListModules)))
@@ -78,6 +79,8 @@ func (r *WebAppRouter) setupRoutes() {
 	r.mux.Handle("/app/api/payment/status", auth(http.HandlerFunc(paymentHandler.Status)))
 	r.mux.Handle("/app/api/payment/pay", auth(http.HandlerFunc(paymentHandler.Pay)))
 	r.mux.Handle("/app/api/profile", auth(http.HandlerFunc(profileHandler.GetProfile)))
+	r.mux.Handle("/app/api/register", auth(http.HandlerFunc(registrationHandler.Register)))
+	r.mux.Handle("/app/api/registration/status", auth(http.HandlerFunc(registrationHandler.Status)))
 
 	// SPA serving - serve static files, fallback to index.html
 	r.mux.HandleFunc("/", r.serveSPA)

@@ -56,6 +56,19 @@ export interface SubscriptionStatus {
   active: boolean
 }
 
+export interface RegisterRequest {
+  age: number
+  height_cm: number
+  weight_kg: number
+  gender: 'male' | 'female'
+  fitness_level: 'beginner' | 'intermediate' | 'advanced'
+  goals: string[]
+}
+
+export interface RegistrationStatus {
+  is_registered: boolean
+}
+
 export interface PaymentStatus {
   is_paid: boolean
   price_kzt: number

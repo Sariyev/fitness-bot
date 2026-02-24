@@ -4,6 +4,8 @@ import type {
   LessonWithProgress,
   LessonDetail,
   SubscriptionStatus,
+  RegisterRequest,
+  RegistrationStatus,
   PaymentStatus,
   PaymentResult,
   UserProfile,
@@ -70,5 +72,16 @@ export const api = {
 
   getProfile(): Promise<UserProfile> {
     return request('/app/api/profile')
+  },
+
+  register(data: RegisterRequest): Promise<{ success: boolean }> {
+    return request('/app/api/register', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  },
+
+  getRegistrationStatus(): Promise<RegistrationStatus> {
+    return request('/app/api/registration/status')
   },
 }

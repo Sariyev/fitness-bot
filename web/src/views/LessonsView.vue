@@ -1,8 +1,8 @@
 <template>
   <div class="lessons-view">
-    <h1 class="page-title">Занятия</h1>
-    <div v-if="loading" class="loading">
-      <div class="spinner"></div>
+    <h1 class="page-title">Занятия 📝</h1>
+    <div v-if="loading" class="skeleton-list">
+      <SkeletonCard v-for="i in 5" :key="i" />
     </div>
     <div v-else-if="lessons.length === 0" class="empty">
       <p>Занятия пока не доступны</p>
@@ -12,6 +12,7 @@
         v-for="(lesson, index) in lessons"
         :key="lesson.id"
         class="lesson-card"
+        :style="{ animationDelay: index * 50 + 'ms' }"
         @click="openLesson(lesson.id)"
       >
         <div class="lesson-number" :class="lesson.status">
@@ -23,8 +24,8 @@
           <p v-if="lesson.description">{{ lesson.description }}</p>
         </div>
         <div class="lesson-status">
-          <span v-if="lesson.status === 'completed'" class="status-badge completed">Пройдено</span>
-          <span v-else-if="lesson.status === 'in_progress'" class="status-badge in-progress">В процессе</span>
+          <span v-if="lesson.status === 'completed'" class="status-badge completed">Пройдено ✅</span>
+          <span v-else-if="lesson.status === 'in_progress'" class="status-badge in-progress">В процессе ⏳</span>
           <span class="lesson-arrow">›</span>
         </div>
       </div>
@@ -36,15 +37,18 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '../api'
+import { useTelegram } from '../composables/useTelegram'
 import type { LessonWithProgress } from '../types'
+import SkeletonCard from '../components/SkeletonCard.vue'
 
 const props = defineProps<{ id: string }>()
 const router = useRouter()
+const { hapticSelection } = useTelegram()
 const lessons = ref<LessonWithProgress[]>([])
 const loading = ref(true)
 
 function openLesson(id: number) {
-  window.Telegram?.WebApp?.HapticFeedback?.selectionChanged()
+  hapticSelection()
   router.push({ name: 'lesson', params: { id } })
 }
 
@@ -80,6 +84,12 @@ onUnmounted(() => {
   margin-bottom: 16px;
 }
 
+.skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .lesson-list {
   display: flex;
   flex-direction: column;
@@ -94,11 +104,13 @@ onUnmounted(() => {
   background: var(--secondary-bg);
   border-radius: 12px;
   cursor: pointer;
-  transition: opacity 0.15s;
+  opacity: 0;
+  animation: fadeSlideUp 0.35s ease forwards;
+  transition: transform 0.15s ease;
 }
 
 .lesson-card:active {
-  opacity: 0.7;
+  transform: scale(0.98);
 }
 
 .lesson-number {
@@ -121,6 +133,12 @@ onUnmounted(() => {
 
 .lesson-number.in_progress {
   background: #ff9500;
+  animation: pulse-status 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-status {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.08); opacity: 0.85; }
 }
 
 .lesson-info {

@@ -1,66 +1,72 @@
 <template>
   <div class="profile-page">
-    <div v-if="loading" class="loading">
-      <div class="spinner"></div>
+    <div v-if="loading" class="skeleton-list">
+      <SkeletonCard v-for="i in 4" :key="i" />
     </div>
 
     <div v-else-if="profile" class="profile-content">
       <div class="profile-header">
+        <div class="header-gradient"></div>
         <div class="avatar">{{ initials }}</div>
         <h2>{{ profile.first_name }} {{ profile.last_name }}</h2>
         <p v-if="profile.username" class="username">@{{ profile.username }}</p>
       </div>
 
-      <div class="info-card">
+      <div class="info-card" style="animation-delay: 80ms">
         <div class="info-row">
-          <span class="label">Возраст</span>
+          <span class="label">🎂 Возраст</span>
           <span class="value">{{ profile.age }}</span>
         </div>
         <div class="info-row">
-          <span class="label">Рост</span>
+          <span class="label">📏 Рост</span>
           <span class="value">{{ profile.height_cm }} см</span>
         </div>
         <div class="info-row">
-          <span class="label">Вес</span>
+          <span class="label">⚖️ Вес</span>
           <span class="value">{{ profile.weight_kg }} кг</span>
         </div>
         <div class="info-row">
-          <span class="label">Пол</span>
+          <span class="label">{{ profile.gender === 'male' ? '🙋‍♂️' : '🙋‍♀️' }} Пол</span>
           <span class="value">{{ genderLabel }}</span>
         </div>
         <div class="info-row">
-          <span class="label">Уровень</span>
+          <span class="label">💪 Уровень</span>
           <span class="value">{{ fitnessLabel }}</span>
         </div>
       </div>
 
-      <div class="info-card" v-if="profile.goals && profile.goals.length">
-        <h3>Цели</h3>
+      <div class="info-card" v-if="profile.goals && profile.goals.length" style="animation-delay: 160ms">
+        <h3>🎯 Цели</h3>
         <div class="goals-list">
-          <span v-for="goal in profile.goals" :key="goal" class="goal-tag">{{ goalLabel(goal) }}</span>
+          <span
+            v-for="(goal, index) in profile.goals"
+            :key="goal"
+            class="goal-tag"
+            :style="{ animationDelay: index * 60 + 'ms' }"
+          >{{ goalLabel(goal) }}</span>
         </div>
       </div>
 
-      <div class="info-card">
+      <div class="info-card" style="animation-delay: 240ms">
         <div class="info-row">
-          <span class="label">Доступ</span>
+          <span class="label">💳 Доступ</span>
           <span class="value" :class="profile.is_paid ? 'paid' : 'unpaid'">
-            {{ profile.is_paid ? '✅ Оплачено' : 'Не оплачено' }}
+            {{ profile.is_paid ? '✅ Оплачено' : '❌ Не оплачено' }}
           </span>
         </div>
       </div>
 
       <button v-if="!profile.is_paid" class="btn btn-primary" @click="$router.push('/payment')">
-        Оплатить доступ
+        Оплатить доступ 💳
       </button>
       <button class="btn btn-secondary" @click="$router.push('/')">
-        К модулям
+        К модулям 📚
       </button>
     </div>
 
     <div v-else class="error">
-      <p>Не удалось загрузить профиль</p>
-      <button class="btn" @click="$router.push('/')">Назад</button>
+      <p>Не удалось загрузить профиль 😔</p>
+      <button class="btn btn-secondary" @click="$router.push('/')">Назад</button>
     </div>
   </div>
 </template>
@@ -69,21 +75,22 @@
 import { ref, computed, onMounted } from 'vue'
 import { api } from '../api'
 import type { UserProfile } from '../types'
+import SkeletonCard from '../components/SkeletonCard.vue'
 
 const loading = ref(true)
 const profile = ref<UserProfile | null>(null)
 
 const goalLabels: Record<string, string> = {
-  weight_loss: 'Похудеть',
-  muscle_gain: 'Набрать массу',
-  strength: 'Больше силы',
-  endurance: 'Выносливость',
-  maintenance: 'Поддержание формы',
-  hernia: 'Грыжа',
-  protrusion: 'Протрузии',
-  scoliosis: 'Сколиоз',
-  kyphosis: 'Кифоз',
-  lordosis: 'Лордоз',
+  weight_loss: '🔥 Похудеть',
+  muscle_gain: '💪 Набрать массу',
+  strength: '🏋️ Больше силы',
+  endurance: '🏃 Выносливость',
+  maintenance: '⚡ Поддержание формы',
+  hernia: '🏥 Грыжа',
+  protrusion: '🏥 Протрузии',
+  scoliosis: '🏥 Сколиоз',
+  kyphosis: '🏥 Кифоз',
+  lordosis: '🏥 Лордоз',
 }
 
 function goalLabel(key: string): string {
@@ -103,9 +110,9 @@ const genderLabel = computed(() => {
 
 const fitnessLabel = computed(() => {
   const labels: Record<string, string> = {
-    beginner: 'Новичок',
-    intermediate: 'Средний',
-    advanced: 'Продвинутый',
+    beginner: '🌱 Новичок',
+    intermediate: '⚡ Средний',
+    advanced: '🔥 Продвинутый',
   }
   return labels[profile.value?.fitness_level || ''] || profile.value?.fitness_level || ''
 })
@@ -127,9 +134,32 @@ onMounted(async () => {
   margin: 0 auto;
 }
 
+.skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .profile-header {
   text-align: center;
   margin-bottom: 20px;
+  padding: 24px 16px 16px;
+  background: var(--secondary-bg);
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+  opacity: 0;
+  animation: fadeSlideUp 0.35s ease forwards;
+}
+
+.header-gradient {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: linear-gradient(135deg, var(--button-color), var(--link-color));
+  opacity: 0.15;
 }
 
 .avatar {
@@ -144,6 +174,8 @@ onMounted(async () => {
   font-size: 24px;
   font-weight: bold;
   margin: 0 auto 12px;
+  position: relative;
+  z-index: 1;
 }
 
 .username {
@@ -156,6 +188,8 @@ onMounted(async () => {
   border-radius: 12px;
   padding: 16px;
   margin-bottom: 12px;
+  opacity: 0;
+  animation: fadeSlideUp 0.35s ease forwards;
 }
 
 .info-card h3 {
@@ -200,6 +234,14 @@ onMounted(async () => {
   padding: 4px 12px;
   border-radius: 16px;
   font-size: 13px;
+  opacity: 0;
+  animation: bounceIn 0.4s ease forwards;
+}
+
+@keyframes bounceIn {
+  0% { opacity: 0; transform: scale(0.6); }
+  60% { opacity: 1; transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
 }
 
 .btn {

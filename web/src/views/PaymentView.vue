@@ -1,62 +1,68 @@
 <template>
   <div class="payment-page">
-    <div v-if="loading" class="loading">
-      <div class="spinner"></div>
+    <div v-if="loading" class="skeleton-list">
+      <SkeletonCard />
+      <SkeletonCard />
     </div>
 
     <div v-else-if="paid" class="success-card">
       <div class="success-icon">✅</div>
       <h2>Доступ оплачен</h2>
-      <p>Все модули доступны. Приятных тренировок!</p>
-      <button class="btn" @click="goToModules">Перейти к модулям</button>
+      <p>Все модули доступны. Приятных тренировок! 💪</p>
+      <button class="btn btn-primary" @click="goToModules">Перейти к модулям</button>
     </div>
 
     <div v-else class="payment-flow">
-      <!-- Step 1: Product card -->
-      <div v-if="step === 'product'" class="product-card">
-        <h2>🏋️ Полный доступ</h2>
-        <div class="features">
-          <div class="feature">🏥 ЛФК — упражнения при проблемах со здоровьем</div>
-          <div class="feature">💪 Тренировки — программы по группам мышц</div>
-          <div class="feature">🥗 Питание — рецепты и планы</div>
+      <Transition name="fade" mode="out-in">
+        <!-- Step 1: Product card -->
+        <div v-if="step === 'product'" key="product" class="product-card">
+          <div class="product-gradient"></div>
+          <h2>🏋️ Полный доступ</h2>
+          <div class="features">
+            <div class="feature">🏥 ЛФК — упражнения при проблемах со здоровьем</div>
+            <div class="feature">💪 Тренировки — программы по группам мышц</div>
+            <div class="feature">🥗 Питание — рецепты и планы</div>
+          </div>
+          <div class="price">5 000 ₸ <span class="price-note">разовая оплата</span></div>
+          <button class="btn btn-primary" @click="goToConfirm">Оплатить 💳</button>
         </div>
-        <div class="price">5 000 ₸ <span class="price-note">разовая оплата</span></div>
-        <button class="btn btn-primary" @click="step = 'confirm'">Оплатить</button>
-      </div>
 
-      <!-- Step 2: Confirmation -->
-      <div v-else-if="step === 'confirm'" class="confirm-card">
-        <h2>Подтверждение</h2>
-        <p>Полный доступ к платформе</p>
-        <div class="price">5 000 ₸</div>
-        <div class="btn-row">
-          <button class="btn btn-primary" @click="pay">Подтвердить</button>
-          <button class="btn btn-secondary" @click="step = 'product'">Отмена</button>
+        <!-- Step 2: Confirmation -->
+        <div v-else-if="step === 'confirm'" key="confirm" class="confirm-card">
+          <h2>Подтверждение 🔐</h2>
+          <p>Полный доступ к платформе</p>
+          <div class="price">5 000 ₸</div>
+          <div class="btn-row">
+            <button class="btn btn-primary" @click="pay">Подтвердить ✅</button>
+            <button class="btn btn-secondary" @click="goToProduct">Отмена</button>
+          </div>
         </div>
-      </div>
 
-      <!-- Step 3: Processing -->
-      <div v-else-if="step === 'processing'" class="processing-card">
-        <div class="spinner"></div>
-        <p>Обработка платежа...</p>
-      </div>
+        <!-- Step 3: Processing -->
+        <div v-else-if="step === 'processing'" key="processing" class="processing-card">
+          <div class="spinner"></div>
+          <p>Обработка платежа... ⏳</p>
+        </div>
 
-      <!-- Step 4: Success -->
-      <div v-else-if="step === 'success'" class="success-card">
-        <div class="success-icon">✅</div>
-        <h2>Оплата прошла успешно!</h2>
-        <p>Полный доступ ко всем модулям открыт.</p>
-        <button class="btn btn-primary" @click="goToModules">Перейти к модулям</button>
-      </div>
+        <!-- Step 4: Success -->
+        <div v-else-if="step === 'success'" key="success" class="success-card">
+          <div class="success-icon">🎉</div>
+          <h2>Оплата прошла успешно!</h2>
+          <p>Полный доступ ко всем модулям открыт. 💪</p>
+          <button class="btn btn-primary" @click="goToModules">Перейти к модулям</button>
+        </div>
 
-      <!-- Error -->
-      <div v-else-if="step === 'error'" class="error-card">
-        <div class="error-icon">❌</div>
-        <h2>Ошибка</h2>
-        <p>{{ errorMsg }}</p>
-        <button class="btn" @click="step = 'product'">Попробовать снова</button>
-      </div>
+        <!-- Error -->
+        <div v-else-if="step === 'error'" key="error" class="error-card">
+          <div class="error-icon">❌</div>
+          <h2>Ошибка</h2>
+          <p>{{ errorMsg }}</p>
+          <button class="btn btn-primary" @click="goToProduct">Попробовать снова</button>
+        </div>
+      </Transition>
     </div>
+
+    <ConfettiCanvas :active="showConfetti" />
   </div>
 </template>
 
@@ -64,12 +70,17 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '../api'
+import { useTelegram } from '../composables/useTelegram'
+import SkeletonCard from '../components/SkeletonCard.vue'
+import ConfettiCanvas from '../components/ConfettiCanvas.vue'
 
 const router = useRouter()
+const { hapticImpact, hapticNotification } = useTelegram()
 const loading = ref(true)
 const paid = ref(false)
 const step = ref<'product' | 'confirm' | 'processing' | 'success' | 'error'>('product')
 const errorMsg = ref('')
+const showConfetti = ref(false)
 
 onMounted(async () => {
   try {
@@ -82,20 +93,35 @@ onMounted(async () => {
   }
 })
 
+function goToConfirm() {
+  hapticImpact('light')
+  step.value = 'confirm'
+}
+
+function goToProduct() {
+  hapticImpact('light')
+  step.value = 'product'
+}
+
 async function pay() {
+  hapticImpact('medium')
   step.value = 'processing'
   try {
     const result = await api.processPayment()
     if (result.success) {
       step.value = 'success'
       paid.value = true
+      showConfetti.value = true
+      hapticNotification('success')
     } else {
       errorMsg.value = result.message || 'Неизвестная ошибка'
       step.value = 'error'
+      hapticNotification('error')
     }
   } catch (e: any) {
     errorMsg.value = e.message || 'Ошибка соединения'
     step.value = 'error'
+    hapticNotification('error')
   }
 }
 
@@ -110,12 +136,30 @@ function goToModules() {
   margin: 0 auto;
 }
 
+.skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+}
+
 .product-card, .confirm-card, .success-card, .error-card, .processing-card {
   text-align: center;
   padding: 24px;
   background: var(--secondary-bg);
   border-radius: 12px;
   margin-top: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.product-gradient {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--button-color), #34c759, var(--link-color));
 }
 
 .features {

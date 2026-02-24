@@ -1,17 +1,18 @@
 <template>
   <div class="categories-view">
-    <h1 class="page-title">Категории</h1>
-    <div v-if="loading" class="loading">
-      <div class="spinner"></div>
+    <h1 class="page-title">Категории 📂</h1>
+    <div v-if="loading" class="skeleton-list">
+      <SkeletonCard v-for="i in 4" :key="i" />
     </div>
     <div v-else-if="categories.length === 0" class="empty">
       <p>Категории пока не доступны</p>
     </div>
     <div v-else class="category-list">
       <div
-        v-for="cat in categories"
+        v-for="(cat, index) in categories"
         :key="cat.id"
         class="category-card"
+        :style="{ animationDelay: index * 60 + 'ms' }"
         @click="openCategory(cat.id)"
       >
         <div class="category-header">
@@ -36,16 +37,19 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '../api'
+import { useTelegram } from '../composables/useTelegram'
 import type { CategoryWithProgress } from '../types'
 import ProgressBar from '../components/ProgressBar.vue'
+import SkeletonCard from '../components/SkeletonCard.vue'
 
 const props = defineProps<{ id: string }>()
 const router = useRouter()
+const { hapticSelection } = useTelegram()
 const categories = ref<CategoryWithProgress[]>([])
 const loading = ref(true)
 
 function openCategory(id: number) {
-  window.Telegram?.WebApp?.HapticFeedback?.selectionChanged()
+  hapticSelection()
   router.push({ name: 'lessons', params: { id } })
 }
 
@@ -81,6 +85,12 @@ onUnmounted(() => {
   margin-bottom: 16px;
 }
 
+.skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .category-list {
   display: flex;
   flex-direction: column;
@@ -92,11 +102,13 @@ onUnmounted(() => {
   background: var(--secondary-bg);
   border-radius: 12px;
   cursor: pointer;
-  transition: opacity 0.15s;
+  opacity: 0;
+  animation: fadeSlideUp 0.35s ease forwards;
+  transition: transform 0.15s ease;
 }
 
 .category-card:active {
-  opacity: 0.7;
+  transform: scale(0.98);
 }
 
 .category-header {
