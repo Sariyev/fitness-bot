@@ -145,7 +145,7 @@ body {
 
 .app { min-height: 100vh; }
 .content { padding: 16px; }
-.content.with-nav { padding-bottom: 80px; }
+.content.with-nav { padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
 .content.with-header { padding-top: 56px; }
 
 /* App header */
@@ -214,8 +214,8 @@ body {
   display: flex;
   background: var(--bg-color);
   border-top: 1px solid var(--secondary-bg);
-  padding: 6px 0;
-  padding-bottom: max(6px, env(safe-area-inset-bottom));
+  padding: 8px 0;
+  padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
   z-index: 100;
 }
 
