@@ -20,13 +20,13 @@ func (r *nutritionRepo) ListPlans(ctx context.Context, goal string) ([]models.Me
 	var args []interface{}
 
 	if goal != "" {
-		query = `SELECT id, slug, name, goal, day_number, calories, protein, fat, carbs,
+		query = `SELECT id, slug, name, goal, day_number, COALESCE(calories,0), COALESCE(protein,0), COALESCE(fat,0), COALESCE(carbs,0),
 				 is_active, sort_order, created_at, updated_at
 				 FROM meal_plans WHERE is_active = TRUE AND goal = $1
 				 ORDER BY sort_order`
 		args = append(args, goal)
 	} else {
-		query = `SELECT id, slug, name, goal, day_number, calories, protein, fat, carbs,
+		query = `SELECT id, slug, name, goal, day_number, COALESCE(calories,0), COALESCE(protein,0), COALESCE(fat,0), COALESCE(carbs,0),
 				 is_active, sort_order, created_at, updated_at
 				 FROM meal_plans WHERE is_active = TRUE
 				 ORDER BY sort_order`
@@ -87,8 +87,8 @@ func (r *nutritionRepo) UpdatePlan(ctx context.Context, p *models.MealPlan) erro
 
 func (r *nutritionRepo) ListMeals(ctx context.Context, planID int) ([]models.Meal, error) {
 	rows, err := r.pool.Query(ctx,
-		`SELECT id, meal_plan_id, meal_type, name, recipe, calories, protein, fat, carbs,
-			alternatives, sort_order, created_at, updated_at
+		`SELECT id, meal_plan_id, meal_type, name, COALESCE(recipe,''), COALESCE(calories,0), COALESCE(protein,0), COALESCE(fat,0), COALESCE(carbs,0),
+			COALESCE(alternatives,''), sort_order, created_at, updated_at
 		 FROM meals WHERE meal_plan_id = $1 ORDER BY sort_order`, planID)
 	if err != nil {
 		return nil, err

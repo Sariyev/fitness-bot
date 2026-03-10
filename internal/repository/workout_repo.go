@@ -17,8 +17,8 @@ func NewWorkoutRepo(pool *pgxpool.Pool) WorkoutRepository {
 }
 
 func (r *workoutRepo) ListWorkouts(ctx context.Context, format, goal, level string) ([]models.Workout, error) {
-	query := `SELECT id, program_id, slug, name, description, goal, format, level,
-			  duration_minutes, equipment, expected_result, video_url, sort_order,
+	query := `SELECT id, program_id, slug, name, COALESCE(description,''), COALESCE(goal,''), COALESCE(format,''), COALESCE(level,''),
+			  COALESCE(duration_minutes,0), equipment, COALESCE(expected_result,''), COALESCE(video_url,''), sort_order,
 			  week_number, day_number, is_active, created_at, updated_at
 			  FROM workouts WHERE is_active = TRUE`
 	args := []interface{}{}
@@ -64,8 +64,8 @@ func (r *workoutRepo) ListWorkouts(ctx context.Context, format, goal, level stri
 func (r *workoutRepo) GetWorkoutByID(ctx context.Context, id int) (*models.Workout, error) {
 	w := &models.Workout{}
 	err := r.pool.QueryRow(ctx,
-		`SELECT id, program_id, slug, name, description, goal, format, level,
-			duration_minutes, equipment, expected_result, video_url, sort_order,
+		`SELECT id, program_id, slug, name, COALESCE(description,''), COALESCE(goal,''), COALESCE(format,''), COALESCE(level,''),
+			COALESCE(duration_minutes,0), equipment, COALESCE(expected_result,''), COALESCE(video_url,''), sort_order,
 			week_number, day_number, is_active, created_at, updated_at
 		 FROM workouts WHERE id = $1`, id,
 	).Scan(&w.ID, &w.ProgramID, &w.Slug, &w.Name, &w.Description,
@@ -80,8 +80,8 @@ func (r *workoutRepo) GetWorkoutByID(ctx context.Context, id int) (*models.Worko
 
 func (r *workoutRepo) ListByProgram(ctx context.Context, programID int) ([]models.Workout, error) {
 	rows, err := r.pool.Query(ctx,
-		`SELECT id, program_id, slug, name, description, goal, format, level,
-			duration_minutes, equipment, expected_result, video_url, sort_order,
+		`SELECT id, program_id, slug, name, COALESCE(description,''), COALESCE(goal,''), COALESCE(format,''), COALESCE(level,''),
+			COALESCE(duration_minutes,0), equipment, COALESCE(expected_result,''), COALESCE(video_url,''), sort_order,
 			week_number, day_number, is_active, created_at, updated_at
 		 FROM workouts WHERE program_id = $1 AND is_active = TRUE
 		 ORDER BY week_number, day_number, sort_order`, programID)
@@ -131,7 +131,7 @@ func (r *workoutRepo) UpdateWorkout(ctx context.Context, w *models.Workout) erro
 
 func (r *workoutRepo) ListExercises(ctx context.Context, workoutID int) ([]models.WorkoutExercise, error) {
 	rows, err := r.pool.Query(ctx,
-		`SELECT id, workout_id, exercise_id, sets, reps, duration_seconds, sort_order
+		`SELECT id, workout_id, exercise_id, COALESCE(sets,0), COALESCE(reps,''), COALESCE(duration_seconds,0), sort_order
 		 FROM workout_exercises WHERE workout_id = $1 ORDER BY sort_order`, workoutID)
 	if err != nil {
 		return nil, err

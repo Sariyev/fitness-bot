@@ -20,12 +20,12 @@ func (r *rehabRepo) ListCourses(ctx context.Context, category string) ([]models.
 	var args []interface{}
 
 	if category != "" {
-		query = `SELECT id, slug, category, name, description, warnings, is_active, sort_order, created_at, updated_at
+		query = `SELECT id, slug, category, name, COALESCE(description,''), COALESCE(warnings,''), is_active, sort_order, created_at, updated_at
 				 FROM rehab_courses WHERE is_active = TRUE AND category = $1
 				 ORDER BY sort_order`
 		args = append(args, category)
 	} else {
-		query = `SELECT id, slug, category, name, description, warnings, is_active, sort_order, created_at, updated_at
+		query = `SELECT id, slug, category, name, COALESCE(description,''), COALESCE(warnings,''), is_active, sort_order, created_at, updated_at
 				 FROM rehab_courses WHERE is_active = TRUE
 				 ORDER BY sort_order`
 	}
@@ -81,8 +81,8 @@ func (r *rehabRepo) UpdateCourse(ctx context.Context, c *models.RehabCourse) err
 
 func (r *rehabRepo) ListSessions(ctx context.Context, courseID int) ([]models.RehabSession, error) {
 	rows, err := r.pool.Query(ctx,
-		`SELECT id, course_id, day_number, stage, video_url, duration_minutes,
-			description, sort_order, created_at, updated_at
+		`SELECT id, course_id, day_number, stage, COALESCE(video_url,''), COALESCE(duration_minutes,0),
+			COALESCE(description,''), sort_order, created_at, updated_at
 		 FROM rehab_sessions WHERE course_id = $1
 		 ORDER BY sort_order`, courseID)
 	if err != nil {
@@ -105,8 +105,8 @@ func (r *rehabRepo) ListSessions(ctx context.Context, courseID int) ([]models.Re
 func (r *rehabRepo) GetSessionByID(ctx context.Context, id int) (*models.RehabSession, error) {
 	s := &models.RehabSession{}
 	err := r.pool.QueryRow(ctx,
-		`SELECT id, course_id, day_number, stage, video_url, duration_minutes,
-			description, sort_order, created_at, updated_at
+		`SELECT id, course_id, day_number, stage, COALESCE(video_url,''), COALESCE(duration_minutes,0),
+			COALESCE(description,''), sort_order, created_at, updated_at
 		 FROM rehab_sessions WHERE id = $1`, id,
 	).Scan(&s.ID, &s.CourseID, &s.DayNumber, &s.Stage, &s.VideoURL,
 		&s.DurationMinutes, &s.Description, &s.SortOrder, &s.CreatedAt, &s.UpdatedAt)

@@ -17,7 +17,7 @@ func NewProgramRepo(pool *pgxpool.Pool) ProgramRepository {
 }
 
 func (r *programRepo) ListPrograms(ctx context.Context, format, goal, level string) ([]models.Program, error) {
-	query := `SELECT id, slug, name, description, goal, format, level, duration_weeks,
+	query := `SELECT id, slug, name, COALESCE(description,''), goal, format, level, duration_weeks,
 			  is_active, sort_order, created_at, updated_at
 			  FROM programs WHERE is_active = TRUE`
 	args := []interface{}{}

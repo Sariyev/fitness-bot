@@ -17,8 +17,8 @@ func NewExerciseRepo(pool *pgxpool.Pool) ExerciseRepository {
 
 func (r *exerciseRepo) List(ctx context.Context) ([]models.Exercise, error) {
 	rows, err := r.pool.Query(ctx,
-		`SELECT id, name, technique, common_mistakes, easier_modification,
-			harder_modification, rest_seconds, created_at, updated_at
+		`SELECT id, name, COALESCE(technique,''), COALESCE(common_mistakes,''), COALESCE(easier_modification,''),
+			COALESCE(harder_modification,''), COALESCE(rest_seconds,60), created_at, updated_at
 		 FROM exercises ORDER BY name`)
 	if err != nil {
 		return nil, err
@@ -41,8 +41,8 @@ func (r *exerciseRepo) List(ctx context.Context) ([]models.Exercise, error) {
 func (r *exerciseRepo) GetByID(ctx context.Context, id int) (*models.Exercise, error) {
 	e := &models.Exercise{}
 	err := r.pool.QueryRow(ctx,
-		`SELECT id, name, technique, common_mistakes, easier_modification,
-			harder_modification, rest_seconds, created_at, updated_at
+		`SELECT id, name, COALESCE(technique,''), COALESCE(common_mistakes,''), COALESCE(easier_modification,''),
+			COALESCE(harder_modification,''), COALESCE(rest_seconds,60), created_at, updated_at
 		 FROM exercises WHERE id = $1`, id,
 	).Scan(&e.ID, &e.Name, &e.Technique, &e.CommonMistakes,
 		&e.EasierModification, &e.HarderModification, &e.RestSeconds,
