@@ -35,7 +35,6 @@ let registrationChecked = false
 let isRegistered = false
 
 router.beforeEach(async (to) => {
-  if (to.name === 'onboarding') return true
   if (!registrationChecked) {
     try {
       const status = await api.getRegistrationStatus()
@@ -45,7 +44,8 @@ router.beforeEach(async (to) => {
     }
     registrationChecked = true
   }
-  if (!isRegistered) return { name: 'onboarding' }
+  if (isRegistered && to.name === 'onboarding') return { name: 'today' }
+  if (!isRegistered && to.name !== 'onboarding') return { name: 'onboarding' }
   return true
 })
 
