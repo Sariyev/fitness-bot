@@ -38,7 +38,7 @@ func (r *nutritionRepo) ListPlans(ctx context.Context, goal string) ([]models.Me
 	}
 	defer rows.Close()
 
-	var plans []models.MealPlan
+	plans := []models.MealPlan{}
 	for rows.Next() {
 		var p models.MealPlan
 		if err := rows.Scan(&p.ID, &p.Slug, &p.Name, &p.Goal, &p.DayNumber,
@@ -95,7 +95,7 @@ func (r *nutritionRepo) ListMeals(ctx context.Context, planID int) ([]models.Mea
 	}
 	defer rows.Close()
 
-	var meals []models.Meal
+	meals := []models.Meal{}
 	for rows.Next() {
 		var m models.Meal
 		if err := rows.Scan(&m.ID, &m.MealPlanID, &m.MealType, &m.Name, &m.Recipe,

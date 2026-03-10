@@ -47,7 +47,7 @@ func (r *achievementRepo) ListByUser(ctx context.Context, userID int64) ([]model
 	}
 	defer rows.Close()
 
-	var achievements []models.UserAchievement
+	achievements := []models.UserAchievement{}
 	for rows.Next() {
 		var a models.UserAchievement
 		if err := rows.Scan(&a.ID, &a.UserID, &a.AchievementID, &a.EarnedAt); err != nil {

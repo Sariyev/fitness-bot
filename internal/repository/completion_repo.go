@@ -36,7 +36,7 @@ func (r *completionRepo) ListByDate(ctx context.Context, userID int64, date stri
 	}
 	defer rows.Close()
 
-	var completions []models.DailyCompletion
+	completions := []models.DailyCompletion{}
 	for rows.Next() {
 		var c models.DailyCompletion
 		if err := rows.Scan(&c.ID, &c.UserID, &c.EntityType, &c.EntityID,
@@ -88,7 +88,7 @@ func (r *completionRepo) GetCalendar(ctx context.Context, userID int64, year, mo
 	}
 	defer rows.Close()
 
-	var dates []string
+	dates := []string{}
 	for rows.Next() {
 		var d string
 		if err := rows.Scan(&d); err != nil {

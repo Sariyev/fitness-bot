@@ -43,7 +43,7 @@ func (r *foodLogRepo) ListByDate(ctx context.Context, userID int64, date string)
 	}
 	defer rows.Close()
 
-	var entries []models.FoodLogEntry
+	entries := []models.FoodLogEntry{}
 	for rows.Next() {
 		var e models.FoodLogEntry
 		if err := rows.Scan(&e.ID, &e.UserID, &e.Date, &e.MealType, &e.FoodName,

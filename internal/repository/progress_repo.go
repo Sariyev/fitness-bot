@@ -43,7 +43,7 @@ func (r *progressRepo) ListByUser(ctx context.Context, userID int64) ([]models.P
 	}
 	defer rows.Close()
 
-	var entries []models.ProgressEntry
+	entries := []models.ProgressEntry{}
 	for rows.Next() {
 		var e models.ProgressEntry
 		var measurementsRaw []byte
@@ -72,7 +72,7 @@ func (r *progressRepo) GetWeightHistory(ctx context.Context, userID int64) ([]mo
 	}
 	defer rows.Close()
 
-	var points []models.WeightPoint
+	points := []models.WeightPoint{}
 	for rows.Next() {
 		var p models.WeightPoint
 		if err := rows.Scan(&p.Date, &p.WeightKg); err != nil {

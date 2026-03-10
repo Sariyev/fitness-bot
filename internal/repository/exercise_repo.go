@@ -25,7 +25,7 @@ func (r *exerciseRepo) List(ctx context.Context) ([]models.Exercise, error) {
 	}
 	defer rows.Close()
 
-	var exercises []models.Exercise
+	exercises := []models.Exercise{}
 	for rows.Next() {
 		var e models.Exercise
 		if err := rows.Scan(&e.ID, &e.Name, &e.Technique, &e.CommonMistakes,

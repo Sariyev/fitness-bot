@@ -47,7 +47,7 @@ func (r *workoutRepo) ListWorkouts(ctx context.Context, format, goal, level stri
 	}
 	defer rows.Close()
 
-	var workouts []models.Workout
+	workouts := []models.Workout{}
 	for rows.Next() {
 		var w models.Workout
 		if err := rows.Scan(&w.ID, &w.ProgramID, &w.Slug, &w.Name, &w.Description,
@@ -90,7 +90,7 @@ func (r *workoutRepo) ListByProgram(ctx context.Context, programID int) ([]model
 	}
 	defer rows.Close()
 
-	var workouts []models.Workout
+	workouts := []models.Workout{}
 	for rows.Next() {
 		var w models.Workout
 		if err := rows.Scan(&w.ID, &w.ProgramID, &w.Slug, &w.Name, &w.Description,
@@ -138,7 +138,7 @@ func (r *workoutRepo) ListExercises(ctx context.Context, workoutID int) ([]model
 	}
 	defer rows.Close()
 
-	var exercises []models.WorkoutExercise
+	exercises := []models.WorkoutExercise{}
 	for rows.Next() {
 		var we models.WorkoutExercise
 		if err := rows.Scan(&we.ID, &we.WorkoutID, &we.ExerciseID, &we.Sets,

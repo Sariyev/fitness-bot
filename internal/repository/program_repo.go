@@ -46,7 +46,7 @@ func (r *programRepo) ListPrograms(ctx context.Context, format, goal, level stri
 	}
 	defer rows.Close()
 
-	var programs []models.Program
+	programs := []models.Program{}
 	for rows.Next() {
 		var p models.Program
 		if err := rows.Scan(&p.ID, &p.Slug, &p.Name, &p.Description, &p.Goal, &p.Format,
@@ -124,7 +124,7 @@ func (r *programRepo) ListUserEnrollments(ctx context.Context, userID int64) ([]
 	}
 	defer rows.Close()
 
-	var enrollments []models.UserProgramEnrollment
+	enrollments := []models.UserProgramEnrollment{}
 	for rows.Next() {
 		var e models.UserProgramEnrollment
 		if err := rows.Scan(&e.ID, &e.UserID, &e.ProgramID, &e.StartedAt, &e.CurrentWeek,

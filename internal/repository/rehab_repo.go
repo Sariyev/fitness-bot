@@ -36,7 +36,7 @@ func (r *rehabRepo) ListCourses(ctx context.Context, category string) ([]models.
 	}
 	defer rows.Close()
 
-	var courses []models.RehabCourse
+	courses := []models.RehabCourse{}
 	for rows.Next() {
 		var c models.RehabCourse
 		if err := rows.Scan(&c.ID, &c.Slug, &c.Category, &c.Name, &c.Description,
@@ -90,7 +90,7 @@ func (r *rehabRepo) ListSessions(ctx context.Context, courseID int) ([]models.Re
 	}
 	defer rows.Close()
 
-	var sessions []models.RehabSession
+	sessions := []models.RehabSession{}
 	for rows.Next() {
 		var s models.RehabSession
 		if err := rows.Scan(&s.ID, &s.CourseID, &s.DayNumber, &s.Stage, &s.VideoURL,
@@ -157,7 +157,7 @@ func (r *rehabRepo) ListUserProgress(ctx context.Context, userID int64, courseID
 	}
 	defer rows.Close()
 
-	var progress []models.UserRehabProgress
+	progress := []models.UserRehabProgress{}
 	for rows.Next() {
 		var p models.UserRehabProgress
 		if err := rows.Scan(&p.ID, &p.UserID, &p.CourseID, &p.SessionID,
