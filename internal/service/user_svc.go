@@ -40,14 +40,38 @@ func (s *UserService) GetOrCreateUser(ctx context.Context, telegramID int64, use
 }
 
 func (s *UserService) CreateProfile(ctx context.Context, userID int64, data models.RegistrationData) error {
+	trainingAccess := &data.TrainingAccess
+	if data.TrainingAccess == "" {
+		trainingAccess = nil
+	}
+	trainingExperience := &data.TrainingExperience
+	if data.TrainingExperience == "" {
+		trainingExperience = nil
+	}
+	preferredTime := &data.PreferredTime
+	if data.PreferredTime == "" {
+		preferredTime = nil
+	}
+
 	profile := &models.UserProfile{
-		UserID:       userID,
-		Gender:       data.Gender,
-		Age:          data.Age,
-		WeightKg:     data.WeightKg,
-		HeightCm:     data.HeightCm,
-		FitnessLevel: data.FitnessLevel,
-		Goal:         strings.Join(data.Goals, ","),
+		UserID:             userID,
+		Gender:             data.Gender,
+		Age:                data.Age,
+		WeightKg:           data.WeightKg,
+		HeightCm:           data.HeightCm,
+		FitnessLevel:       data.FitnessLevel,
+		Goal:               strings.Join(data.Goals, ","),
+		TrainingAccess:     trainingAccess,
+		TrainingExperience: trainingExperience,
+		HasPain:            data.HasPain,
+		PainLocations:      data.PainLocations,
+		PainLevel:          data.PainLevel,
+		Diagnoses:          data.Diagnoses,
+		Contraindications:  data.Contraindications,
+		DaysPerWeek:        data.DaysPerWeek,
+		SessionDuration:    data.SessionDuration,
+		PreferredTime:      preferredTime,
+		Equipment:          data.Equipment,
 	}
 	if err := s.repo.CreateProfile(ctx, profile); err != nil {
 		return err
@@ -70,4 +94,8 @@ func (s *UserService) MarkRegistered(ctx context.Context, user *models.User) err
 
 func (s *UserService) GetProfile(ctx context.Context, userID int64) (*models.UserProfile, error) {
 	return s.repo.GetProfileByUserID(ctx, userID)
+}
+
+func (s *UserService) UpdateProfile(ctx context.Context, profile *models.UserProfile) error {
+	return s.repo.UpdateProfile(ctx, profile)
 }

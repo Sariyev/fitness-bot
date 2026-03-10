@@ -12,12 +12,18 @@ import (
 )
 
 type WebAppRouter struct {
-	mux        *http.ServeMux
-	moduleSvc  *service.ModuleService
-	userSvc    *service.UserService
-	paymentSvc *service.PaymentService
-	botToken   string
-	staticDir  string
+	mux          *http.ServeMux
+	moduleSvc    *service.ModuleService
+	userSvc      *service.UserService
+	paymentSvc   *service.PaymentService
+	workoutSvc   *service.WorkoutService
+	rehabSvc     *service.RehabService
+	nutritionSvc *service.NutritionService
+	progressSvc  *service.ProgressService
+	dashboardSvc *service.DashboardService
+	recommendSvc *service.RecommendationService
+	botToken     string
+	staticDir    string
 }
 
 func NewRouter(
@@ -25,15 +31,27 @@ func NewRouter(
 	userSvc *service.UserService,
 	moduleSvc *service.ModuleService,
 	paymentSvc *service.PaymentService,
+	workoutSvc *service.WorkoutService,
+	rehabSvc *service.RehabService,
+	nutritionSvc *service.NutritionService,
+	progressSvc *service.ProgressService,
+	dashboardSvc *service.DashboardService,
+	recommendSvc *service.RecommendationService,
 	staticDir string,
 ) *WebAppRouter {
 	r := &WebAppRouter{
-		mux:        http.NewServeMux(),
-		moduleSvc:  moduleSvc,
-		userSvc:    userSvc,
-		paymentSvc: paymentSvc,
-		botToken:   botToken,
-		staticDir:  staticDir,
+		mux:          http.NewServeMux(),
+		moduleSvc:    moduleSvc,
+		userSvc:      userSvc,
+		paymentSvc:   paymentSvc,
+		workoutSvc:   workoutSvc,
+		rehabSvc:     rehabSvc,
+		nutritionSvc: nutritionSvc,
+		progressSvc:  progressSvc,
+		dashboardSvc: dashboardSvc,
+		recommendSvc: recommendSvc,
+		botToken:     botToken,
+		staticDir:    staticDir,
 	}
 
 	r.setupRoutes()
@@ -43,7 +61,7 @@ func NewRouter(
 func (r *WebAppRouter) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	// Set CORS headers for Telegram Mini App
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-Telegram-Init-Data")
 
 	if req.Method == "OPTIONS" {
@@ -61,7 +79,12 @@ func (r *WebAppRouter) setupRoutes() {
 	progressHandler := NewProgressHandler(r.moduleSvc)
 	paymentHandler := NewPaymentHandler(r.paymentSvc)
 	profileHandler := NewProfileHandler(r.userSvc)
-	registrationHandler := NewRegistrationHandler(r.userSvc)
+	registrationHandler := NewRegistrationHandler(r.userSvc, r.recommendSvc)
+	dashboardHandler := NewDashboardHandler(r.dashboardSvc)
+	workoutHandler := NewWorkoutHandler(r.workoutSvc)
+	rehabHandler := NewRehabHandler(r.rehabSvc)
+	nutritionHandler := NewNutritionHandler(r.nutritionSvc)
+	progressV2Handler := NewProgressV2Handler(r.progressSvc)
 
 	// API routes (authenticated)
 	r.mux.Handle("/app/api/modules", auth(http.HandlerFunc(moduleHandler.ListModules)))
@@ -78,9 +101,39 @@ func (r *WebAppRouter) setupRoutes() {
 	r.mux.Handle("/app/api/subscription/status", auth(http.HandlerFunc(moduleHandler.PaymentStatus)))
 	r.mux.Handle("/app/api/payment/status", auth(http.HandlerFunc(paymentHandler.Status)))
 	r.mux.Handle("/app/api/payment/pay", auth(http.HandlerFunc(paymentHandler.Pay)))
-	r.mux.Handle("/app/api/profile", auth(http.HandlerFunc(profileHandler.GetProfile)))
+	r.mux.Handle("/app/api/profile", auth(http.HandlerFunc(profileHandler.HandleProfile)))
 	r.mux.Handle("/app/api/register", auth(http.HandlerFunc(registrationHandler.Register)))
 	r.mux.Handle("/app/api/registration/status", auth(http.HandlerFunc(registrationHandler.Status)))
+
+	// Dashboard
+	r.mux.Handle("/app/api/dashboard", auth(http.HandlerFunc(dashboardHandler.GetDashboard)))
+
+	// Programs
+	r.mux.Handle("/app/api/programs", auth(http.HandlerFunc(workoutHandler.HandleProgramRoutes)))
+	r.mux.Handle("/app/api/programs/", auth(http.HandlerFunc(workoutHandler.HandleProgramRoutes)))
+
+	// Workouts
+	r.mux.Handle("/app/api/workouts", auth(http.HandlerFunc(workoutHandler.HandleWorkoutRoutes)))
+	r.mux.Handle("/app/api/workouts/", auth(http.HandlerFunc(workoutHandler.HandleWorkoutRoutes)))
+
+	// Rehab
+	r.mux.Handle("/app/api/rehab/courses", auth(http.HandlerFunc(rehabHandler.HandleRehabRoutes)))
+	r.mux.Handle("/app/api/rehab/courses/", auth(http.HandlerFunc(rehabHandler.HandleRehabRoutes)))
+	r.mux.Handle("/app/api/rehab/sessions/", auth(http.HandlerFunc(rehabHandler.HandleRehabSessionRoutes)))
+	r.mux.Handle("/app/api/rehab/progress/", auth(http.HandlerFunc(rehabHandler.HandleRehabProgressRoutes)))
+
+	// Nutrition
+	r.mux.Handle("/app/api/nutrition/plans", auth(http.HandlerFunc(nutritionHandler.HandleNutritionRoutes)))
+	r.mux.Handle("/app/api/nutrition/plans/", auth(http.HandlerFunc(nutritionHandler.HandleNutritionRoutes)))
+	r.mux.Handle("/app/api/nutrition/calculator", auth(http.HandlerFunc(nutritionHandler.HandleNutritionRoutes)))
+	r.mux.Handle("/app/api/food-log", auth(http.HandlerFunc(nutritionHandler.HandleFoodLogRoutes)))
+	r.mux.Handle("/app/api/food-log/", auth(http.HandlerFunc(nutritionHandler.HandleFoodLogRoutes)))
+	r.mux.Handle("/app/api/food-log/summary", auth(http.HandlerFunc(nutritionHandler.HandleFoodLogSummary)))
+
+	// Progress
+	r.mux.Handle("/app/api/progress", auth(http.HandlerFunc(progressV2Handler.HandleProgressRoutes)))
+	r.mux.Handle("/app/api/progress/stats", auth(http.HandlerFunc(progressV2Handler.HandleProgressStats)))
+	r.mux.Handle("/app/api/progress/achievements", auth(http.HandlerFunc(progressV2Handler.HandleProgressAchievements)))
 
 	// SPA serving - serve static files, fallback to index.html
 	r.mux.HandleFunc("/", r.serveSPA)

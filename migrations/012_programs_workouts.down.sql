@@ -1,0 +1,7 @@
+BEGIN;
+
+DROP TABLE IF EXISTS workout_exercises;
+DROP TABLE IF EXISTS workouts;
+DROP TABLE IF EXISTS programs;
+
+COMMIT;

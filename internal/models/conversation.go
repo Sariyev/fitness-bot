@@ -46,13 +46,24 @@ const (
 )
 
 type RegistrationData struct {
-	Age          int      `json:"age,omitempty"`
-	HeightCm     int      `json:"height_cm,omitempty"`
-	WeightKg     float64  `json:"weight_kg,omitempty"`
-	Gender       string   `json:"gender,omitempty"`
-	FitnessLevel string   `json:"fitness_level,omitempty"`
-	Goals        []string `json:"goals,omitempty"`
-	GoalMsgID    int      `json:"goal_msg_id,omitempty"`
+	Age                int      `json:"age,omitempty"`
+	HeightCm           int      `json:"height_cm,omitempty"`
+	WeightKg           float64  `json:"weight_kg,omitempty"`
+	Gender             string   `json:"gender,omitempty"`
+	FitnessLevel       string   `json:"fitness_level,omitempty"`
+	Goals              []string `json:"goals,omitempty"`
+	GoalMsgID          int      `json:"goal_msg_id,omitempty"`
+	TrainingAccess     string   `json:"training_access,omitempty"`
+	TrainingExperience string   `json:"training_experience,omitempty"`
+	HasPain            bool     `json:"has_pain,omitempty"`
+	PainLocations      []string `json:"pain_locations,omitempty"`
+	PainLevel          int      `json:"pain_level,omitempty"`
+	Diagnoses          []string `json:"diagnoses,omitempty"`
+	Contraindications  string   `json:"contraindications,omitempty"`
+	DaysPerWeek        *int     `json:"days_per_week,omitempty"`
+	SessionDuration    *int     `json:"session_duration,omitempty"`
+	PreferredTime      string   `json:"preferred_time,omitempty"`
+	Equipment          []string `json:"equipment,omitempty"`
 }
 
 type QuizFlowData struct {

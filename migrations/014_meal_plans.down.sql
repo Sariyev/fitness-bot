@@ -1,0 +1,6 @@
+BEGIN;
+
+DROP TABLE IF EXISTS meals;
+DROP TABLE IF EXISTS meal_plans;
+
+COMMIT;

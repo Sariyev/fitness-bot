@@ -11,6 +11,7 @@ type UserRepository interface {
 	Update(ctx context.Context, user *models.User) error
 	CreateProfile(ctx context.Context, profile *models.UserProfile) error
 	GetProfileByUserID(ctx context.Context, userID int64) (*models.UserProfile, error)
+	UpdateProfile(ctx context.Context, profile *models.UserProfile) error
 }
 
 type ConversationRepository interface {
@@ -87,4 +88,80 @@ type ScoreRepository interface {
 	Create(ctx context.Context, s *models.UserScore) error
 	GetByReference(ctx context.Context, userID int64, refType string, refID int) (*models.UserScore, error)
 	ListByUser(ctx context.Context, userID int64) ([]models.UserScore, error)
+}
+
+type ProgramRepository interface {
+	ListPrograms(ctx context.Context, format, goal, level string) ([]models.Program, error)
+	GetProgramByID(ctx context.Context, id int) (*models.Program, error)
+	CreateProgram(ctx context.Context, p *models.Program) error
+	UpdateProgram(ctx context.Context, p *models.Program) error
+	EnrollUser(ctx context.Context, userID int64, programID int) error
+	GetActiveEnrollment(ctx context.Context, userID int64) (*models.UserProgramEnrollment, error)
+	ListUserEnrollments(ctx context.Context, userID int64) ([]models.UserProgramEnrollment, error)
+}
+
+type WorkoutRepository interface {
+	ListWorkouts(ctx context.Context, format, goal, level string) ([]models.Workout, error)
+	GetWorkoutByID(ctx context.Context, id int) (*models.Workout, error)
+	ListByProgram(ctx context.Context, programID int) ([]models.Workout, error)
+	CreateWorkout(ctx context.Context, w *models.Workout) error
+	UpdateWorkout(ctx context.Context, w *models.Workout) error
+	ListExercises(ctx context.Context, workoutID int) ([]models.WorkoutExercise, error)
+	AddExercise(ctx context.Context, we *models.WorkoutExercise) error
+}
+
+type ExerciseRepository interface {
+	List(ctx context.Context) ([]models.Exercise, error)
+	GetByID(ctx context.Context, id int) (*models.Exercise, error)
+	Create(ctx context.Context, e *models.Exercise) error
+	Update(ctx context.Context, e *models.Exercise) error
+}
+
+type RehabRepository interface {
+	ListCourses(ctx context.Context, category string) ([]models.RehabCourse, error)
+	GetCourseByID(ctx context.Context, id int) (*models.RehabCourse, error)
+	CreateCourse(ctx context.Context, c *models.RehabCourse) error
+	UpdateCourse(ctx context.Context, c *models.RehabCourse) error
+	ListSessions(ctx context.Context, courseID int) ([]models.RehabSession, error)
+	GetSessionByID(ctx context.Context, id int) (*models.RehabSession, error)
+	CreateSession(ctx context.Context, s *models.RehabSession) error
+	UpdateSession(ctx context.Context, s *models.RehabSession) error
+	CreateProgress(ctx context.Context, p *models.UserRehabProgress) error
+	ListUserProgress(ctx context.Context, userID int64, courseID int) ([]models.UserRehabProgress, error)
+}
+
+type NutritionRepository interface {
+	ListPlans(ctx context.Context, goal string) ([]models.MealPlan, error)
+	GetPlanByID(ctx context.Context, id int) (*models.MealPlan, error)
+	CreatePlan(ctx context.Context, p *models.MealPlan) error
+	UpdatePlan(ctx context.Context, p *models.MealPlan) error
+	ListMeals(ctx context.Context, planID int) ([]models.Meal, error)
+	CreateMeal(ctx context.Context, m *models.Meal) error
+	UpdateMeal(ctx context.Context, m *models.Meal) error
+}
+
+type FoodLogRepository interface {
+	Create(ctx context.Context, entry *models.FoodLogEntry) error
+	Delete(ctx context.Context, userID int64, id int64) error
+	ListByDate(ctx context.Context, userID int64, date string) ([]models.FoodLogEntry, error)
+	GetDailySummary(ctx context.Context, userID int64, date string) (calories int, protein, fat, carbs float64, err error)
+}
+
+type ProgressRepository interface {
+	Create(ctx context.Context, entry *models.ProgressEntry) error
+	ListByUser(ctx context.Context, userID int64) ([]models.ProgressEntry, error)
+	GetWeightHistory(ctx context.Context, userID int64) ([]models.WeightPoint, error)
+}
+
+type AchievementRepository interface {
+	ListAll(ctx context.Context) ([]models.Achievement, error)
+	ListByUser(ctx context.Context, userID int64) ([]models.UserAchievement, error)
+	Unlock(ctx context.Context, userID int64, achievementID int) error
+}
+
+type DailyCompletionRepository interface {
+	Create(ctx context.Context, c *models.DailyCompletion) error
+	ListByDate(ctx context.Context, userID int64, date string) ([]models.DailyCompletion, error)
+	GetStreak(ctx context.Context, userID int64) (current int, longest int, err error)
+	GetCalendar(ctx context.Context, userID int64, year, month int) ([]string, error)
 }

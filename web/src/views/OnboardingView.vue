@@ -1,9 +1,9 @@
 <template>
   <div class="onboarding">
     <!-- Progress dots -->
-    <div class="progress-dots" v-if="currentSlide > 0 && currentSlide < 7">
+    <div class="progress-dots" v-if="currentSlide > 0 && currentSlide < totalSlides">
       <span
-        v-for="i in 7"
+        v-for="i in totalSlides"
         :key="i"
         class="dot"
         :class="{ active: i - 1 <= currentSlide, current: i - 1 === currentSlide }"
@@ -19,9 +19,33 @@
       <GenderSlide v-else-if="currentSlide === 4" :key="4" v-model="formData.gender" />
       <FitnessSlide v-else-if="currentSlide === 5" :key="5" v-model="formData.fitnessLevel" />
       <GoalsSlide v-else-if="currentSlide === 6" :key="6" v-model="formData.goals" />
-      <SuccessSlide
+      <HealthSlide
         v-else-if="currentSlide === 7"
         :key="7"
+        :painLocations="formData.painLocations"
+        :painLevel="formData.painLevel"
+        :diagnoses="formData.diagnoses"
+        @update:painLocations="formData.painLocations = $event"
+        @update:painLevel="formData.painLevel = $event"
+        @update:diagnoses="formData.diagnoses = $event"
+      />
+      <ScheduleSlide
+        v-else-if="currentSlide === 8"
+        :key="8"
+        :trainingAccess="formData.trainingAccess"
+        :daysPerWeek="formData.daysPerWeek"
+        :sessionDuration="formData.sessionDuration"
+        :preferredTime="formData.preferredTime"
+        :equipment="formData.equipment"
+        @update:trainingAccess="formData.trainingAccess = $event"
+        @update:daysPerWeek="formData.daysPerWeek = $event"
+        @update:sessionDuration="formData.sessionDuration = $event"
+        @update:preferredTime="formData.preferredTime = $event"
+        @update:equipment="formData.equipment = $event"
+      />
+      <SuccessSlide
+        v-else-if="currentSlide === 9"
+        :key="9"
         :age="formData.age"
         :heightCm="formData.heightCm"
         :weightKg="formData.weightKg"
@@ -46,11 +70,14 @@ import WeightSlide from './onboarding/WeightSlide.vue'
 import GenderSlide from './onboarding/GenderSlide.vue'
 import FitnessSlide from './onboarding/FitnessSlide.vue'
 import GoalsSlide from './onboarding/GoalsSlide.vue'
+import HealthSlide from './onboarding/HealthSlide.vue'
+import ScheduleSlide from './onboarding/ScheduleSlide.vue'
 import SuccessSlide from './onboarding/SuccessSlide.vue'
 
 const router = useRouter()
 const { hapticImpact, hapticNotification, showMainButton, hideMainButton, showBackButton, hideBackButton } = useTelegram()
 
+const totalSlides = 9 // slides 1-8 (excluding welcome=0 and success=9)
 const currentSlide = ref(0)
 const slideDirection = ref('slide-left')
 const error = ref('')
@@ -63,24 +90,35 @@ const formData = reactive({
   gender: '',
   fitnessLevel: '',
   goals: [] as string[],
+  // Health
+  painLocations: [] as string[],
+  painLevel: 0,
+  diagnoses: [] as string[],
+  // Schedule
+  trainingAccess: 'home',
+  daysPerWeek: 3,
+  sessionDuration: 35,
+  preferredTime: 'evening',
+  equipment: [] as string[],
 })
 
 const mainButtonLabels = [
-  'Начать',     // 0: welcome
-  'Далее',      // 1: age
-  'Далее',      // 2: height
-  'Далее',      // 3: weight
-  'Далее',      // 4: gender
-  'Далее',      // 5: fitness
-  'Готово ✨',  // 6: goals
-  'К модулям 💪', // 7: success
+  'Начать',        // 0: welcome
+  'Далее',         // 1: age
+  'Далее',         // 2: height
+  'Далее',         // 3: weight
+  'Далее',         // 4: gender
+  'Далее',         // 5: fitness
+  'Далее',         // 6: goals
+  'Далее',         // 7: health
+  'Готово ✨',     // 8: schedule
+  'К тренировкам 💪', // 9: success
 ]
 
 function canProceed(): boolean {
   switch (currentSlide.value) {
     case 4: return formData.gender !== ''
     case 5: return formData.fitnessLevel !== ''
-    case 6: return true
     default: return true
   }
 }
@@ -95,12 +133,12 @@ function next() {
   error.value = ''
   hapticImpact('light')
 
-  if (currentSlide.value === 6) {
+  if (currentSlide.value === 8) {
     submitRegistration()
     return
   }
 
-  if (currentSlide.value === 7) {
+  if (currentSlide.value === 9) {
     router.replace('/')
     return
   }
@@ -110,7 +148,7 @@ function next() {
 }
 
 function back() {
-  if (currentSlide.value > 0 && currentSlide.value < 7) {
+  if (currentSlide.value > 0 && currentSlide.value < 9) {
     error.value = ''
     slideDirection.value = 'slide-right'
     currentSlide.value--
@@ -131,12 +169,28 @@ async function submitRegistration() {
       gender: formData.gender as 'male' | 'female',
       fitness_level: formData.fitnessLevel as 'beginner' | 'intermediate' | 'advanced',
       goals: formData.goals,
+      training_access: formData.trainingAccess,
+      has_pain: formData.painLocations.length > 0,
+      pain_locations: formData.painLocations,
+      pain_level: formData.painLevel,
+      diagnoses: formData.diagnoses,
+      days_per_week: formData.daysPerWeek,
+      session_duration: formData.sessionDuration,
+      preferred_time: formData.preferredTime,
+      equipment: formData.equipment,
     })
     markRegistered()
     slideDirection.value = 'slide-left'
-    currentSlide.value = 7
+    currentSlide.value = 9
   } catch (e: any) {
-    error.value = e.message || 'Ошибка регистрации'
+    const tg = window.Telegram?.WebApp
+    const initLen = tg?.initData?.length ?? -1
+    const platform = tg?.platform ?? 'none'
+    const version = tg?.version ?? 'none'
+    const hash = window.location.hash?.length ?? 0
+    const href = window.location.href
+    const uid = (tg as any)?.initDataUnsafe?.user?.id ?? 'no-user'
+    error.value = `${e.message} [init:${initLen}, p:${platform}, v:${version}, hash:${hash}, uid:${uid}, url:${href}]`
     hapticNotification('error')
   } finally {
     submitting.value = false
@@ -149,7 +203,7 @@ const backRef = back
 
 function updateButtons() {
   showMainButton(mainButtonLabels[currentSlide.value], nextRef)
-  if (currentSlide.value > 0 && currentSlide.value < 7) {
+  if (currentSlide.value > 0 && currentSlide.value < 9) {
     showBackButton(backRef)
   } else {
     hideBackButton()

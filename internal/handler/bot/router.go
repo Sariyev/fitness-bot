@@ -1,10 +1,15 @@
 package bot
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fitness-bot/internal/models"
 	"fitness-bot/internal/service"
+	"fmt"
+	"io"
 	"log"
+	"net/http"
 	"strconv"
 	"strings"
 
@@ -212,15 +217,46 @@ func (r *Router) sendOnboardingButton(bot *tgbotapi.BotAPI, chatID int64, user *
 		"Я — Андрей, твой персональный тренер. " +
 		"Помогу тебе привести тело в форму и улучшить здоровье. 💪\n\n" +
 		"Нажми кнопку ниже, чтобы начать:"
-	m := tgbotapi.NewMessage(chatID, text)
-	m.ReplyMarkup = webAppReplyKeyboard{
-		Keyboard: [][]webAppKeyboardButton{
-			{{Text: "📱 Начать", WebApp: &webAppInfo{URL: r.webAppURL + "/onboarding"}}},
+
+	// Use inline_keyboard with web_app (provides initData with query_id + user)
+	// Raw API call because tgbotapi v5.5.1 doesn't have WebApp support
+	payload := map[string]interface{}{
+		"chat_id": chatID,
+		"text":    text,
+		"reply_markup": map[string]interface{}{
+			"inline_keyboard": [][]map[string]interface{}{
+				{
+					{
+						"text":    "📱 Начать",
+						"web_app": map[string]string{"url": r.webAppURL + "/onboarding"},
+					},
+				},
+			},
 		},
-		ResizeKeyboard:  true,
-		OneTimeKeyboard: false,
 	}
-	bot.Send(m)
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		log.Printf("[BOT] Error marshaling onboarding payload: %v", err)
+		return
+	}
+
+	log.Printf("[BOT] Sending WebApp inline button with payload: %s", string(body))
+
+	apiURL := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", bot.Token)
+	resp, err := http.Post(apiURL, "application/json", bytes.NewReader(body))
+	if err != nil {
+		log.Printf("[BOT] Error sending onboarding button: %v", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		respBody, _ := io.ReadAll(resp.Body)
+		log.Printf("[BOT] Telegram API error (status %d): %s", resp.StatusCode, respBody)
+	} else {
+		log.Printf("[BOT] WebApp inline button sent successfully")
+	}
 }
 
 func (r *Router) handleStart(ctx context.Context, bot *tgbotapi.BotAPI, msg *tgbotapi.Message, user *models.User) {
@@ -285,20 +321,29 @@ func (r *Router) handleWebApp(bot *tgbotapi.BotAPI, chatID int64) {
 		return
 	}
 
-	msg := tgbotapi.NewMessage(chatID, "Нажмите кнопку ниже, чтобы открыть приложение:")
-	msg.ReplyMarkup = webAppReplyKeyboard{
-		Keyboard: [][]webAppKeyboardButton{
-			{
+	payload := map[string]interface{}{
+		"chat_id": chatID,
+		"text":    "Нажмите кнопку ниже, чтобы открыть приложение:",
+		"reply_markup": map[string]interface{}{
+			"inline_keyboard": [][]map[string]interface{}{
 				{
-					Text:   "📱 Открыть приложение",
-					WebApp: &webAppInfo{URL: r.webAppURL},
+					{
+						"text":    "📱 Открыть приложение",
+						"web_app": map[string]string{"url": r.webAppURL},
+					},
 				},
 			},
 		},
-		ResizeKeyboard:  true,
-		OneTimeKeyboard: true,
 	}
-	bot.Send(msg)
+
+	body, _ := json.Marshal(payload)
+	apiURL := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", bot.Token)
+	resp, err := http.Post(apiURL, "application/json", bytes.NewReader(body))
+	if err != nil {
+		log.Printf("[BOT] Error sending webapp button: %v", err)
+		return
+	}
+	defer resp.Body.Close()
 }
 
 func send(bot *tgbotapi.BotAPI, chatID int64, text string) {

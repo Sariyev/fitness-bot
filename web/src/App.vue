@@ -5,71 +5,93 @@
       <div class="spinner"></div>
     </div>
     <template v-else>
-      <nav class="bottom-nav" v-if="showNav">
-        <router-link
-          to="/"
-          class="nav-item"
-          :class="{ active: $route.name === 'modules' }"
-          @click="hapticTap"
-        >
-          <span class="nav-icon">📚</span>
-          <span class="nav-label">Модули</span>
-        </router-link>
-        <router-link
-          to="/payment"
-          class="nav-item"
-          :class="{ active: $route.name === 'payment' }"
-          @click="hapticTap"
-        >
-          <span class="nav-icon">💳</span>
-          <span class="nav-label">Оплата</span>
-        </router-link>
-        <router-link
-          to="/profile"
-          class="nav-item"
-          :class="{ active: $route.name === 'profile' }"
-          @click="hapticTap"
-        >
-          <span class="nav-icon">👤</span>
-          <span class="nav-label">Профиль</span>
-        </router-link>
-      </nav>
-      <div class="content" :class="{ 'with-nav': showNav }">
+      <!-- Top header with profile icon -->
+      <header class="app-header" v-if="showNav">
+        <span class="header-title">{{ pageTitle }}</span>
+        <router-link to="/profile" class="header-profile" @click="hapticTap">👤</router-link>
+      </header>
+
+      <div class="content" :class="{ 'with-nav': showNav, 'with-header': showNav }">
         <router-view v-slot="{ Component }">
           <Transition :name="transitionName" mode="out-in">
             <component :is="Component" />
           </Transition>
         </router-view>
       </div>
+
+      <!-- 5-tab bottom nav -->
+      <nav class="bottom-nav" v-if="showNav">
+        <router-link to="/" class="nav-item" :class="{ active: $route.name === 'today' }" @click="hapticTap">
+          <span class="nav-icon">🏠</span>
+          <span class="nav-label">Сегодня</span>
+        </router-link>
+        <router-link to="/workouts" class="nav-item" :class="{ active: $route.name === 'workouts' }" @click="hapticTap">
+          <span class="nav-icon">🏋️</span>
+          <span class="nav-label">Тренировки</span>
+        </router-link>
+        <router-link to="/lfk" class="nav-item" :class="{ active: $route.name === 'lfk' }" @click="hapticTap">
+          <span class="nav-icon">❤️‍🩹</span>
+          <span class="nav-label">ЛФК</span>
+        </router-link>
+        <router-link to="/nutrition" class="nav-item" :class="{ active: $route.name === 'nutrition' }" @click="hapticTap">
+          <span class="nav-icon">🍽️</span>
+          <span class="nav-label">Питание</span>
+        </router-link>
+        <router-link to="/progress" class="nav-item" :class="{ active: $route.name === 'progress' }" @click="hapticTap">
+          <span class="nav-icon">📊</span>
+          <span class="nav-label">Прогресс</span>
+        </router-link>
+      </nav>
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { useRoute } from 'vue-router'
 
-const router = useRouter()
 const route = useRoute()
 const loading = ref(true)
 const transitionName = ref('fade')
 
+const mainTabs = ['today', 'workouts', 'lfk', 'nutrition', 'progress']
+
 const showNav = computed(() => {
   if (route.meta.hideNav) return false
-  const navRoutes = ['modules', 'payment', 'profile']
-  return navRoutes.includes(route.name as string)
+  return mainTabs.includes(route.name as string)
+})
+
+const pageTitle = computed(() => {
+  const titles: Record<string, string> = {
+    today: 'Сегодня',
+    workouts: 'Тренировки',
+    lfk: 'ЛФК 14 дней',
+    nutrition: 'Питание',
+    progress: 'Прогресс',
+  }
+  return titles[route.name as string] || ''
 })
 
 function hapticTap() {
   window.Telegram?.WebApp?.HapticFeedback?.selectionChanged()
 }
 
-// Track route depth for transition direction
 const routeDepth: Record<string, number> = {
   onboarding: 0,
+  today: 1,
+  workouts: 1,
+  lfk: 1,
+  nutrition: 1,
+  progress: 1,
+  profile: 2,
+  payment: 2,
+  'workout-program': 2,
+  'workout-session': 3,
+  'lfk-course': 2,
+  'lfk-session': 3,
+  'food-diary': 2,
+  'macro-calculator': 2,
   modules: 1,
-  payment: 1,
-  profile: 1,
   categories: 2,
   lessons: 3,
   lesson: 4,
@@ -96,8 +118,6 @@ onMounted(async () => {
     tg.ready()
     tg.expand()
   }
-
-  // Small delay for branded loader feel
   await new Promise(r => setTimeout(r, 300))
   loading.value = false
 })
@@ -114,11 +134,7 @@ onMounted(async () => {
   --secondary-bg: var(--tg-theme-secondary-bg-color, #f0f0f0);
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -127,19 +143,38 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-.app {
-  min-height: 100vh;
+.app { min-height: 100vh; }
+.content { padding: 16px; }
+.content.with-nav { padding-bottom: 80px; }
+.content.with-header { padding-top: 56px; }
+
+/* App header */
+.app-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  background: var(--bg-color);
+  border-bottom: 1px solid var(--secondary-bg);
+  z-index: 100;
 }
 
-.content {
-  padding: 16px;
+.header-title {
+  font-size: 18px;
+  font-weight: 700;
 }
 
-.content.with-nav {
-  padding-bottom: 72px;
+.header-profile {
+  font-size: 22px;
+  text-decoration: none;
 }
 
-/* Branded loading screen */
+/* Loading */
 .loading-screen {
   display: flex;
   flex-direction: column;
@@ -168,11 +203,9 @@ body {
   animation: spin 0.8s linear infinite;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
+@keyframes spin { to { transform: rotate(360deg); } }
 
-/* Bottom nav */
+/* Bottom nav - 5 tabs */
 .bottom-nav {
   position: fixed;
   bottom: 0;
@@ -181,8 +214,8 @@ body {
   display: flex;
   background: var(--bg-color);
   border-top: 1px solid var(--secondary-bg);
-  padding: 8px 0;
-  padding-bottom: max(8px, env(safe-area-inset-bottom));
+  padding: 6px 0;
+  padding-bottom: max(6px, env(safe-area-inset-bottom));
   z-index: 100;
 }
 
@@ -193,22 +226,14 @@ body {
   align-items: center;
   text-decoration: none;
   color: var(--hint-color);
-  font-size: 11px;
+  font-size: 10px;
   gap: 2px;
   transition: color 0.2s;
 }
 
-.nav-item.active {
-  color: var(--button-color);
-}
-
-.nav-icon {
-  font-size: 20px;
-}
-
-.nav-label {
-  font-size: 11px;
-}
+.nav-item.active { color: var(--button-color); }
+.nav-icon { font-size: 18px; }
+.nav-label { font-size: 10px; }
 
 .btn {
   display: inline-block;
@@ -220,42 +245,30 @@ body {
   border-radius: 8px;
   font-size: 16px;
   cursor: pointer;
+  width: 100%;
+  text-align: center;
 }
 
-.btn:active {
-  opacity: 0.8;
-}
+.btn:active { opacity: 0.8; }
 
-/* Page transitions */
-.slide-left-enter-active,
-.slide-left-leave-active,
-.slide-right-enter-active,
-.slide-right-leave-active {
+/* Transitions */
+.slide-left-enter-active, .slide-left-leave-active,
+.slide-right-enter-active, .slide-right-leave-active {
   transition: all 0.25s ease;
 }
-
 .slide-left-enter-from { transform: translateX(30px); opacity: 0; }
 .slide-left-leave-to { transform: translateX(-30px); opacity: 0; }
 .slide-right-enter-from { transform: translateX(-30px); opacity: 0; }
 .slide-right-leave-to { transform: translateX(30px); opacity: 0; }
 
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.2s ease;
-}
+.fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
 
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
-/* Stagger animation utility */
 @keyframes fadeSlideUp {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Skeleton shimmer */
 @keyframes shimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }

@@ -8,6 +8,8 @@ declare module '*.vue' {
 
 interface TelegramWebApp {
   initData: string
+  platform: string
+  version: string
   initDataUnsafe: {
     query_id?: string
     user?: {

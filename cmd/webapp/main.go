@@ -34,12 +34,27 @@ func main() {
 	userRepo := repository.NewUserRepo(db.Pool)
 	moduleRepo := repository.NewModuleRepo(db.Pool)
 	paymentRepo := repository.NewPaymentRepo(db.Pool)
+	programRepo := repository.NewProgramRepo(db.Pool)
+	workoutRepo := repository.NewWorkoutRepo(db.Pool)
+	exerciseRepo := repository.NewExerciseRepo(db.Pool)
+	completionRepo := repository.NewCompletionRepo(db.Pool)
+	rehabRepo := repository.NewRehabRepo(db.Pool)
+	nutritionRepo := repository.NewNutritionRepo(db.Pool)
+	foodLogRepo := repository.NewFoodLogRepo(db.Pool)
+	progressRepo := repository.NewProgressRepo(db.Pool)
+	achievementRepo := repository.NewAchievementRepo(db.Pool)
 
 	// Services
 	userSvc := service.NewUserService(userRepo)
 	moduleSvc := service.NewModuleService(moduleRepo)
 	paymentProvider := payment.NewDummyProvider()
 	paymentSvc := service.NewPaymentService(paymentRepo, userRepo, paymentProvider, 5000)
+	workoutSvc := service.NewWorkoutService(programRepo, workoutRepo, exerciseRepo, completionRepo)
+	rehabSvc := service.NewRehabService(rehabRepo)
+	nutritionSvc := service.NewNutritionService(nutritionRepo, foodLogRepo)
+	progressSvc := service.NewProgressService(progressRepo, completionRepo, achievementRepo)
+	dashboardSvc := service.NewDashboardService(userSvc, workoutSvc, rehabSvc, nutritionSvc)
+	recommendSvc := service.NewRecommendationService(programRepo, rehabRepo, nutritionRepo)
 
 	// WebApp router
 	router := webapphandler.NewRouter(
@@ -47,6 +62,12 @@ func main() {
 		userSvc,
 		moduleSvc,
 		paymentSvc,
+		workoutSvc,
+		rehabSvc,
+		nutritionSvc,
+		progressSvc,
+		dashboardSvc,
+		recommendSvc,
 		"./static",
 	)
 

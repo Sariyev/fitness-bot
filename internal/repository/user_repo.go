@@ -49,22 +49,47 @@ func (r *userRepo) Update(ctx context.Context, user *models.User) error {
 
 func (r *userRepo) CreateProfile(ctx context.Context, p *models.UserProfile) error {
 	return r.pool.QueryRow(ctx,
-		`INSERT INTO user_profiles (user_id, gender, age, weight_kg, height_cm, fitness_level, goal)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7)
+		`INSERT INTO user_profiles (
+			user_id, gender, age, weight_kg, height_cm, fitness_level, goal,
+			training_access, training_experience, has_pain, pain_locations, pain_level,
+			diagnoses, contraindications, days_per_week, session_duration, preferred_time, equipment
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
 		 RETURNING id, created_at, updated_at`,
 		p.UserID, p.Gender, p.Age, p.WeightKg, p.HeightCm, p.FitnessLevel, p.Goal,
+		p.TrainingAccess, p.TrainingExperience, p.HasPain, p.PainLocations, p.PainLevel,
+		p.Diagnoses, p.Contraindications, p.DaysPerWeek, p.SessionDuration, p.PreferredTime, p.Equipment,
 	).Scan(&p.ID, &p.CreatedAt, &p.UpdatedAt)
 }
 
 func (r *userRepo) GetProfileByUserID(ctx context.Context, userID int64) (*models.UserProfile, error) {
 	p := &models.UserProfile{}
 	err := r.pool.QueryRow(ctx,
-		`SELECT id, user_id, gender, age, weight_kg, height_cm, fitness_level, goal, created_at, updated_at
+		`SELECT id, user_id, gender, age, weight_kg, height_cm, fitness_level, goal,
+			training_access, training_experience, has_pain, pain_locations, pain_level,
+			diagnoses, contraindications, days_per_week, session_duration, preferred_time, equipment,
+			created_at, updated_at
 		 FROM user_profiles WHERE user_id = $1`, userID,
 	).Scan(&p.ID, &p.UserID, &p.Gender, &p.Age, &p.WeightKg, &p.HeightCm,
-		&p.FitnessLevel, &p.Goal, &p.CreatedAt, &p.UpdatedAt)
+		&p.FitnessLevel, &p.Goal,
+		&p.TrainingAccess, &p.TrainingExperience, &p.HasPain, &p.PainLocations, &p.PainLevel,
+		&p.Diagnoses, &p.Contraindications, &p.DaysPerWeek, &p.SessionDuration, &p.PreferredTime, &p.Equipment,
+		&p.CreatedAt, &p.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
 	return p, nil
+}
+
+func (r *userRepo) UpdateProfile(ctx context.Context, p *models.UserProfile) error {
+	_, err := r.pool.Exec(ctx,
+		`UPDATE user_profiles SET
+			gender=$2, age=$3, weight_kg=$4, height_cm=$5, fitness_level=$6, goal=$7,
+			training_access=$8, training_experience=$9, has_pain=$10, pain_locations=$11, pain_level=$12,
+			diagnoses=$13, contraindications=$14, days_per_week=$15, session_duration=$16,
+			preferred_time=$17, equipment=$18, updated_at=NOW()
+		 WHERE user_id=$1`,
+		p.UserID, p.Gender, p.Age, p.WeightKg, p.HeightCm, p.FitnessLevel, p.Goal,
+		p.TrainingAccess, p.TrainingExperience, p.HasPain, p.PainLocations, p.PainLevel,
+		p.Diagnoses, p.Contraindications, p.DaysPerWeek, p.SessionDuration, p.PreferredTime, p.Equipment)
+	return err
 }

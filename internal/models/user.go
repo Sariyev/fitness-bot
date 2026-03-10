@@ -16,14 +16,25 @@ type User struct {
 }
 
 type UserProfile struct {
-	ID           int64     `json:"id"`
-	UserID       int64     `json:"user_id"`
-	Gender       string    `json:"gender"`
-	Age          int       `json:"age"`
-	WeightKg     float64   `json:"weight_kg"`
-	HeightCm     int       `json:"height_cm"`
-	FitnessLevel string    `json:"fitness_level"`
-	Goal         string    `json:"goal"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
+	ID                 int64     `json:"id"`
+	UserID             int64     `json:"user_id"`
+	Gender             string    `json:"gender"`
+	Age                int       `json:"age"`
+	WeightKg           float64   `json:"weight_kg"`
+	HeightCm           int       `json:"height_cm"`
+	FitnessLevel       string    `json:"fitness_level"`
+	Goal               string    `json:"goal"`
+	TrainingAccess     *string   `json:"training_access"`
+	TrainingExperience *string   `json:"training_experience"`
+	HasPain            bool      `json:"has_pain"`
+	PainLocations      []string  `json:"pain_locations"`
+	PainLevel          int       `json:"pain_level"`
+	Diagnoses          []string  `json:"diagnoses"`
+	Contraindications  string    `json:"contraindications"`
+	DaysPerWeek        *int      `json:"days_per_week"`
+	SessionDuration    *int      `json:"session_duration"`
+	PreferredTime      *string   `json:"preferred_time"`
+	Equipment          []string  `json:"equipment"`
+	CreatedAt          time.Time `json:"created_at"`
+	UpdatedAt          time.Time `json:"updated_at"`
 }
