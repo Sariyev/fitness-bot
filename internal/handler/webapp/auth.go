@@ -28,10 +28,10 @@ func UserFromContext(ctx context.Context) *models.User {
 }
 
 type TelegramInitData struct {
-	QueryID      string       `json:"query_id"`
-	User         TelegramUser `json:"user"`
-	AuthDate     string       `json:"auth_date"`
-	Hash         string       `json:"hash"`
+	QueryID  string       `json:"query_id"`
+	User     TelegramUser `json:"user"`
+	AuthDate string       `json:"auth_date"`
+	Hash     string       `json:"hash"`
 }
 
 type TelegramUser struct {
@@ -101,14 +101,78 @@ func ValidateInitData(initData string, botToken string) (*TelegramInitData, erro
 	return result, nil
 }
 
+// AuthHandler handles POST /app/api/auth — validates initData once and returns a session token.
+func AuthHandler(botToken string, userSvc *service.UserService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			jsonError(w, http.StatusMethodNotAllowed, "method not allowed")
+			return
+		}
+
+		initData := r.Header.Get("X-Telegram-Init-Data")
+		if initData == "" {
+			jsonError(w, http.StatusUnauthorized, "missing init data")
+			return
+		}
+
+		parsed, err := ValidateInitData(initData, botToken)
+		if err != nil {
+			log.Printf("[AUTH] token request rejected: %v", err)
+			jsonError(w, http.StatusUnauthorized, "invalid init data")
+			return
+		}
+
+		// Ensure user exists
+		_, err = userSvc.GetOrCreateUser(
+			r.Context(),
+			parsed.User.ID,
+			parsed.User.Username,
+			parsed.User.FirstName,
+			parsed.User.LastName,
+		)
+		if err != nil {
+			jsonError(w, http.StatusInternalServerError, "user lookup failed")
+			return
+		}
+
+		token, err := GenerateToken(parsed.User.ID, botToken)
+		if err != nil {
+			jsonError(w, http.StatusInternalServerError, "token generation failed")
+			return
+		}
+
+		log.Printf("[AUTH] token issued for telegram_id=%d", parsed.User.ID)
+		jsonResponse(w, http.StatusOK, map[string]interface{}{
+			"token":      token,
+			"expires_in": int(tokenTTL.Seconds()),
+		})
+	}
+}
+
 func AuthMiddleware(botToken string, userSvc *service.UserService) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Try Bearer token first
+			if authHeader := r.Header.Get("Authorization"); strings.HasPrefix(authHeader, "Bearer ") {
+				token := strings.TrimPrefix(authHeader, "Bearer ")
+				telegramID, err := ValidateToken(token, botToken)
+				if err == nil {
+					user, err := userSvc.GetOrCreateUser(r.Context(), telegramID, "", "", "")
+					if err == nil {
+						ctx := context.WithValue(r.Context(), userContextKey, user)
+						next.ServeHTTP(w, r.WithContext(ctx))
+						return
+					}
+					log.Printf("[AUTH] bearer token valid but user lookup failed: %v", err)
+				} else {
+					log.Printf("[AUTH] bearer token invalid: %v", err)
+				}
+			}
+
+			// Fall back to initData
 			initData := r.Header.Get("X-Telegram-Init-Data")
-			log.Printf("[AUTH] %s %s | initData length: %d", r.Method, r.URL.Path, len(initData))
 			if initData == "" {
-				log.Printf("[AUTH] REJECTED: missing init data for %s", r.URL.Path)
-				http.Error(w, `{"error":"missing init data"}`, http.StatusUnauthorized)
+				http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
 				return
 			}
 

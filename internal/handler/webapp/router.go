@@ -62,7 +62,7 @@ func (r *WebAppRouter) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	// Set CORS headers for Telegram Mini App
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-Telegram-Init-Data")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-Telegram-Init-Data, Authorization")
 
 	if req.Method == "OPTIONS" {
 		w.WriteHeader(http.StatusOK)
@@ -85,6 +85,9 @@ func (r *WebAppRouter) setupRoutes() {
 	rehabHandler := NewRehabHandler(r.rehabSvc)
 	nutritionHandler := NewNutritionHandler(r.nutritionSvc)
 	progressV2Handler := NewProgressV2Handler(r.progressSvc)
+
+	// Auth — exchanges initData for a session token
+	r.mux.HandleFunc("/app/api/auth", AuthHandler(r.botToken, r.userSvc))
 
 	// API routes (authenticated)
 	r.mux.Handle("/app/api/modules", auth(http.HandlerFunc(moduleHandler.ListModules)))

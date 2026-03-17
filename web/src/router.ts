@@ -33,8 +33,15 @@ const router = createRouter({
 
 let registrationChecked = false
 let isRegistered = false
+let authDone = false
 
 router.beforeEach(async (to) => {
+  // Authenticate once on app start — get session token
+  if (!authDone) {
+    await api.authenticate()
+    authDone = true
+  }
+
   if (!registrationChecked) {
     try {
       const status = await api.getRegistrationStatus()

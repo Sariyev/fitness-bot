@@ -37,15 +37,30 @@ function getInitData(): string {
   return window.Telegram?.WebApp?.initData || ''
 }
 
+let authToken: string | null = null
+
+function getAuthHeaders(): Record<string, string> {
+  if (authToken) {
+    return { Authorization: `Bearer ${authToken}` }
+  }
+  return { 'X-Telegram-Init-Data': getInitData() }
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(path, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      'X-Telegram-Init-Data': getInitData(),
+      ...getAuthHeaders(),
       ...options?.headers,
     },
   })
+
+  // On 401 with a token, clear it and retry with initData
+  if (res.status === 401 && authToken) {
+    authToken = null
+    return request(path, options)
+  }
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: 'Request failed' }))
@@ -55,7 +70,29 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return res.json()
 }
 
+async function authenticate(): Promise<void> {
+  const initData = getInitData()
+  if (!initData) return
+
+  try {
+    const res = await fetch('/app/api/auth', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Telegram-Init-Data': initData,
+      },
+    })
+    if (res.ok) {
+      const data = await res.json()
+      authToken = data.token
+    }
+  } catch {
+    // Auth failed silently — requests will fall back to initData
+  }
+}
+
 export const api = {
+  authenticate,
   // ====== LEGACY MODULES ======
   getModules(): Promise<Module[]> {
     return request('/app/api/modules')
