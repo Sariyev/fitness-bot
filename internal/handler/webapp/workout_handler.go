@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"fitness-bot/internal/models"
 	"fitness-bot/internal/service"
 )
 
@@ -195,9 +196,14 @@ func (h *WorkoutHandler) GetWorkout(w http.ResponseWriter, r *http.Request, idSt
 		return
 	}
 
-	jsonResponse(w, http.StatusOK, map[string]interface{}{
-		"workout":   workout,
-		"exercises": exercises,
+	type workoutWithExercises struct {
+		*models.Workout
+		Exercises []models.WorkoutExerciseWithDetails `json:"exercises"`
+	}
+
+	jsonResponse(w, http.StatusOK, workoutWithExercises{
+		Workout:   workout,
+		Exercises: exercises,
 	})
 }
 
