@@ -53,14 +53,38 @@
             class="exercise-card"
             :style="{ animationDelay: index * 60 + 'ms' }"
           >
-            <div class="exercise-number">{{ index + 1 }}</div>
-            <div class="exercise-info">
-              <span class="exercise-name">Упражнение #{{ ex.exercise_id }}</span>
-              <span class="exercise-detail">
-                <template v-if="ex.sets && ex.reps">{{ ex.sets }} x {{ ex.reps }}</template>
-                <template v-else-if="ex.duration_seconds">{{ ex.duration_seconds }} сек</template>
-              </span>
+            <div class="exercise-card-top" @click="toggleExercise(ex.id)">
+              <div class="exercise-number">{{ index + 1 }}</div>
+              <div class="exercise-info">
+                <span class="exercise-name">{{ ex.exercise_name || 'Упражнение #' + ex.exercise_id }}</span>
+                <span class="exercise-detail">
+                  <template v-if="ex.sets && ex.reps">{{ ex.sets }} x {{ ex.reps }}</template>
+                  <template v-else-if="ex.duration_seconds">{{ ex.duration_seconds }} сек</template>
+                  <template v-if="ex.rest_seconds"> · отдых {{ ex.rest_seconds }}с</template>
+                </span>
+              </div>
+              <span class="exercise-chevron" :class="{ open: expandedExercise === ex.id }">›</span>
             </div>
+            <Transition name="detail-slide">
+              <div v-if="expandedExercise === ex.id && hasDetails(ex)" class="exercise-details">
+                <div v-if="ex.technique" class="detail-block">
+                  <span class="detail-label">Техника</span>
+                  <p class="detail-text">{{ ex.technique }}</p>
+                </div>
+                <div v-if="ex.common_mistakes" class="detail-block">
+                  <span class="detail-label">Частые ошибки</span>
+                  <p class="detail-text">{{ ex.common_mistakes }}</p>
+                </div>
+                <div v-if="ex.easier_modification" class="detail-block">
+                  <span class="detail-label">Упрощение</span>
+                  <p class="detail-text">{{ ex.easier_modification }}</p>
+                </div>
+                <div v-if="ex.harder_modification" class="detail-block">
+                  <span class="detail-label">Усложнение</span>
+                  <p class="detail-text">{{ ex.harder_modification }}</p>
+                </div>
+              </div>
+            </Transition>
           </div>
         </div>
       </div>
@@ -86,7 +110,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { api } from '../api'
-import type { WorkoutWithExercises } from '../types'
+import type { WorkoutWithExercises, WorkoutExercise } from '../types'
 import SkeletonCard from '../components/SkeletonCard.vue'
 
 const props = defineProps<{ id: string }>()
@@ -97,6 +121,15 @@ const loading = ref(true)
 const workout = ref<WorkoutWithExercises | null>(null)
 const completing = ref(false)
 const error = ref('')
+const expandedExercise = ref<number | null>(null)
+
+function toggleExercise(id: number) {
+  expandedExercise.value = expandedExercise.value === id ? null : id
+}
+
+function hasDetails(ex: WorkoutExercise): boolean {
+  return !!(ex.technique || ex.common_mistakes || ex.easier_modification || ex.harder_modification)
+}
 
 async function complete() {
   if (completing.value || !workout.value) return
@@ -230,14 +263,24 @@ onMounted(async () => {
 }
 
 .exercise-card {
+  background: var(--secondary-bg);
+  border-radius: 12px;
+  overflow: hidden;
+  opacity: 0;
+  animation: fadeSlideUp 0.35s ease forwards;
+}
+
+.exercise-card-top {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
-  background: var(--secondary-bg);
-  border-radius: 12px;
-  opacity: 0;
-  animation: fadeSlideUp 0.35s ease forwards;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.exercise-card-top:active {
+  background: var(--bg-color);
 }
 
 .exercise-number {
@@ -255,6 +298,8 @@ onMounted(async () => {
 }
 
 .exercise-info {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -268,6 +313,59 @@ onMounted(async () => {
 .exercise-detail {
   font-size: 13px;
   color: var(--hint-color);
+}
+
+.exercise-chevron {
+  flex-shrink: 0;
+  font-size: 20px;
+  color: var(--hint-color);
+  transition: transform 0.2s ease;
+}
+
+.exercise-chevron.open {
+  transform: rotate(90deg);
+}
+
+.exercise-details {
+  padding: 0 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.detail-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.detail-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--button-color);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.detail-text {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--hint-color);
+  margin: 0;
+}
+
+.detail-slide-enter-active,
+.detail-slide-leave-active {
+  transition: all 0.25s ease;
+  overflow: hidden;
+}
+
+.detail-slide-enter-from,
+.detail-slide-leave-to {
+  opacity: 0;
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 .btn {

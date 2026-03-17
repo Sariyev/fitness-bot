@@ -196,6 +196,12 @@ export interface WorkoutExercise {
   reps: string
   duration_seconds: number
   sort_order: number
+  exercise_name: string
+  technique: string
+  common_mistakes: string
+  easier_modification: string
+  harder_modification: string
+  rest_seconds: number
 }
 
 export interface WorkoutWithExercises extends Workout {

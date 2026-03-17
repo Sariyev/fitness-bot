@@ -12,29 +12,50 @@
         <div class="avatar">{{ initials }}</div>
         <h2>{{ profile.first_name }} {{ profile.last_name }}</h2>
         <p v-if="profile.username" class="username">@{{ profile.username }}</p>
+        <button class="edit-toggle" @click="toggleEdit">
+          {{ editing ? 'Отмена' : 'Редактировать' }}
+        </button>
       </div>
 
       <!-- Basic info -->
       <div class="info-card" style="animation-delay: 80ms">
         <div class="info-row">
           <span class="label">Возраст</span>
-          <span class="value">{{ profile.age }}</span>
+          <input v-if="editing" v-model.number="editData.age" type="number" class="edit-input" />
+          <span v-else class="value">{{ profile.age }}</span>
         </div>
         <div class="info-row">
           <span class="label">Рост</span>
-          <span class="value">{{ profile.height_cm }} см</span>
+          <div v-if="editing" class="edit-with-unit">
+            <input v-model.number="editData.height_cm" type="number" class="edit-input" />
+            <span class="unit">см</span>
+          </div>
+          <span v-else class="value">{{ profile.height_cm }} см</span>
         </div>
         <div class="info-row">
           <span class="label">Вес</span>
-          <span class="value">{{ profile.weight_kg }} кг</span>
+          <div v-if="editing" class="edit-with-unit">
+            <input v-model.number="editData.weight_kg" type="number" step="0.1" class="edit-input" />
+            <span class="unit">кг</span>
+          </div>
+          <span v-else class="value">{{ profile.weight_kg }} кг</span>
         </div>
         <div class="info-row">
           <span class="label">Пол</span>
-          <span class="value">{{ genderLabel }}</span>
+          <select v-if="editing" v-model="editData.gender" class="edit-select">
+            <option value="male">Мужской</option>
+            <option value="female">Женский</option>
+          </select>
+          <span v-else class="value">{{ genderLabel }}</span>
         </div>
         <div class="info-row">
           <span class="label">Уровень</span>
-          <span class="value">{{ fitnessLabel }}</span>
+          <select v-if="editing" v-model="editData.fitness_level" class="edit-select">
+            <option value="beginner">Новичок</option>
+            <option value="intermediate">Средний</option>
+            <option value="advanced">Продвинутый</option>
+          </select>
+          <span v-else class="value">{{ fitnessLabel }}</span>
         </div>
       </div>
 
@@ -65,21 +86,32 @@
       </div>
 
       <!-- Schedule -->
-      <div class="info-card" v-if="profile.days_per_week || profile.session_duration || profile.preferred_time" style="animation-delay: 320ms">
+      <div class="info-card" v-if="editing || profile.days_per_week || profile.session_duration || profile.preferred_time" style="animation-delay: 320ms">
         <h3>Расписание</h3>
-        <div class="info-row" v-if="profile.days_per_week">
+        <div class="info-row">
           <span class="label">Дней в неделю</span>
-          <span class="value">{{ profile.days_per_week }}</span>
+          <input v-if="editing" v-model.number="editData.days_per_week" type="number" min="1" max="7" class="edit-input" />
+          <span v-else class="value">{{ profile.days_per_week }}</span>
         </div>
-        <div class="info-row" v-if="profile.session_duration">
+        <div class="info-row">
           <span class="label">Длительность</span>
-          <span class="value">{{ profile.session_duration }} мин</span>
+          <div v-if="editing" class="edit-with-unit">
+            <input v-model.number="editData.session_duration" type="number" class="edit-input" />
+            <span class="unit">мин</span>
+          </div>
+          <span v-else class="value">{{ profile.session_duration }} мин</span>
         </div>
-        <div class="info-row" v-if="profile.preferred_time">
+        <div class="info-row">
           <span class="label">Время</span>
-          <span class="value">{{ timeLabel }}</span>
+          <select v-if="editing" v-model="editData.preferred_time" class="edit-select">
+            <option value="morning">Утро</option>
+            <option value="afternoon">День</option>
+            <option value="evening">Вечер</option>
+            <option value="any">Любое</option>
+          </select>
+          <span v-else class="value">{{ timeLabel }}</span>
         </div>
-        <div class="info-row" v-if="profile.equipment && profile.equipment.length">
+        <div class="info-row" v-if="!editing && profile.equipment && profile.equipment.length">
           <span class="label">Оборудование</span>
           <span class="value">{{ profile.equipment.join(', ') }}</span>
         </div>
@@ -116,10 +148,18 @@
         </div>
       </div>
 
-      <button v-if="!profile.is_paid" class="btn btn-primary" @click="router.push('/payment')">
+      <div v-if="editing" class="edit-actions">
+        <button class="btn btn-primary" @click="saveProfile" :disabled="saving">
+          {{ saving ? 'Сохранение...' : 'Сохранить' }}
+        </button>
+        <div v-if="saveError" class="save-msg error-msg">{{ saveError }}</div>
+        <div v-if="saveSuccess" class="save-msg success-msg">Профиль обновлён</div>
+      </div>
+
+      <button v-if="!editing && !profile.is_paid" class="btn btn-primary" @click="router.push('/payment')">
         Оплатить доступ
       </button>
-      <button class="btn btn-secondary" @click="router.push('/')">
+      <button v-if="!editing" class="btn btn-secondary" @click="router.push('/')">
         На главную
       </button>
     </div>
@@ -143,6 +183,71 @@ const router = useRouter()
 
 const loading = ref(true)
 const profile = ref<UserProfile | null>(null)
+const editing = ref(false)
+const saving = ref(false)
+const saveError = ref('')
+const saveSuccess = ref(false)
+const editData = ref<{
+  age: number
+  height_cm: number
+  weight_kg: number
+  gender: 'male' | 'female'
+  fitness_level: 'beginner' | 'intermediate' | 'advanced'
+  days_per_week: number
+  session_duration: number
+  preferred_time: string
+}>({
+  age: 0,
+  height_cm: 0,
+  weight_kg: 0,
+  gender: 'male',
+  fitness_level: 'beginner',
+  days_per_week: 3,
+  session_duration: 60,
+  preferred_time: 'any',
+})
+
+function toggleEdit() {
+  if (editing.value) {
+    editing.value = false
+    return
+  }
+  if (profile.value) {
+    editData.value = {
+      age: profile.value.age,
+      height_cm: profile.value.height_cm,
+      weight_kg: profile.value.weight_kg,
+      gender: (profile.value.gender as 'male' | 'female') || 'male',
+      fitness_level: (profile.value.fitness_level as 'beginner' | 'intermediate' | 'advanced') || 'beginner',
+      days_per_week: profile.value.days_per_week || 3,
+      session_duration: profile.value.session_duration || 60,
+      preferred_time: profile.value.preferred_time || 'any',
+    }
+  }
+  saveError.value = ''
+  saveSuccess.value = false
+  editing.value = true
+}
+
+async function saveProfile() {
+  if (saving.value) return
+  saving.value = true
+  saveError.value = ''
+  saveSuccess.value = false
+  try {
+    await api.updateProfile(editData.value)
+    profile.value = await api.getProfile()
+    saveSuccess.value = true
+    setTimeout(() => {
+      editing.value = false
+      saveSuccess.value = false
+    }, 1000)
+  } catch (e: any) {
+    saveError.value = e.message || 'Ошибка при сохранении'
+  } finally {
+    saving.value = false
+  }
+}
 
 const goalLabels: Record<string, string> = {
   weight_loss: 'Похудеть',
@@ -392,5 +497,68 @@ onMounted(async () => {
   text-align: center;
   padding: 40px;
   color: var(--hint-color);
+}
+
+.edit-toggle {
+  background: none;
+  border: 1px solid var(--button-color);
+  color: var(--button-color);
+  padding: 6px 16px;
+  border-radius: 16px;
+  font-size: 13px;
+  cursor: pointer;
+  margin-top: 10px;
+  position: relative;
+  z-index: 1;
+}
+
+.edit-input {
+  background: var(--bg-color);
+  border: 1px solid var(--hint-color);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 14px;
+  color: var(--text-color);
+  text-align: right;
+  width: 80px;
+}
+
+.edit-select {
+  background: var(--bg-color);
+  border: 1px solid var(--hint-color);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 14px;
+  color: var(--text-color);
+  text-align: right;
+}
+
+.edit-with-unit {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.unit {
+  font-size: 13px;
+  color: var(--hint-color);
+}
+
+.edit-actions {
+  margin-bottom: 12px;
+}
+
+.save-msg {
+  text-align: center;
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+.error-msg {
+  color: #ff3b30;
+}
+
+.success-msg {
+  color: #34c759;
 }
 </style>

@@ -56,6 +56,28 @@ func (s *WorkoutService) GetWorkoutExercises(ctx context.Context, workoutID int)
 	return s.workoutRepo.ListExercises(ctx, workoutID)
 }
 
+func (s *WorkoutService) GetWorkoutExercisesWithDetails(ctx context.Context, workoutID int) ([]models.WorkoutExerciseWithDetails, error) {
+	exercises, err := s.workoutRepo.ListExercises(ctx, workoutID)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]models.WorkoutExerciseWithDetails, 0, len(exercises))
+	for _, we := range exercises {
+		detail := models.WorkoutExerciseWithDetails{WorkoutExercise: we}
+		if ex, err := s.exerciseRepo.GetByID(ctx, we.ExerciseID); err == nil {
+			detail.ExerciseName = ex.Name
+			detail.Technique = ex.Technique
+			detail.CommonMistakes = ex.CommonMistakes
+			detail.EasierModification = ex.EasierModification
+			detail.HarderModification = ex.HarderModification
+			detail.RestSeconds = ex.RestSeconds
+		}
+		result = append(result, detail)
+	}
+	return result, nil
+}
+
 func (s *WorkoutService) CompleteWorkout(ctx context.Context, userID int64, workoutID int) error {
 	completion := &models.DailyCompletion{
 		UserID:     userID,

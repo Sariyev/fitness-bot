@@ -189,7 +189,7 @@ func (h *WorkoutHandler) GetWorkout(w http.ResponseWriter, r *http.Request, idSt
 		return
 	}
 
-	exercises, err := h.workoutSvc.GetWorkoutExercises(r.Context(), id)
+	exercises, err := h.workoutSvc.GetWorkoutExercisesWithDetails(r.Context(), id)
 	if err != nil {
 		jsonError(w, http.StatusInternalServerError, "failed to load exercises")
 		return

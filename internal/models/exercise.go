@@ -23,3 +23,13 @@ type WorkoutExercise struct {
 	DurationSeconds int    `json:"duration_seconds"`
 	SortOrder       int    `json:"sort_order"`
 }
+
+type WorkoutExerciseWithDetails struct {
+	WorkoutExercise
+	ExerciseName       string `json:"exercise_name"`
+	Technique          string `json:"technique"`
+	CommonMistakes     string `json:"common_mistakes"`
+	EasierModification string `json:"easier_modification"`
+	HarderModification string `json:"harder_modification"`
+	RestSeconds        int    `json:"rest_seconds"`
+}

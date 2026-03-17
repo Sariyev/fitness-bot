@@ -314,16 +314,12 @@ function nextDay(): void {
   currentDate.value = d
 }
 
-// Macro bar width calculation (proportional to a reasonable daily max)
-function macroBarWidth(grams: number, type: string): string {
-  const maxValues: Record<string, number> = {
-    protein: 200,
-    fat: 150,
-    carbs: 400,
-  }
-  const max = maxValues[type] || 200
-  const pct = Math.min(100, (grams / max) * 100)
-  return `${pct}%`
+// Macro bar width calculation — proportional to total grams for the day
+function macroBarWidth(grams: number, _type: string): string {
+  const total = (summary.value.protein || 0) + (summary.value.fat || 0) + (summary.value.carbs || 0)
+  if (total === 0 || grams === 0) return '2px'
+  const pct = Math.min(100, (grams / total) * 100)
+  return `${Math.max(4, pct)}%`
 }
 
 // Grouped entries
