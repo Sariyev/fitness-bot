@@ -118,10 +118,6 @@
           <span class="action-icon">&#x1F4D3;</span>
           <span class="action-label">Дневник питания</span>
         </router-link>
-        <router-link to="/nutrition/calculator" class="action-btn">
-          <span class="action-icon">&#x1F9EE;</span>
-          <span class="action-label">Калькулятор БЖУ</span>
-        </router-link>
       </div>
     </template>
   </div>
@@ -130,11 +126,11 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { api } from '../api'
-import type { MealPlan, Meal, DailySummary, MacroTargets } from '../types'
+import type { MealPlan, Meal, DailySummary } from '../types'
 
 const loading = ref(true)
 const mealPlans = ref<MealPlan[]>([])
-const macroTargets = ref<MacroTargets | null>(null)
+const macroTargets = ref<{ calories: number; protein: number; fat: number; carbs: number } | null>(null)
 const dailySummary = ref<DailySummary>({ calories: 0, protein: 0, fat: 0, carbs: 0 })
 
 // Expanded plan
@@ -204,23 +200,6 @@ async function loadInitialData() {
 
     dailySummary.value = summary
 
-    // Try to load user profile for macro targets
-    try {
-      const profile = await api.getProfile()
-      if (profile.goals && profile.goals.length > 0) {
-        const targets = await api.calculateMacros({
-          gender: profile.gender,
-          weight_kg: profile.weight_kg,
-          height_cm: profile.height_cm,
-          age: profile.age,
-          goal: profile.goals[0],
-        })
-        macroTargets.value = targets
-      }
-    } catch {
-      // Macro targets are optional -- continue without them
-      macroTargets.value = null
-    }
   } catch {
     mealPlans.value = []
   } finally {
