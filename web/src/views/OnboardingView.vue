@@ -212,7 +212,28 @@ function updateButtons() {
 
 watch(currentSlide, updateButtons)
 
-onMounted(() => {
+onMounted(async () => {
+  // Pre-fill form with existing profile data for returning users
+  try {
+    const profile = await api.getProfile()
+    if (profile) {
+      formData.age = profile.age || 25
+      formData.heightCm = profile.height_cm || 170
+      formData.weightKg = profile.weight_kg || 70
+      formData.gender = profile.gender || ''
+      formData.fitnessLevel = profile.fitness_level || ''
+      formData.goals = profile.goals || []
+      formData.painLocations = profile.pain_locations || []
+      formData.painLevel = profile.pain_level || 0
+      formData.diagnoses = profile.diagnoses || []
+      formData.trainingAccess = profile.training_access || 'home'
+      formData.daysPerWeek = profile.days_per_week || 3
+      formData.sessionDuration = profile.session_duration || 35
+      formData.preferredTime = profile.preferred_time || 'evening'
+    }
+  } catch {
+    // No profile yet — use defaults
+  }
   updateButtons()
 })
 

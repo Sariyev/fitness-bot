@@ -99,3 +99,43 @@ func (s *UserService) GetProfile(ctx context.Context, userID int64) (*models.Use
 func (s *UserService) UpdateProfile(ctx context.Context, profile *models.UserProfile) error {
 	return s.repo.UpdateProfile(ctx, profile)
 }
+
+func (s *UserService) UpdateProfileFromData(ctx context.Context, userID int64, data models.RegistrationData) error {
+	profile, err := s.repo.GetProfileByUserID(ctx, userID)
+	if err != nil {
+		return err
+	}
+
+	trainingAccess := &data.TrainingAccess
+	if data.TrainingAccess == "" {
+		trainingAccess = nil
+	}
+	trainingExperience := &data.TrainingExperience
+	if data.TrainingExperience == "" {
+		trainingExperience = nil
+	}
+	preferredTime := &data.PreferredTime
+	if data.PreferredTime == "" {
+		preferredTime = nil
+	}
+
+	profile.Gender = data.Gender
+	profile.Age = data.Age
+	profile.WeightKg = data.WeightKg
+	profile.HeightCm = data.HeightCm
+	profile.FitnessLevel = data.FitnessLevel
+	profile.Goal = strings.Join(data.Goals, ",")
+	profile.TrainingAccess = trainingAccess
+	profile.TrainingExperience = trainingExperience
+	profile.HasPain = data.HasPain
+	profile.PainLocations = data.PainLocations
+	profile.PainLevel = data.PainLevel
+	profile.Diagnoses = data.Diagnoses
+	profile.Contraindications = data.Contraindications
+	profile.DaysPerWeek = data.DaysPerWeek
+	profile.SessionDuration = data.SessionDuration
+	profile.PreferredTime = preferredTime
+	profile.Equipment = data.Equipment
+
+	return s.repo.UpdateProfile(ctx, profile)
+}

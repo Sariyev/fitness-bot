@@ -65,11 +65,6 @@ func (h *RegistrationHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if user.IsRegistered {
-		jsonError(w, http.StatusConflict, "already registered")
-		return
-	}
-
 	var req RegisterRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonError(w, http.StatusBadRequest, "invalid request body")
@@ -124,13 +119,22 @@ func (h *RegistrationHandler) Register(w http.ResponseWriter, r *http.Request) {
 		Equipment:          req.Equipment,
 	}
 
-	if err := h.userSvc.CreateProfile(r.Context(), user.ID, data); err != nil {
-		jsonError(w, http.StatusInternalServerError, "failed to create profile")
-		return
-	}
-
-	if err := h.userSvc.MarkRegistered(r.Context(), user); err != nil {
-		// Profile created, registration flag failed -- not critical
+	if user.IsRegistered {
+		// Returning user — update existing profile
+		if err := h.userSvc.UpdateProfileFromData(r.Context(), user.ID, data); err != nil {
+			log.Printf("[REGISTRATION] failed to update profile: %v", err)
+			jsonError(w, http.StatusInternalServerError, "failed to update profile")
+			return
+		}
+	} else {
+		// New user — create profile and mark registered
+		if err := h.userSvc.CreateProfile(r.Context(), user.ID, data); err != nil {
+			jsonError(w, http.StatusInternalServerError, "failed to create profile")
+			return
+		}
+		if err := h.userSvc.MarkRegistered(r.Context(), user); err != nil {
+			// Profile created, registration flag failed -- not critical
+		}
 	}
 
 	// Generate recommendations based on the new profile

@@ -31,8 +31,7 @@ const router = createRouter({
   ],
 })
 
-let registrationChecked = false
-let isRegistered = false
+let onboardingDone = false
 let authDone = false
 
 router.beforeEach(async (to) => {
@@ -42,23 +41,18 @@ router.beforeEach(async (to) => {
     authDone = true
   }
 
-  if (!registrationChecked) {
-    try {
-      const status = await api.getRegistrationStatus()
-      isRegistered = status.is_registered
-    } catch {
-      isRegistered = false
-    }
-    registrationChecked = true
+  // Always show onboarding first when app opens
+  if (!onboardingDone && to.name !== 'onboarding') {
+    return { name: 'onboarding' }
   }
-  if (isRegistered && to.name === 'onboarding') return { name: 'today' }
-  if (!isRegistered && to.name !== 'onboarding') return { name: 'onboarding' }
+  if (onboardingDone && to.name === 'onboarding') {
+    return { name: 'today' }
+  }
   return true
 })
 
 export function markRegistered() {
-  isRegistered = true
-  registrationChecked = true
+  onboardingDone = true
 }
 
 export default router
