@@ -1,32 +1,34 @@
 <template>
   <div class="welcome-slide">
-    <div class="welcome-emoji animate-bounce-in">💪</div>
-    <h1 class="animate-fade-up">Привет! Я Андрей 👋</h1>
-    <p class="subtitle animate-fade-up delay-1">Твой персональный тренер</p>
+    <div class="welcome-emoji animate-bounce-in">🏥</div>
+    <h1 class="animate-fade-up">Тренер-Реабилитолог</h1>
+    <p class="subtitle animate-fade-up delay-1">Помогу восстановить здоровье и избавиться от боли</p>
 
     <div class="features">
       <div class="feature animate-fade-up delay-2">
         <span class="feature-icon">🏥</span>
         <div>
-          <strong>ЛФК</strong>
-          <p>Упражнения при проблемах со здоровьем</p>
+          <strong>ЛФК-программы</strong>
+          <p>Персональные курсы при грыжах, протрузиях, сколиозе</p>
         </div>
       </div>
       <div class="feature animate-fade-up delay-3">
-        <span class="feature-icon">💪</span>
+        <span class="feature-icon">📋</span>
         <div>
-          <strong>Тренировки</strong>
-          <p>Программы по группам мышц</p>
+          <strong>Безопасные упражнения</strong>
+          <p>Подобраны под твой диагноз и уровень боли</p>
         </div>
       </div>
       <div class="feature animate-fade-up delay-4">
-        <span class="feature-icon">🥗</span>
+        <span class="feature-icon">📈</span>
         <div>
-          <strong>Питание</strong>
-          <p>Рецепты и планы питания</p>
+          <strong>Отслеживание прогресса</strong>
+          <p>Контроль самочувствия на каждом занятии</p>
         </div>
       </div>
     </div>
+
+    <p class="cta animate-fade-up delay-4">Жми НАЧАТЬ 👇</p>
   </div>
 </template>
 
@@ -83,6 +85,18 @@ h1 {
   font-size: 13px;
   color: var(--hint-color);
   margin: 0;
+}
+
+.cta {
+  margin-top: 24px;
+  font-size: 15px;
+  color: var(--hint-color);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
 }
 
 .animate-bounce-in {

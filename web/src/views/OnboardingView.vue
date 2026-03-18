@@ -1,27 +1,29 @@
 <template>
   <div class="onboarding">
-    <!-- Progress dots -->
-    <div class="progress-dots" v-if="currentSlide > 0 && currentSlide < totalSlides">
+    <!-- Progress dots (slides 1-3, hidden on welcome=0 and success=4) -->
+    <div class="progress-dots" v-if="currentSlide > 0 && currentSlide < 4">
       <span
-        v-for="i in totalSlides"
+        v-for="i in 3"
         :key="i"
         class="dot"
-        :class="{ active: i - 1 <= currentSlide, current: i - 1 === currentSlide }"
+        :class="{ active: i <= currentSlide, current: i === currentSlide }"
       ></span>
     </div>
 
     <!-- Slides -->
     <Transition :name="slideDirection" mode="out-in">
       <WelcomeSlide v-if="currentSlide === 0" :key="0" />
-      <AgeSlide v-else-if="currentSlide === 1" :key="1" v-model="formData.age" />
-      <HeightSlide v-else-if="currentSlide === 2" :key="2" v-model="formData.heightCm" />
-      <WeightSlide v-else-if="currentSlide === 3" :key="3" v-model="formData.weightKg" />
-      <GenderSlide v-else-if="currentSlide === 4" :key="4" v-model="formData.gender" />
-      <FitnessSlide v-else-if="currentSlide === 5" :key="5" v-model="formData.fitnessLevel" />
-      <GoalsSlide v-else-if="currentSlide === 6" :key="6" v-model="formData.goals" />
+      <AboutYouSlide
+        v-else-if="currentSlide === 1"
+        :key="1"
+        :gender="formData.gender"
+        :age="formData.age"
+        @update:gender="formData.gender = $event"
+        @update:age="formData.age = Number($event)"
+      />
       <HealthSlide
-        v-else-if="currentSlide === 7"
-        :key="7"
+        v-else-if="currentSlide === 2"
+        :key="2"
         :painLocations="formData.painLocations"
         :painLevel="formData.painLevel"
         :diagnoses="formData.diagnoses"
@@ -29,23 +31,19 @@
         @update:painLevel="formData.painLevel = $event"
         @update:diagnoses="formData.diagnoses = $event"
       />
-      <ScheduleSlide
-        v-else-if="currentSlide === 8"
-        :key="8"
-        :trainingAccess="formData.trainingAccess"
-        :daysPerWeek="formData.daysPerWeek"
-        :sessionDuration="formData.sessionDuration"
-        :preferredTime="formData.preferredTime"
-        :equipment="formData.equipment"
-        @update:trainingAccess="formData.trainingAccess = $event"
-        @update:daysPerWeek="formData.daysPerWeek = $event"
-        @update:sessionDuration="formData.sessionDuration = $event"
-        @update:preferredTime="formData.preferredTime = $event"
-        @update:equipment="formData.equipment = $event"
+      <BodyFitnessSlide
+        v-else-if="currentSlide === 3"
+        :key="3"
+        :heightCm="formData.heightCm"
+        :weightKg="formData.weightKg"
+        :fitnessLevel="formData.fitnessLevel"
+        @update:heightCm="formData.heightCm = Number($event)"
+        @update:weightKg="formData.weightKg = Number($event)"
+        @update:fitnessLevel="formData.fitnessLevel = $event"
       />
       <SuccessSlide
-        v-else-if="currentSlide === 9"
-        :key="9"
+        v-else-if="currentSlide === 4"
+        :key="4"
         :age="formData.age"
         :heightCm="formData.heightCm"
         :weightKg="formData.weightKg"
@@ -64,20 +62,14 @@ import { markRegistered } from '../router'
 import { useTelegram } from '../composables/useTelegram'
 
 import WelcomeSlide from './onboarding/WelcomeSlide.vue'
-import AgeSlide from './onboarding/AgeSlide.vue'
-import HeightSlide from './onboarding/HeightSlide.vue'
-import WeightSlide from './onboarding/WeightSlide.vue'
-import GenderSlide from './onboarding/GenderSlide.vue'
-import FitnessSlide from './onboarding/FitnessSlide.vue'
-import GoalsSlide from './onboarding/GoalsSlide.vue'
+import AboutYouSlide from './onboarding/AboutYouSlide.vue'
 import HealthSlide from './onboarding/HealthSlide.vue'
-import ScheduleSlide from './onboarding/ScheduleSlide.vue'
+import BodyFitnessSlide from './onboarding/BodyFitnessSlide.vue'
 import SuccessSlide from './onboarding/SuccessSlide.vue'
 
 const router = useRouter()
 const { hapticImpact, hapticNotification, showMainButton, hideMainButton, showBackButton, hideBackButton } = useTelegram()
 
-const totalSlides = 9 // slides 1-8 (excluding welcome=0 and success=9)
 const currentSlide = ref(0)
 const slideDirection = ref('slide-left')
 const error = ref('')
@@ -88,13 +80,12 @@ const formData = reactive({
   heightCm: 170,
   weightKg: 70,
   gender: '',
-  fitnessLevel: '',
-  goals: [] as string[],
+  fitnessLevel: 'beginner',
   // Health
   painLocations: [] as string[],
   painLevel: 0,
   diagnoses: [] as string[],
-  // Schedule
+  // Defaults for removed fields
   trainingAccess: 'home',
   daysPerWeek: 3,
   sessionDuration: 35,
@@ -103,22 +94,17 @@ const formData = reactive({
 })
 
 const mainButtonLabels = [
-  'Начать',        // 0: welcome
-  'Далее',         // 1: age
-  'Далее',         // 2: height
-  'Далее',         // 3: weight
-  'Далее',         // 4: gender
-  'Далее',         // 5: fitness
-  'Далее',         // 6: goals
-  'Далее',         // 7: health
-  'Готово ✨',     // 8: schedule
-  'К тренировкам 💪', // 9: success
+  'Начать',            // 0: welcome
+  'Далее',             // 1: about you
+  'Далее',             // 2: health
+  'Готово',            // 3: body & fitness
+  'К ЛФК-курсам 💪',  // 4: success
 ]
 
 function canProceed(): boolean {
   switch (currentSlide.value) {
-    case 4: return formData.gender !== ''
-    case 5: return formData.fitnessLevel !== ''
+    case 1: return formData.gender !== ''
+    case 3: return formData.fitnessLevel !== ''
     default: return true
   }
 }
@@ -126,19 +112,19 @@ function canProceed(): boolean {
 function next() {
   if (!canProceed()) {
     hapticNotification('error')
-    if (currentSlide.value === 4) error.value = 'Выбери пол'
-    else if (currentSlide.value === 5) error.value = 'Выбери уровень'
+    if (currentSlide.value === 1) error.value = 'Выбери пол'
+    else if (currentSlide.value === 3) error.value = 'Выбери уровень'
     return
   }
   error.value = ''
   hapticImpact('light')
 
-  if (currentSlide.value === 8) {
+  if (currentSlide.value === 3) {
     submitRegistration()
     return
   }
 
-  if (currentSlide.value === 9) {
+  if (currentSlide.value === 4) {
     router.replace('/')
     return
   }
@@ -148,7 +134,7 @@ function next() {
 }
 
 function back() {
-  if (currentSlide.value > 0 && currentSlide.value < 9) {
+  if (currentSlide.value > 0 && currentSlide.value < 4) {
     error.value = ''
     slideDirection.value = 'slide-right'
     currentSlide.value--
@@ -161,6 +147,10 @@ async function submitRegistration() {
   submitting.value = true
   error.value = ''
 
+  // Auto-derive goals from diagnoses
+  const validGoals = ['hernia', 'protrusion', 'scoliosis', 'kyphosis', 'lordosis']
+  const autoGoals = formData.diagnoses.filter(d => validGoals.includes(d))
+
   try {
     await api.register({
       age: formData.age,
@@ -168,7 +158,7 @@ async function submitRegistration() {
       weight_kg: formData.weightKg,
       gender: formData.gender as 'male' | 'female',
       fitness_level: formData.fitnessLevel as 'beginner' | 'intermediate' | 'advanced',
-      goals: formData.goals,
+      goals: autoGoals,
       training_access: formData.trainingAccess,
       has_pain: formData.painLocations.length > 0,
       pain_locations: formData.painLocations,
@@ -181,16 +171,9 @@ async function submitRegistration() {
     })
     markRegistered()
     slideDirection.value = 'slide-left'
-    currentSlide.value = 9
+    currentSlide.value = 4
   } catch (e: any) {
-    const tg = window.Telegram?.WebApp
-    const initLen = tg?.initData?.length ?? -1
-    const platform = tg?.platform ?? 'none'
-    const version = tg?.version ?? 'none'
-    const hash = window.location.hash?.length ?? 0
-    const href = window.location.href
-    const uid = (tg as any)?.initDataUnsafe?.user?.id ?? 'no-user'
-    error.value = `${e.message} [init:${initLen}, p:${platform}, v:${version}, hash:${hash}, uid:${uid}, url:${href}]`
+    error.value = e.message
     hapticNotification('error')
   } finally {
     submitting.value = false
@@ -203,7 +186,7 @@ const backRef = back
 
 function updateButtons() {
   showMainButton(mainButtonLabels[currentSlide.value], nextRef)
-  if (currentSlide.value > 0 && currentSlide.value < 9) {
+  if (currentSlide.value > 0 && currentSlide.value < 4) {
     showBackButton(backRef)
   } else {
     hideBackButton()
@@ -221,8 +204,7 @@ onMounted(async () => {
       formData.heightCm = profile.height_cm || 170
       formData.weightKg = profile.weight_kg || 70
       formData.gender = profile.gender || ''
-      formData.fitnessLevel = profile.fitness_level || ''
-      formData.goals = profile.goals || []
+      formData.fitnessLevel = profile.fitness_level || 'beginner'
       formData.painLocations = profile.pain_locations || []
       formData.painLevel = profile.pain_level || 0
       formData.diagnoses = profile.diagnoses || []

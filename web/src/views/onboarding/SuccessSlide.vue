@@ -2,9 +2,9 @@
   <div class="success-slide">
     <ConfettiCanvas :active="showConfetti" />
     <div class="success-emoji animate-bounce-in">🎉</div>
-    <h1 class="animate-fade-up delay-1">Отлично, ты готов!</h1>
+    <h1 class="animate-fade-up delay-1">Готово! Курс ЛФК подобран</h1>
     <p class="subtitle animate-fade-up delay-2">
-      Андрей подберёт тебе персональную программу тренировок и питания
+      Персональная программа реабилитации на основе твоих данных
     </p>
     <div class="summary animate-fade-up delay-3">
       <div class="summary-item">🎂 {{ age }} лет</div>

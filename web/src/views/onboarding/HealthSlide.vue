@@ -1,10 +1,10 @@
 <template>
   <div class="health-slide">
-    <h2 class="animate-fade-up">Здоровье и ограничения 🏥</h2>
-    <p class="subtitle animate-fade-up delay-1">Это поможет подобрать безопасный план</p>
+    <h2 class="animate-fade-up">Что тебя беспокоит? 🏥</h2>
+    <p class="subtitle animate-fade-up delay-1">Это поможет подобрать курс ЛФК</p>
 
     <div class="section animate-fade-up delay-2">
-      <div class="section-label">Есть ли боли?</div>
+      <div class="section-label">Где болит?</div>
       <div class="chips">
         <div
           v-for="loc in painOptions"
@@ -35,7 +35,7 @@
     </div>
 
     <div class="section animate-fade-up delay-3">
-      <div class="section-label">Диагнозы</div>
+      <div class="section-label">Есть ли диагноз?</div>
       <div class="chips">
         <div
           v-for="d in diagnosisOptions"
@@ -50,7 +50,7 @@
     </div>
 
     <div class="disclaimer animate-fade-up delay-3">
-      Приложение не заменяет врача. При острой боли обратитесь к специалисту.
+      ⚠️ Приложение не заменяет врача. При острой боли обратитесь к специалисту.
     </div>
   </div>
 </template>
@@ -73,10 +73,11 @@ const emit = defineEmits<{
 const { hapticSelection } = useTelegram()
 
 const painOptions = [
+  { value: 'back', label: 'Спина' },
+  { value: 'lower_back', label: 'Поясница' },
+  { value: 'neck', label: 'Шея' },
   { value: 'shoulder', label: 'Плечо' },
   { value: 'knee', label: 'Колено' },
-  { value: 'back', label: 'Спина' },
-  { value: 'neck', label: 'Шея' },
   { value: 'other', label: 'Другое' },
 ]
 
@@ -84,6 +85,7 @@ const diagnosisOptions = [
   { value: 'hernia', label: 'Грыжа' },
   { value: 'protrusion', label: 'Протрузия' },
   { value: 'scoliosis', label: 'Сколиоз' },
+  { value: 'osteochondrosis', label: 'Остеохондроз' },
   { value: 'kyphosis', label: 'Кифоз' },
   { value: 'lordosis', label: 'Лордоз' },
   { value: 'other', label: 'Другое' },
