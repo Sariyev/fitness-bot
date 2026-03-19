@@ -1,8 +1,8 @@
 <template>
   <div class="welcome-slide">
-    <div class="welcome-emoji animate-bounce-in">🏥</div>
-    <h1 class="animate-fade-up">Тренер-Реабилитолог</h1>
-    <p class="subtitle animate-fade-up delay-1">Помогу восстановить здоровье и избавиться от боли</p>
+    <div class="welcome-emoji animate-bounce-in">👋</div>
+    <h1 class="animate-fade-up">Привет! Я Андрей</h1>
+    <p class="subtitle animate-fade-up delay-1">Тренер-реабилитолог. Помогу восстановить здоровье и избавиться от боли</p>
 
     <div class="features">
       <div class="feature animate-fade-up delay-2">
@@ -20,10 +20,10 @@
         </div>
       </div>
       <div class="feature animate-fade-up delay-4">
-        <span class="feature-icon">📈</span>
+        <span class="feature-icon">💪</span>
         <div>
-          <strong>Отслеживание прогресса</strong>
-          <p>Контроль самочувствия на каждом занятии</p>
+          <strong>Тренировки</strong>
+          <p>Фитнес-программы для поддержания формы и здоровья</p>
         </div>
       </div>
     </div>
@@ -88,9 +88,10 @@ h1 {
 }
 
 .cta {
-  margin-top: 24px;
-  font-size: 15px;
-  color: var(--hint-color);
+  margin-top: 28px;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--button-color);
   animation: pulse 2s ease-in-out infinite;
 }
 
