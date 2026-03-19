@@ -1,9 +1,9 @@
 <template>
   <div class="onboarding">
-    <!-- Progress dots (slides 1-3, hidden on welcome=0 and success=4) -->
-    <div class="progress-dots" v-if="currentSlide > 0 && currentSlide < 4">
+    <!-- Progress dots (slides 1-2, hidden on welcome=0 and success=3) -->
+    <div class="progress-dots" v-if="currentSlide > 0 && currentSlide < 3">
       <span
-        v-for="i in 3"
+        v-for="i in 2"
         :key="i"
         class="dot"
         :class="{ active: i <= currentSlide, current: i === currentSlide }"
@@ -13,37 +13,21 @@
     <!-- Slides -->
     <Transition :name="slideDirection" mode="out-in">
       <WelcomeSlide v-if="currentSlide === 0" :key="0" />
-      <AboutYouSlide
+      <GoalChoiceSlide
         v-else-if="currentSlide === 1"
         :key="1"
-        :gender="formData.gender"
-        :age="formData.age"
-        @update:gender="formData.gender = $event"
-        @update:age="formData.age = Number($event)"
+        :modelValue="formData.programType"
+        @update:modelValue="formData.programType = $event"
       />
-      <HealthSlide
+      <FitnessLevelSlide
         v-else-if="currentSlide === 2"
         :key="2"
-        :painLocations="formData.painLocations"
-        :painLevel="formData.painLevel"
-        :diagnoses="formData.diagnoses"
-        @update:painLocations="formData.painLocations = $event"
-        @update:painLevel="formData.painLevel = $event"
-        @update:diagnoses="formData.diagnoses = $event"
-      />
-      <BodyFitnessSlide
-        v-else-if="currentSlide === 3"
-        :key="3"
-        :heightCm="formData.heightCm"
-        :weightKg="formData.weightKg"
-        :fitnessLevel="formData.fitnessLevel"
-        @update:heightCm="formData.heightCm = Number($event)"
-        @update:weightKg="formData.weightKg = Number($event)"
-        @update:fitnessLevel="formData.fitnessLevel = $event"
+        :modelValue="formData.fitnessLevel"
+        @update:modelValue="formData.fitnessLevel = $event"
       />
       <SuccessSlide
-        v-else-if="currentSlide === 4"
-        :key="4"
+        v-else-if="currentSlide === 3"
+        :key="3"
         :age="formData.age"
         :heightCm="formData.heightCm"
         :weightKg="formData.weightKg"
@@ -62,9 +46,8 @@ import { markRegistered } from '../router'
 import { useTelegram } from '../composables/useTelegram'
 
 import WelcomeSlide from './onboarding/WelcomeSlide.vue'
-import AboutYouSlide from './onboarding/AboutYouSlide.vue'
-import HealthSlide from './onboarding/HealthSlide.vue'
-import BodyFitnessSlide from './onboarding/BodyFitnessSlide.vue'
+import GoalChoiceSlide from './onboarding/GoalChoiceSlide.vue'
+import FitnessLevelSlide from './onboarding/FitnessLevelSlide.vue'
 import SuccessSlide from './onboarding/SuccessSlide.vue'
 
 const router = useRouter()
@@ -76,35 +59,34 @@ const error = ref('')
 const submitting = ref(false)
 
 const formData = reactive({
+  programType: '',
+  fitnessLevel: '',
+  // Defaults for fields not asked
   age: 25,
   heightCm: 170,
   weightKg: 70,
-  gender: '',
-  fitnessLevel: 'beginner',
-  // Health
-  painLocations: [] as string[],
-  painLevel: 0,
-  diagnoses: [] as string[],
-  // Defaults for removed fields
+  gender: 'male' as string,
   trainingAccess: 'home',
   daysPerWeek: 3,
   sessionDuration: 35,
   preferredTime: 'evening',
+  painLocations: [] as string[],
+  painLevel: 0,
+  diagnoses: [] as string[],
   equipment: [] as string[],
 })
 
 const mainButtonLabels = [
   'Начать',            // 0: welcome
-  'Далее',             // 1: about you
-  'Далее',             // 2: health
-  'Готово',            // 3: body & fitness
-  'К ЛФК-курсам 💪',  // 4: success
+  'Далее',             // 1: goal choice
+  'Готово',            // 2: fitness level → submit
+  'Поехали! 💪',      // 3: success
 ]
 
 function canProceed(): boolean {
   switch (currentSlide.value) {
-    case 1: return formData.gender !== ''
-    case 3: return formData.fitnessLevel !== ''
+    case 1: return formData.programType !== ''
+    case 2: return formData.fitnessLevel !== ''
     default: return true
   }
 }
@@ -112,19 +94,19 @@ function canProceed(): boolean {
 function next() {
   if (!canProceed()) {
     hapticNotification('error')
-    if (currentSlide.value === 1) error.value = 'Выбери пол'
-    else if (currentSlide.value === 3) error.value = 'Выбери уровень'
+    if (currentSlide.value === 1) error.value = 'Выбери направление'
+    else if (currentSlide.value === 2) error.value = 'Выбери уровень'
     return
   }
   error.value = ''
   hapticImpact('light')
 
-  if (currentSlide.value === 3) {
+  if (currentSlide.value === 2) {
     submitRegistration()
     return
   }
 
-  if (currentSlide.value === 4) {
+  if (currentSlide.value === 3) {
     router.replace('/')
     return
   }
@@ -134,7 +116,7 @@ function next() {
 }
 
 function back() {
-  if (currentSlide.value > 0 && currentSlide.value < 4) {
+  if (currentSlide.value > 0 && currentSlide.value < 3) {
     error.value = ''
     slideDirection.value = 'slide-right'
     currentSlide.value--
@@ -147,9 +129,8 @@ async function submitRegistration() {
   submitting.value = true
   error.value = ''
 
-  // Auto-derive goals from diagnoses
-  const validGoals = ['hernia', 'protrusion', 'scoliosis', 'kyphosis', 'lordosis']
-  const autoGoals = formData.diagnoses.filter(d => validGoals.includes(d))
+  // Build goals from programType
+  const goals = [formData.programType]
 
   try {
     await api.register({
@@ -158,7 +139,7 @@ async function submitRegistration() {
       weight_kg: formData.weightKg,
       gender: formData.gender as 'male' | 'female',
       fitness_level: formData.fitnessLevel as 'beginner' | 'intermediate' | 'advanced',
-      goals: autoGoals,
+      goals,
       training_access: formData.trainingAccess,
       has_pain: formData.painLocations.length > 0,
       pain_locations: formData.painLocations,
@@ -171,7 +152,7 @@ async function submitRegistration() {
     })
     markRegistered()
     slideDirection.value = 'slide-left'
-    currentSlide.value = 4
+    currentSlide.value = 3
   } catch (e: any) {
     error.value = e.message
     hapticNotification('error')
@@ -186,7 +167,7 @@ const backRef = back
 
 function updateButtons() {
   showMainButton(mainButtonLabels[currentSlide.value], nextRef)
-  if (currentSlide.value > 0 && currentSlide.value < 4) {
+  if (currentSlide.value > 0 && currentSlide.value < 3) {
     showBackButton(backRef)
   } else {
     hideBackButton()
@@ -196,25 +177,28 @@ function updateButtons() {
 watch(currentSlide, updateButtons)
 
 onMounted(async () => {
-  // Pre-fill form with existing profile data for returning users
+  // Pre-fill from existing profile
   try {
     const profile = await api.getProfile()
     if (profile) {
+      formData.fitnessLevel = profile.fitness_level || ''
       formData.age = profile.age || 25
       formData.heightCm = profile.height_cm || 170
       formData.weightKg = profile.weight_kg || 70
-      formData.gender = profile.gender || ''
-      formData.fitnessLevel = profile.fitness_level || 'beginner'
-      formData.painLocations = profile.pain_locations || []
-      formData.painLevel = profile.pain_level || 0
-      formData.diagnoses = profile.diagnoses || []
+      formData.gender = profile.gender || 'male'
       formData.trainingAccess = profile.training_access || 'home'
       formData.daysPerWeek = profile.days_per_week || 3
       formData.sessionDuration = profile.session_duration || 35
       formData.preferredTime = profile.preferred_time || 'evening'
+      formData.painLocations = profile.pain_locations || []
+      formData.painLevel = profile.pain_level || 0
+      formData.diagnoses = profile.diagnoses || []
+      // Derive programType from goals if available
+      if (profile.goals?.includes('lfk')) formData.programType = 'lfk'
+      else if (profile.goals?.includes('training')) formData.programType = 'training'
     }
   } catch {
-    // No profile yet — use defaults
+    // No profile yet
   }
   updateButtons()
 })
