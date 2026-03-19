@@ -44,6 +44,7 @@ var validGoals = map[string]bool{
 	"weight_loss": true, "muscle_gain": true, "strength": true,
 	"endurance": true, "maintenance": true, "hernia": true,
 	"protrusion": true, "scoliosis": true, "kyphosis": true, "lordosis": true,
+	"lfk": true, "training": true,
 }
 
 var validFitness = map[string]bool{
