@@ -2,9 +2,9 @@
   <div class="success-slide">
     <ConfettiCanvas :active="showConfetti" />
     <div class="success-emoji animate-bounce-in">🎉</div>
-    <h1 class="animate-fade-up delay-1">Готово! Курс ЛФК подобран</h1>
+    <h1 class="animate-fade-up delay-1">{{ programType === 'lfk' ? 'Готово! Курс ЛФК подобран' : 'Готово! Программа подобрана' }}</h1>
     <p class="subtitle animate-fade-up delay-2">
-      Персональная программа реабилитации на основе твоих данных
+      {{ programType === 'lfk' ? 'Персональная программа реабилитации на основе твоих данных' : 'Персональная программа тренировок на основе твоих данных' }}
     </p>
     <div class="summary animate-fade-up delay-3">
       <div class="summary-item">🎂 {{ age }} лет</div>
@@ -23,6 +23,7 @@ defineProps<{
   age: number
   heightCm: number
   weightKg: number
+  programType: string
 }>()
 
 const { hapticNotification } = useTelegram()

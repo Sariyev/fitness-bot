@@ -31,6 +31,7 @@
         :age="formData.age"
         :heightCm="formData.heightCm"
         :weightKg="formData.weightKg"
+        :programType="formData.programType"
       />
     </Transition>
 
