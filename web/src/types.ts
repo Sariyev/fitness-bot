@@ -69,7 +69,8 @@ export interface PaymentStatus {
 
 export interface PaymentResult {
   success: boolean
-  message: string
+  message?: string
+  redirect_url?: string
 }
 
 // ====== USER & REGISTRATION ======

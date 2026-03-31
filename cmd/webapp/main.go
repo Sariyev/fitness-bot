@@ -47,7 +47,26 @@ func main() {
 	// Services
 	userSvc := service.NewUserService(userRepo)
 	moduleSvc := service.NewModuleService(moduleRepo)
-	paymentProvider := payment.NewDummyProvider()
+
+	// Payment provider: Robokassa if configured, otherwise Dummy
+	var paymentProvider payment.Provider
+	var verifier payment.CallbackVerifier
+	if cfg.RobokassaMerchantLogin != "" {
+		roboCfg := payment.RobokassaConfig{
+			MerchantLogin: cfg.RobokassaMerchantLogin,
+			Password1:     cfg.RobokassaPassword1,
+			Password2:     cfg.RobokassaPassword2,
+			IsTest:        cfg.RobokassaIsTest,
+		}
+		rp := payment.NewRobokassaProvider(roboCfg, paymentRepo)
+		paymentProvider = rp
+		verifier = rp
+		log.Println("Payment provider: Robokassa (test:", cfg.RobokassaIsTest, ")")
+	} else {
+		paymentProvider = payment.NewDummyProvider()
+		log.Println("Payment provider: Dummy (instant)")
+	}
+
 	paymentSvc := service.NewPaymentService(paymentRepo, userRepo, paymentProvider, 5000)
 	workoutSvc := service.NewWorkoutService(programRepo, workoutRepo, exerciseRepo, completionRepo)
 	rehabSvc := service.NewRehabService(rehabRepo)
@@ -69,6 +88,8 @@ func main() {
 		dashboardSvc,
 		recommendSvc,
 		"./static",
+		verifier,
+		cfg.WebAppURL,
 	)
 
 	log.Printf("WebApp server listening on :%s", cfg.WebAppPort)

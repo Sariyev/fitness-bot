@@ -25,6 +25,19 @@ func (r *userRepo) Create(ctx context.Context, user *models.User) error {
 	).Scan(&user.ID, &user.IsPaid, &user.CreatedAt, &user.UpdatedAt)
 }
 
+func (r *userRepo) GetByID(ctx context.Context, id int64) (*models.User, error) {
+	u := &models.User{}
+	err := r.pool.QueryRow(ctx,
+		`SELECT id, telegram_id, username, first_name, last_name, language_code, is_registered, is_paid, created_at, updated_at
+		 FROM users WHERE id = $1`, id,
+	).Scan(&u.ID, &u.TelegramID, &u.Username, &u.FirstName, &u.LastName,
+		&u.LanguageCode, &u.IsRegistered, &u.IsPaid, &u.CreatedAt, &u.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return u, nil
+}
+
 func (r *userRepo) GetByTelegramID(ctx context.Context, telegramID int64) (*models.User, error) {
 	u := &models.User{}
 	err := r.pool.QueryRow(ctx,

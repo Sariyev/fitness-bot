@@ -43,3 +43,13 @@ func (r *paymentRepo) GetPaymentByID(ctx context.Context, id int64) (*models.Pay
 	}
 	return p, nil
 }
+
+func (r *paymentRepo) CreatePendingPayment(ctx context.Context, userID int64, amountKZT int, provider string) (int64, error) {
+	var id int64
+	err := r.pool.QueryRow(ctx,
+		`INSERT INTO payments (user_id, amount_kzt, status, provider)
+		 VALUES ($1, $2, 'pending', $3) RETURNING id`,
+		userID, amountKZT, provider,
+	).Scan(&id)
+	return id, err
+}

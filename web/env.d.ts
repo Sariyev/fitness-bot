@@ -25,6 +25,7 @@ interface TelegramWebApp {
   ready(): void
   expand(): void
   close(): void
+  openLink(url: string): void
   MainButton: {
     text: string
     color: string

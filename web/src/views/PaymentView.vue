@@ -38,10 +38,18 @@
           </div>
         </div>
 
-        <!-- Step 3: Processing -->
+        <!-- Step 3: Processing (instant providers) -->
         <div v-else-if="step === 'processing'" key="processing" class="processing-card">
           <div class="spinner"></div>
           <p>Обработка платежа... ⏳</p>
+        </div>
+
+        <!-- Step 3b: Waiting for Robokassa -->
+        <div v-else-if="step === 'waiting'" key="waiting" class="processing-card">
+          <div class="spinner"></div>
+          <h2>Завершите оплату</h2>
+          <p>Окно оплаты открыто. После завершения вернитесь сюда.</p>
+          <button class="btn btn-secondary" style="margin-top: 16px" @click="cancelWaiting">Отмена</button>
         </div>
 
         <!-- Step 4: Success -->
@@ -67,20 +75,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted, onUnmounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { api } from '../api'
 import { useTelegram } from '../composables/useTelegram'
 import SkeletonCard from '../components/SkeletonCard.vue'
 import ConfettiCanvas from '../components/ConfettiCanvas.vue'
 
 const router = useRouter()
+const route = useRoute()
 const { hapticImpact, hapticNotification } = useTelegram()
 const loading = ref(true)
 const paid = ref(false)
-const step = ref<'product' | 'confirm' | 'processing' | 'success' | 'error'>('product')
+const step = ref<'product' | 'confirm' | 'processing' | 'waiting' | 'success' | 'error'>('product')
 const errorMsg = ref('')
 const showConfetti = ref(false)
+let pollTimer: ReturnType<typeof setInterval> | null = null
 
 onMounted(async () => {
   try {
@@ -91,6 +101,21 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
+
+  // Handle redirect back from Robokassa
+  const queryStatus = route.query.status as string
+  if (queryStatus === 'success' && !paid.value) {
+    step.value = 'waiting'
+    startPolling()
+  } else if (queryStatus === 'fail') {
+    errorMsg.value = 'Оплата отменена или не прошла'
+    step.value = 'error'
+    hapticNotification('error')
+  }
+})
+
+onUnmounted(() => {
+  stopPolling()
 })
 
 function goToConfirm() {
@@ -108,7 +133,13 @@ async function pay() {
   step.value = 'processing'
   try {
     const result = await api.processPayment()
-    if (result.success) {
+    if (result.redirect_url) {
+      // Async provider (Robokassa) — open payment page and start polling
+      step.value = 'waiting'
+      window.Telegram?.WebApp?.openLink(result.redirect_url)
+      startPolling()
+    } else if (result.success) {
+      // Sync provider (Dummy) — payment completed instantly
       step.value = 'success'
       paid.value = true
       showConfetti.value = true
@@ -123,6 +154,36 @@ async function pay() {
     step.value = 'error'
     hapticNotification('error')
   }
+}
+
+function startPolling() {
+  stopPolling()
+  pollTimer = setInterval(async () => {
+    try {
+      const status = await api.getPaymentStatus()
+      if (status.is_paid) {
+        stopPolling()
+        paid.value = true
+        step.value = 'success'
+        showConfetti.value = true
+        hapticNotification('success')
+      }
+    } catch {
+      // Ignore polling errors, keep trying
+    }
+  }, 3000)
+}
+
+function stopPolling() {
+  if (pollTimer) {
+    clearInterval(pollTimer)
+    pollTimer = null
+  }
+}
+
+function cancelWaiting() {
+  stopPolling()
+  goToProduct()
 }
 
 function goToModules() {

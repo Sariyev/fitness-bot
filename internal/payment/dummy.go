@@ -16,5 +16,6 @@ func (d *DummyProvider) CreatePayment(_ context.Context, userID int64, amountKZT
 	return &PaymentResult{
 		ProviderTxID: fmt.Sprintf("dummy_%d_%d", userID, time.Now().UnixNano()),
 		Status:       "completed",
+		RedirectURL:  "",
 	}, nil
 }

@@ -20,6 +20,12 @@ type Config struct {
 	AdminAPIKey   string
 	WebAppPort    string
 	WebAppURL     string
+
+	// Robokassa
+	RobokassaMerchantLogin string
+	RobokassaPassword1     string
+	RobokassaPassword2     string
+	RobokassaIsTest        bool
 }
 
 func Load() *Config {
@@ -38,6 +44,11 @@ func Load() *Config {
 		AdminAPIKey:   getEnv("ADMIN_API_KEY", ""),
 		WebAppPort:    getEnv("WEBAPP_PORT", "8081"),
 		WebAppURL:     getEnv("WEBAPP_URL", ""),
+
+		RobokassaMerchantLogin: getEnv("ROBOKASSA_MERCHANT_LOGIN", ""),
+		RobokassaPassword1:     getEnv("ROBOKASSA_PASSWORD1", ""),
+		RobokassaPassword2:     getEnv("ROBOKASSA_PASSWORD2", ""),
+		RobokassaIsTest:        getEnv("ROBOKASSA_IS_TEST", "true") == "true",
 	}
 }
 

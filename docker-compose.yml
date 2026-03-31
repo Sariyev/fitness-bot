@@ -73,12 +73,17 @@ services:
     environment:
       WEBAPP_PORT: 8081
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      WEBAPP_URL: ${WEBAPP_URL:-}
       DB_HOST: db
       DB_PORT: 5432
       DB_USER: fitbot
       DB_PASSWORD: fitbot_password
       DB_NAME: fitness_bot
       DB_SSLMODE: disable
+      ROBOKASSA_MERCHANT_LOGIN: ${ROBOKASSA_MERCHANT_LOGIN:-}
+      ROBOKASSA_PASSWORD1: ${ROBOKASSA_PASSWORD1:-}
+      ROBOKASSA_PASSWORD2: ${ROBOKASSA_PASSWORD2:-}
+      ROBOKASSA_IS_TEST: ${ROBOKASSA_IS_TEST:-true}
 
 volumes:
   postgres_data:

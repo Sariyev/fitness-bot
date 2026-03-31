@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"fitness-bot/internal/payment"
 	"fitness-bot/internal/service"
 )
 
@@ -24,6 +25,8 @@ type WebAppRouter struct {
 	recommendSvc *service.RecommendationService
 	botToken     string
 	staticDir    string
+	verifier     payment.CallbackVerifier
+	webAppURL    string
 }
 
 func NewRouter(
@@ -38,6 +41,8 @@ func NewRouter(
 	dashboardSvc *service.DashboardService,
 	recommendSvc *service.RecommendationService,
 	staticDir string,
+	verifier payment.CallbackVerifier,
+	webAppURL string,
 ) *WebAppRouter {
 	r := &WebAppRouter{
 		mux:          http.NewServeMux(),
@@ -52,6 +57,8 @@ func NewRouter(
 		recommendSvc: recommendSvc,
 		botToken:     botToken,
 		staticDir:    staticDir,
+		verifier:     verifier,
+		webAppURL:    webAppURL,
 	}
 
 	r.setupRoutes()
@@ -77,7 +84,7 @@ func (r *WebAppRouter) setupRoutes() {
 
 	moduleHandler := NewModuleHandler(r.moduleSvc)
 	progressHandler := NewProgressHandler(r.moduleSvc)
-	paymentHandler := NewPaymentHandler(r.paymentSvc)
+	paymentHandler := NewPaymentHandler(r.paymentSvc, r.verifier, r.webAppURL)
 	profileHandler := NewProfileHandler(r.userSvc)
 	registrationHandler := NewRegistrationHandler(r.userSvc, r.recommendSvc)
 	dashboardHandler := NewDashboardHandler(r.dashboardSvc)
@@ -104,6 +111,11 @@ func (r *WebAppRouter) setupRoutes() {
 	r.mux.Handle("/app/api/subscription/status", auth(http.HandlerFunc(moduleHandler.PaymentStatus)))
 	r.mux.Handle("/app/api/payment/status", auth(http.HandlerFunc(paymentHandler.Status)))
 	r.mux.Handle("/app/api/payment/pay", auth(http.HandlerFunc(paymentHandler.Pay)))
+
+	// Robokassa callbacks (unauthenticated — called by Robokassa servers and browser redirects)
+	r.mux.HandleFunc("/app/api/payment/robokassa/result", paymentHandler.RobokassaResult)
+	r.mux.HandleFunc("/app/api/payment/robokassa/success", paymentHandler.RobokassaSuccess)
+	r.mux.HandleFunc("/app/api/payment/robokassa/fail", paymentHandler.RobokassaFail)
 	r.mux.Handle("/app/api/profile", auth(http.HandlerFunc(profileHandler.HandleProfile)))
 	r.mux.Handle("/app/api/register", auth(http.HandlerFunc(registrationHandler.Register)))
 	r.mux.Handle("/app/api/registration/status", auth(http.HandlerFunc(registrationHandler.Status)))

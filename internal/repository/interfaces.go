@@ -7,6 +7,7 @@ import (
 
 type UserRepository interface {
 	Create(ctx context.Context, user *models.User) error
+	GetByID(ctx context.Context, id int64) (*models.User, error)
 	GetByTelegramID(ctx context.Context, telegramID int64) (*models.User, error)
 	Update(ctx context.Context, user *models.User) error
 	CreateProfile(ctx context.Context, profile *models.UserProfile) error
@@ -49,6 +50,7 @@ type PaymentRepository interface {
 	CreatePayment(ctx context.Context, p *models.Payment) error
 	UpdatePayment(ctx context.Context, p *models.Payment) error
 	GetPaymentByID(ctx context.Context, id int64) (*models.Payment, error)
+	CreatePendingPayment(ctx context.Context, userID int64, amountKZT int, provider string) (int64, error)
 }
 
 type ModuleRepository interface {
