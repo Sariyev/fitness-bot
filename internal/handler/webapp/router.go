@@ -23,6 +23,7 @@ type WebAppRouter struct {
 	progressSvc  *service.ProgressService
 	dashboardSvc *service.DashboardService
 	recommendSvc *service.RecommendationService
+	scoreSvc     *service.ScoreService
 	botToken     string
 	staticDir    string
 	verifier     payment.CallbackVerifier
@@ -40,6 +41,7 @@ func NewRouter(
 	progressSvc *service.ProgressService,
 	dashboardSvc *service.DashboardService,
 	recommendSvc *service.RecommendationService,
+	scoreSvc *service.ScoreService,
 	staticDir string,
 	verifier payment.CallbackVerifier,
 	webAppURL string,
@@ -55,6 +57,7 @@ func NewRouter(
 		progressSvc:  progressSvc,
 		dashboardSvc: dashboardSvc,
 		recommendSvc: recommendSvc,
+		scoreSvc:     scoreSvc,
 		botToken:     botToken,
 		staticDir:    staticDir,
 		verifier:     verifier,
@@ -92,6 +95,7 @@ func (r *WebAppRouter) setupRoutes() {
 	rehabHandler := NewRehabHandler(r.rehabSvc)
 	nutritionHandler := NewNutritionHandler(r.nutritionSvc)
 	progressV2Handler := NewProgressV2Handler(r.progressSvc)
+	reviewHandler := NewReviewHandler(r.scoreSvc)
 
 	// Auth — exchanges initData for a session token
 	r.mux.HandleFunc("/app/api/auth", AuthHandler(r.botToken, r.userSvc))
@@ -149,6 +153,10 @@ func (r *WebAppRouter) setupRoutes() {
 	r.mux.Handle("/app/api/progress", auth(http.HandlerFunc(progressV2Handler.HandleProgressRoutes)))
 	r.mux.Handle("/app/api/progress/stats", auth(http.HandlerFunc(progressV2Handler.HandleProgressStats)))
 	r.mux.Handle("/app/api/progress/achievements", auth(http.HandlerFunc(progressV2Handler.HandleProgressAchievements)))
+
+	// Reviews
+	r.mux.Handle("/app/api/reviews", auth(http.HandlerFunc(reviewHandler.HandleReviewRoutes)))
+	r.mux.Handle("/app/api/reviews/", auth(http.HandlerFunc(reviewHandler.HandleReviewRoutes)))
 
 	// SPA serving - serve static files, fallback to index.html
 	r.mux.HandleFunc("/", r.serveSPA)

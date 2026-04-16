@@ -90,6 +90,9 @@ type ScoreRepository interface {
 	Create(ctx context.Context, s *models.UserScore) error
 	GetByReference(ctx context.Context, userID int64, refType string, refID int) (*models.UserScore, error)
 	ListByUser(ctx context.Context, userID int64) ([]models.UserScore, error)
+	ListByReference(ctx context.Context, refType string, refID int) ([]models.UserScore, error)
+	GetSummary(ctx context.Context, refType string, refID int) (*models.ReviewSummary, error)
+	GetBotSummary(ctx context.Context) (*models.ReviewSummary, error)
 }
 
 type ProgramRepository interface {

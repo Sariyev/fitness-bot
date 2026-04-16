@@ -40,8 +40,9 @@ const (
 	StateModChooseLesson   = "mod:choose_lesson"
 	StateModViewLesson     = "mod:view_lesson"
 
-	// Score collection
+	// Score / review collection
 	StateScoreAwaitRating  = "score:await_rating"
+	StateScoreAwaitTags    = "score:await_tags"
 	StateScoreAwaitComment = "score:await_comment"
 )
 
@@ -85,8 +86,10 @@ type ModuleBrowseData struct {
 }
 
 type ScoreFlowData struct {
-	ScoreType     string `json:"score_type"`
-	ReferenceType string `json:"reference_type"`
-	ReferenceID   int    `json:"reference_id"`
-	Score         int    `json:"score,omitempty"`
+	ScoreType     string   `json:"score_type"`
+	ReferenceType string   `json:"reference_type"`
+	ReferenceID   int      `json:"reference_id"`
+	Score         int      `json:"score,omitempty"`
+	Tags          []string `json:"tags,omitempty"`
+	TagMsgID      int      `json:"tag_msg_id,omitempty"`
 }

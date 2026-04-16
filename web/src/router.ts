@@ -28,6 +28,7 @@ const router = createRouter({
     { path: '/module/:id', name: 'categories', component: () => import('./views/CategoriesView.vue'), props: true, meta: { hideNav: true } },
     { path: '/category/:id', name: 'lessons', component: () => import('./views/LessonsView.vue'), props: true, meta: { hideNav: true } },
     { path: '/lesson/:id', name: 'lesson', component: () => import('./views/LessonView.vue'), props: true, meta: { hideNav: true } },
+    { path: '/review', name: 'review', component: () => import('./views/ReviewView.vue'), meta: { hideNav: true } },
   ],
 })
 

@@ -17,6 +17,9 @@ func NewScoreService(repo repository.ScoreRepository) *ScoreService {
 }
 
 func (s *ScoreService) SaveScore(ctx context.Context, score *models.UserScore) error {
+	if score.Tags == nil {
+		score.Tags = []string{}
+	}
 	return s.repo.Create(ctx, score)
 }
 
@@ -33,4 +36,16 @@ func (s *ScoreService) HasScored(ctx context.Context, userID int64, refType stri
 
 func (s *ScoreService) ListByUser(ctx context.Context, userID int64) ([]models.UserScore, error) {
 	return s.repo.ListByUser(ctx, userID)
+}
+
+func (s *ScoreService) ListByReference(ctx context.Context, refType string, refID int) ([]models.UserScore, error) {
+	return s.repo.ListByReference(ctx, refType, refID)
+}
+
+func (s *ScoreService) GetSummary(ctx context.Context, refType string, refID int) (*models.ReviewSummary, error) {
+	return s.repo.GetSummary(ctx, refType, refID)
+}
+
+func (s *ScoreService) GetBotSummary(ctx context.Context) (*models.ReviewSummary, error) {
+	return s.repo.GetBotSummary(ctx)
 }

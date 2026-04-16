@@ -34,6 +34,7 @@ func main() {
 	userRepo := repository.NewUserRepo(db.Pool)
 	moduleRepo := repository.NewModuleRepo(db.Pool)
 	paymentRepo := repository.NewPaymentRepo(db.Pool)
+	scoreRepo := repository.NewScoreRepo(db.Pool)
 	programRepo := repository.NewProgramRepo(db.Pool)
 	workoutRepo := repository.NewWorkoutRepo(db.Pool)
 	exerciseRepo := repository.NewExerciseRepo(db.Pool)
@@ -67,6 +68,7 @@ func main() {
 		log.Println("Payment provider: Dummy (instant)")
 	}
 
+	scoreSvc := service.NewScoreService(scoreRepo)
 	paymentSvc := service.NewPaymentService(paymentRepo, userRepo, paymentProvider, 5000)
 	workoutSvc := service.NewWorkoutService(programRepo, workoutRepo, exerciseRepo, completionRepo)
 	rehabSvc := service.NewRehabService(rehabRepo)
@@ -87,6 +89,7 @@ func main() {
 		progressSvc,
 		dashboardSvc,
 		recommendSvc,
+		scoreSvc,
 		"./static",
 		verifier,
 		cfg.WebAppURL,

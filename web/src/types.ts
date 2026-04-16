@@ -378,3 +378,37 @@ export interface UserAchievement {
   achievement_id: number
   earned_at: string
 }
+
+// ====== REVIEWS ======
+
+export interface Review {
+  id: number
+  user_id: number
+  score_type: string
+  reference_type: string
+  reference_id: number
+  score: number
+  comment: string
+  tags: string[]
+  created_at: string
+}
+
+export interface CreateReviewRequest {
+  reference_type: string
+  reference_id: number
+  score: number
+  comment?: string
+  tags?: string[]
+}
+
+export interface ReviewSummary {
+  reference_type: string
+  reference_id: number
+  average_score: number
+  total_reviews: number
+}
+
+export interface ReviewTagsResponse {
+  reference_type: string
+  tags: string[]
+}

@@ -64,6 +64,7 @@ func (h *ProfileHandler) HandleHelp(bot *tgbotapi.BotAPI, chatID int64) {
 		"/app — Открыть приложение\n" +
 		"/buy — Оплатить доступ\n" +
 		"/profile — Мой профиль\n" +
+		"/review — Оставить отзыв о боте\n" +
 		"/help — Эта справка"
 
 	msg := tgbotapi.NewMessage(chatID, text)

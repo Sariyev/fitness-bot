@@ -31,6 +31,10 @@ import type {
   WeightPoint,
   Achievement,
   UserAchievement,
+  Review,
+  CreateReviewRequest,
+  ReviewSummary,
+  ReviewTagsResponse,
 } from './types'
 
 function getInitData(): string {
@@ -260,5 +264,28 @@ export const api = {
   // ====== ACHIEVEMENTS ======
   getAchievements(): Promise<{ achievements: Achievement[]; user_achievements: UserAchievement[] }> {
     return request('/app/api/progress/achievements')
+  },
+
+  // ====== REVIEWS ======
+  createReview(data: CreateReviewRequest): Promise<Review> {
+    return request('/app/api/reviews', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  },
+  getReviews(referenceType: string, referenceId: number): Promise<Review[]> {
+    return request(`/app/api/reviews?reference_type=${referenceType}&reference_id=${referenceId}`)
+  },
+  getMyReviews(): Promise<Review[]> {
+    return request('/app/api/reviews/my')
+  },
+  getReviewSummary(referenceType: string, referenceId: number): Promise<ReviewSummary> {
+    return request(`/app/api/reviews/summary?reference_type=${referenceType}&reference_id=${referenceId}`)
+  },
+  getBotReviewSummary(): Promise<ReviewSummary> {
+    return request('/app/api/reviews/bot/summary')
+  },
+  getReviewTags(referenceType: string): Promise<ReviewTagsResponse> {
+    return request(`/app/api/reviews/tags?reference_type=${referenceType}`)
   },
 }

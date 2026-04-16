@@ -115,6 +115,11 @@ func (r *Router) handleCommand(ctx context.Context, bot *tgbotapi.BotAPI, msg *t
 			return
 		}
 		r.handleWebApp(bot, msg.Chat.ID)
+	case "review":
+		if !r.requireRegistration(bot, msg.Chat.ID, user) {
+			return
+		}
+		r.scoreHandler.StartBotReview(ctx, bot, msg.Chat.ID, user)
 	default:
 		send(bot, msg.Chat.ID, "Неизвестная команда. Используйте /help для списка команд.")
 	}
@@ -199,10 +204,14 @@ func (r *Router) handleCallback(ctx context.Context, bot *tgbotapi.BotAPI, cb *t
 	case strings.HasPrefix(data, "pay:"):
 		r.payHandler.HandleCallback(ctx, bot, chatID, user, data)
 
-	// Score callbacks
+	// Score / review callbacks
 	case strings.HasPrefix(data, "score:"):
 		r.scoreHandler.HandleCallback(ctx, bot, chatID, user, data)
 	case data == "score_skip":
+		r.scoreHandler.HandleCallback(ctx, bot, chatID, user, data)
+	case strings.HasPrefix(data, "tag:"):
+		r.scoreHandler.HandleCallback(ctx, bot, chatID, user, data)
+	case data == "tags_done":
 		r.scoreHandler.HandleCallback(ctx, bot, chatID, user, data)
 	}
 }
@@ -287,6 +296,7 @@ func (r *Router) handleStart(ctx context.Context, bot *tgbotapi.BotAPI, msg *tgb
 		"/app — Открыть приложение\n" +
 		"/buy — Оплатить доступ\n" +
 		"/profile — Мой профиль\n" +
+		"/review — Оставить отзыв\n" +
 		"/help — Помощь"
 	send(bot, msg.Chat.ID, text)
 }
