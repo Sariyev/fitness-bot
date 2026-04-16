@@ -35,6 +35,7 @@ import type {
   CreateReviewRequest,
   ReviewSummary,
   ReviewTagsResponse,
+  AdminUser,
 } from './types'
 
 function getInitData(): string {
@@ -42,6 +43,7 @@ function getInitData(): string {
 }
 
 let authToken: string | null = null
+let userRole: string | null = null
 
 function getAuthHeaders(): Record<string, string> {
   if (authToken) {
@@ -89,6 +91,7 @@ async function authenticate(): Promise<void> {
     if (res.ok) {
       const data = await res.json()
       authToken = data.token
+      userRole = data.role || 'client'
     }
   } catch {
     // Auth failed silently — requests will fall back to initData
@@ -287,5 +290,34 @@ export const api = {
   },
   getReviewTags(referenceType: string): Promise<ReviewTagsResponse> {
     return request(`/app/api/reviews/tags?reference_type=${referenceType}`)
+  },
+
+  // ====== ADMIN ======
+  isAdmin(): boolean {
+    return userRole === 'admin'
+  },
+  getAdminUsers(limit = 20, offset = 0): Promise<{ users: AdminUser[]; total: number }> {
+    return request(`/app/api/admin/users?limit=${limit}&offset=${offset}`)
+  },
+  getAdminUser(id: number): Promise<{ user: AdminUser; profile: UserProfile | null }> {
+    return request(`/app/api/admin/users/${id}`)
+  },
+  updateAdminUser(id: number, data: { role?: string; is_paid?: boolean }): Promise<{ success: boolean }> {
+    return request(`/app/api/admin/users/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+  },
+  getAdminPrograms(): Promise<Program[]> {
+    return request('/app/api/admin/programs')
+  },
+  getAdminWorkouts(): Promise<Workout[]> {
+    return request('/app/api/admin/workouts')
+  },
+  getAdminReviewsSummary(): Promise<ReviewSummary> {
+    return request('/app/api/admin/reviews')
+  },
+  getAdminStats(): Promise<{ total_users: number }> {
+    return request('/app/api/admin/stats')
   },
 }

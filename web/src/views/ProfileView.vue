@@ -159,6 +159,9 @@
       <button v-if="!editing && !profile.is_paid" class="btn btn-primary" @click="router.push('/payment')">
         Оплатить доступ
       </button>
+      <button v-if="!editing && profile.role === 'admin'" class="btn btn-primary" @click="router.push('/admin')">
+        Админ панель
+      </button>
       <button v-if="!editing" class="btn btn-secondary" @click="router.push('/')">
         На главную
       </button>

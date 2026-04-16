@@ -100,6 +100,18 @@ func (s *UserService) UpdateProfile(ctx context.Context, profile *models.UserPro
 	return s.repo.UpdateProfile(ctx, profile)
 }
 
+func (s *UserService) ListUsers(ctx context.Context, limit, offset int) ([]models.User, int, error) {
+	return s.repo.ListAll(ctx, limit, offset)
+}
+
+func (s *UserService) GetUserByID(ctx context.Context, id int64) (*models.User, error) {
+	return s.repo.GetByID(ctx, id)
+}
+
+func (s *UserService) UpdateUser(ctx context.Context, user *models.User) error {
+	return s.repo.Update(ctx, user)
+}
+
 func (s *UserService) UpdateProfileFromData(ctx context.Context, userID int64, data models.RegistrationData) error {
 	profile, err := s.repo.GetProfileByUserID(ctx, userID)
 	if err != nil {

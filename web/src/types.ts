@@ -413,3 +413,19 @@ export interface ReviewTagsResponse {
   reference_type: string
   tags: string[]
 }
+
+// ====== ADMIN ======
+
+export interface AdminUser {
+  id: number
+  telegram_id: number
+  username: string
+  first_name: string
+  last_name: string
+  language_code: string
+  role: string
+  is_registered: boolean
+  is_paid: boolean
+  created_at: string
+  updated_at: string
+}

@@ -10,6 +10,7 @@ type UserRepository interface {
 	GetByID(ctx context.Context, id int64) (*models.User, error)
 	GetByTelegramID(ctx context.Context, telegramID int64) (*models.User, error)
 	Update(ctx context.Context, user *models.User) error
+	ListAll(ctx context.Context, limit, offset int) ([]models.User, int, error)
 	CreateProfile(ctx context.Context, profile *models.UserProfile) error
 	GetProfileByUserID(ctx context.Context, userID int64) (*models.UserProfile, error)
 	UpdateProfile(ctx context.Context, profile *models.UserProfile) error

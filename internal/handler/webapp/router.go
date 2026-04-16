@@ -158,6 +158,18 @@ func (r *WebAppRouter) setupRoutes() {
 	r.mux.Handle("/app/api/reviews", auth(http.HandlerFunc(reviewHandler.HandleReviewRoutes)))
 	r.mux.Handle("/app/api/reviews/", auth(http.HandlerFunc(reviewHandler.HandleReviewRoutes)))
 
+	// Admin routes (authenticated + admin role required)
+	adminHandler := NewAdminHandler(r.userSvc, r.workoutSvc, r.scoreSvc)
+	adminAuth := func(h http.Handler) http.Handler {
+		return auth(AdminMiddleware(h))
+	}
+	r.mux.Handle("/app/api/admin/users", adminAuth(http.HandlerFunc(adminHandler.HandleUserRoutes)))
+	r.mux.Handle("/app/api/admin/users/", adminAuth(http.HandlerFunc(adminHandler.HandleUserRoutes)))
+	r.mux.Handle("/app/api/admin/programs", adminAuth(http.HandlerFunc(adminHandler.ListPrograms)))
+	r.mux.Handle("/app/api/admin/workouts", adminAuth(http.HandlerFunc(adminHandler.ListWorkouts)))
+	r.mux.Handle("/app/api/admin/reviews", adminAuth(http.HandlerFunc(adminHandler.GetReviewsSummary)))
+	r.mux.Handle("/app/api/admin/stats", adminAuth(http.HandlerFunc(adminHandler.GetStats)))
+
 	// SPA serving - serve static files, fallback to index.html
 	r.mux.HandleFunc("/", r.serveSPA)
 }

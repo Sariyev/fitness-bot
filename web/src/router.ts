@@ -29,6 +29,12 @@ const router = createRouter({
     { path: '/category/:id', name: 'lessons', component: () => import('./views/LessonsView.vue'), props: true, meta: { hideNav: true } },
     { path: '/lesson/:id', name: 'lesson', component: () => import('./views/LessonView.vue'), props: true, meta: { hideNav: true } },
     { path: '/review', name: 'review', component: () => import('./views/ReviewView.vue'), meta: { hideNav: true } },
+    // Admin routes
+    { path: '/admin', name: 'admin', component: () => import('./views/admin/AdminDashboardView.vue'), meta: { hideNav: true, requiresAdmin: true } },
+    { path: '/admin/users', name: 'admin-users', component: () => import('./views/admin/AdminUsersView.vue'), meta: { hideNav: true, requiresAdmin: true } },
+    { path: '/admin/users/:id', name: 'admin-user-detail', component: () => import('./views/admin/AdminUserDetailView.vue'), props: true, meta: { hideNav: true, requiresAdmin: true } },
+    { path: '/admin/content', name: 'admin-content', component: () => import('./views/admin/AdminContentView.vue'), meta: { hideNav: true, requiresAdmin: true } },
+    { path: '/admin/reviews', name: 'admin-reviews', component: () => import('./views/admin/AdminReviewsView.vue'), meta: { hideNav: true, requiresAdmin: true } },
   ],
 })
 
@@ -40,6 +46,11 @@ router.beforeEach(async (to) => {
   if (!authDone) {
     await api.authenticate()
     authDone = true
+  }
+
+  // Admin route guard
+  if (to.meta.requiresAdmin && !api.isAdmin()) {
+    return { name: 'today' }
   }
 
   // Always show onboarding first when app opens

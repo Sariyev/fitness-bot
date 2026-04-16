@@ -123,7 +123,7 @@ func AuthHandler(botToken string, userSvc *service.UserService) http.HandlerFunc
 		}
 
 		// Ensure user exists
-		_, err = userSvc.GetOrCreateUser(
+		user, err := userSvc.GetOrCreateUser(
 			r.Context(),
 			parsed.User.ID,
 			parsed.User.Username,
@@ -145,6 +145,7 @@ func AuthHandler(botToken string, userSvc *service.UserService) http.HandlerFunc
 		jsonResponse(w, http.StatusOK, map[string]interface{}{
 			"token":      token,
 			"expires_in": int(tokenTTL.Seconds()),
+			"role":       user.Role,
 		})
 	}
 }
@@ -199,4 +200,15 @@ func AuthMiddleware(botToken string, userSvc *service.UserService) func(http.Han
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
+}
+
+func AdminMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user := UserFromContext(r.Context())
+		if user == nil || !user.IsAdmin() {
+			jsonError(w, http.StatusForbidden, "admin access required")
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }

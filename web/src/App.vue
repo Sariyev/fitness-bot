@@ -95,6 +95,11 @@ const routeDepth: Record<string, number> = {
   categories: 2,
   lessons: 3,
   lesson: 4,
+  admin: 2,
+  'admin-users': 3,
+  'admin-user-detail': 4,
+  'admin-content': 3,
+  'admin-reviews': 3,
 }
 
 watch(

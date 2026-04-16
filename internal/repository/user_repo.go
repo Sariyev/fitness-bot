@@ -63,6 +63,34 @@ func (r *userRepo) Update(ctx context.Context, user *models.User) error {
 	return err
 }
 
+func (r *userRepo) ListAll(ctx context.Context, limit, offset int) ([]models.User, int, error) {
+	var total int
+	err := r.pool.QueryRow(ctx, `SELECT COUNT(*) FROM users`).Scan(&total)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	rows, err := r.pool.Query(ctx,
+		`SELECT id, telegram_id, username, first_name, last_name, language_code,
+				is_registered, is_paid, role, created_at, updated_at
+		 FROM users ORDER BY created_at DESC LIMIT $1 OFFSET $2`, limit, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var users []models.User
+	for rows.Next() {
+		var u models.User
+		if err := rows.Scan(&u.ID, &u.TelegramID, &u.Username, &u.FirstName, &u.LastName,
+			&u.LanguageCode, &u.IsRegistered, &u.IsPaid, &u.Role, &u.CreatedAt, &u.UpdatedAt); err != nil {
+			return nil, 0, err
+		}
+		users = append(users, u)
+	}
+	return users, total, nil
+}
+
 func (r *userRepo) CreateProfile(ctx context.Context, p *models.UserProfile) error {
 	return r.pool.QueryRow(ctx,
 		`INSERT INTO user_profiles (
