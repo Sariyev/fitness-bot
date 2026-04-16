@@ -86,6 +86,7 @@ export interface UserProfile {
   fitness_level: string
   goals: string[]
   is_paid: boolean
+  role: string
   training_access?: string
   training_experience?: string
   has_pain?: boolean

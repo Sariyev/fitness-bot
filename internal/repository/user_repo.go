@@ -16,22 +16,25 @@ func NewUserRepo(pool *pgxpool.Pool) UserRepository {
 }
 
 func (r *userRepo) Create(ctx context.Context, user *models.User) error {
+	if user.Role == "" {
+		user.Role = models.RoleClient
+	}
 	return r.pool.QueryRow(ctx,
-		`INSERT INTO users (telegram_id, username, first_name, last_name, language_code, is_registered)
-		 VALUES ($1, $2, $3, $4, $5, $6)
+		`INSERT INTO users (telegram_id, username, first_name, last_name, language_code, is_registered, role)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7)
 		 ON CONFLICT (telegram_id) DO UPDATE SET username = EXCLUDED.username
-		 RETURNING id, is_paid, created_at, updated_at`,
-		user.TelegramID, user.Username, user.FirstName, user.LastName, user.LanguageCode, user.IsRegistered,
-	).Scan(&user.ID, &user.IsPaid, &user.CreatedAt, &user.UpdatedAt)
+		 RETURNING id, is_paid, role, created_at, updated_at`,
+		user.TelegramID, user.Username, user.FirstName, user.LastName, user.LanguageCode, user.IsRegistered, user.Role,
+	).Scan(&user.ID, &user.IsPaid, &user.Role, &user.CreatedAt, &user.UpdatedAt)
 }
 
 func (r *userRepo) GetByID(ctx context.Context, id int64) (*models.User, error) {
 	u := &models.User{}
 	err := r.pool.QueryRow(ctx,
-		`SELECT id, telegram_id, username, first_name, last_name, language_code, is_registered, is_paid, created_at, updated_at
+		`SELECT id, telegram_id, username, first_name, last_name, language_code, is_registered, is_paid, role, created_at, updated_at
 		 FROM users WHERE id = $1`, id,
 	).Scan(&u.ID, &u.TelegramID, &u.Username, &u.FirstName, &u.LastName,
-		&u.LanguageCode, &u.IsRegistered, &u.IsPaid, &u.CreatedAt, &u.UpdatedAt)
+		&u.LanguageCode, &u.IsRegistered, &u.IsPaid, &u.Role, &u.CreatedAt, &u.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -41,10 +44,10 @@ func (r *userRepo) GetByID(ctx context.Context, id int64) (*models.User, error) 
 func (r *userRepo) GetByTelegramID(ctx context.Context, telegramID int64) (*models.User, error) {
 	u := &models.User{}
 	err := r.pool.QueryRow(ctx,
-		`SELECT id, telegram_id, username, first_name, last_name, language_code, is_registered, is_paid, created_at, updated_at
+		`SELECT id, telegram_id, username, first_name, last_name, language_code, is_registered, is_paid, role, created_at, updated_at
 		 FROM users WHERE telegram_id = $1`, telegramID,
 	).Scan(&u.ID, &u.TelegramID, &u.Username, &u.FirstName, &u.LastName,
-		&u.LanguageCode, &u.IsRegistered, &u.IsPaid, &u.CreatedAt, &u.UpdatedAt)
+		&u.LanguageCode, &u.IsRegistered, &u.IsPaid, &u.Role, &u.CreatedAt, &u.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -53,9 +56,9 @@ func (r *userRepo) GetByTelegramID(ctx context.Context, telegramID int64) (*mode
 
 func (r *userRepo) Update(ctx context.Context, user *models.User) error {
 	_, err := r.pool.Exec(ctx,
-		`UPDATE users SET username=$2, first_name=$3, last_name=$4, is_registered=$5, is_paid=$6, updated_at=NOW()
+		`UPDATE users SET username=$2, first_name=$3, last_name=$4, is_registered=$5, is_paid=$6, role=$7, updated_at=NOW()
 		 WHERE id=$1`,
-		user.ID, user.Username, user.FirstName, user.LastName, user.IsRegistered, user.IsPaid,
+		user.ID, user.Username, user.FirstName, user.LastName, user.IsRegistered, user.IsPaid, user.Role,
 	)
 	return err
 }

@@ -58,6 +58,7 @@ func (h *ProfileHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 		"fitness_level":       profile.FitnessLevel,
 		"goals":               goals,
 		"is_paid":             user.IsPaid,
+		"role":                user.Role,
 		"training_access":     profile.TrainingAccess,
 		"training_experience": profile.TrainingExperience,
 		"has_pain":            profile.HasPain,

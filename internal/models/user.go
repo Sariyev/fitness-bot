@@ -2,6 +2,11 @@ package models
 
 import "time"
 
+const (
+	RoleClient = "client"
+	RoleAdmin  = "admin"
+)
+
 type User struct {
 	ID           int64     `json:"id"`
 	TelegramID   int64     `json:"telegram_id"`
@@ -9,10 +14,15 @@ type User struct {
 	FirstName    string    `json:"first_name"`
 	LastName     string    `json:"last_name"`
 	LanguageCode string    `json:"language_code"`
+	Role         string    `json:"role"`
 	IsRegistered bool      `json:"is_registered"`
 	IsPaid       bool      `json:"is_paid"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
+}
+
+func (u *User) IsAdmin() bool {
+	return u.Role == RoleAdmin
 }
 
 type UserProfile struct {
