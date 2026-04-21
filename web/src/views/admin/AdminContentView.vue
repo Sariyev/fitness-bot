@@ -6,8 +6,11 @@
     <div v-if="loading" class="loading">Загрузка...</div>
 
     <div v-else>
-      <h2 class="section-title">Программы ({{ programs.length }})</h2>
-      <div v-for="p in programs" :key="p.id" class="content-card">
+      <div class="section-header">
+        <h2 class="section-title">Программы ({{ programs.length }})</h2>
+        <button class="add-btn" @click="router.push('/admin/programs/new')">+</button>
+      </div>
+      <div v-for="p in programs" :key="p.id" class="content-card" :class="{ inactive: !p.is_active }" @click="router.push(`/admin/programs/${p.id}`)">
         <div class="content-main">
           <span class="content-name">{{ p.name }}</span>
           <span class="content-meta">{{ p.level }} | {{ p.format }} | {{ p.duration_weeks }} нед.</span>
@@ -17,8 +20,11 @@
         </span>
       </div>
 
-      <h2 class="section-title">Тренировки ({{ workouts.length }})</h2>
-      <div v-for="w in workouts" :key="w.id" class="content-card">
+      <div class="section-header">
+        <h2 class="section-title">Тренировки ({{ workouts.length }})</h2>
+        <button class="add-btn" @click="router.push('/admin/workouts/new')">+</button>
+      </div>
+      <div v-for="w in workouts" :key="w.id" class="content-card" :class="{ inactive: !w.is_active }" @click="router.push(`/admin/workouts/${w.id}`)">
         <div class="content-main">
           <span class="content-name">{{ w.name }}</span>
           <span class="content-meta">{{ w.level }} | {{ w.duration_minutes }} мин</span>
@@ -26,6 +32,31 @@
         <span class="badge" :class="w.is_active ? 'badge-active' : 'badge-inactive'">
           {{ w.is_active ? 'Active' : 'Off' }}
         </span>
+      </div>
+
+      <div class="section-header">
+        <h2 class="section-title">Планы питания ({{ mealPlans.length }})</h2>
+        <button class="add-btn" @click="router.push('/admin/meal-plans/new')">+</button>
+      </div>
+      <div v-for="mp in mealPlans" :key="mp.id" class="content-card" :class="{ inactive: !mp.is_active }" @click="router.push(`/admin/meal-plans/${mp.id}`)">
+        <div class="content-main">
+          <span class="content-name">{{ mp.name }}</span>
+          <span class="content-meta">{{ mp.goal }} | День {{ mp.day_number }} | {{ mp.calories }} ккал</span>
+        </div>
+        <span class="badge" :class="mp.is_active ? 'badge-active' : 'badge-inactive'">
+          {{ mp.is_active ? 'Active' : 'Off' }}
+        </span>
+      </div>
+
+      <div class="section-header">
+        <h2 class="section-title">Упражнения</h2>
+      </div>
+      <div class="content-card" @click="router.push('/admin/exercises')">
+        <div class="content-main">
+          <span class="content-name">Управление упражнениями</span>
+          <span class="content-meta">Просмотр и редактирование базы упражнений</span>
+        </div>
+        <span class="arrow">→</span>
       </div>
     </div>
   </div>
@@ -35,21 +66,24 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '../../api'
-import type { Program, Workout } from '../../types'
+import type { Program, Workout, MealPlan } from '../../types'
 
 const router = useRouter()
 const programs = ref<Program[]>([])
 const workouts = ref<Workout[]>([])
+const mealPlans = ref<MealPlan[]>([])
 const loading = ref(true)
 
 onMounted(async () => {
   try {
-    const [p, w] = await Promise.all([
+    const [p, w, mp] = await Promise.all([
       api.getAdminPrograms(),
       api.getAdminWorkouts(),
+      api.getAdminMealPlans(),
     ])
     programs.value = p || []
     workouts.value = w || []
+    mealPlans.value = mp || []
   } catch {
     // ignore
   } finally {
@@ -87,11 +121,32 @@ onMounted(async () => {
   padding: 40px;
 }
 
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 16px 0 10px;
+}
+
 .section-title {
   font-size: 16px;
   font-weight: 600;
-  margin: 16px 0 10px;
   color: var(--hint-color);
+}
+
+.add-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: var(--button-color);
+  color: var(--button-text-color);
+  font-size: 20px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .content-card {
@@ -102,8 +157,17 @@ onMounted(async () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  cursor: pointer;
   opacity: 0;
   animation: fadeSlideUp 0.3s ease forwards;
+}
+
+.content-card.inactive {
+  opacity: 0;
+  animation: fadeSlideUp 0.3s ease forwards;
+}
+.content-card.inactive .content-name {
+  color: var(--hint-color);
 }
 
 .content-main {
@@ -127,6 +191,7 @@ onMounted(async () => {
   border-radius: 12px;
   font-size: 12px;
   font-weight: 500;
+  flex-shrink: 0;
 }
 
 .badge-active {
@@ -136,6 +201,11 @@ onMounted(async () => {
 
 .badge-inactive {
   background: rgba(0,0,0,0.08);
+  color: var(--hint-color);
+}
+
+.arrow {
+  font-size: 18px;
   color: var(--hint-color);
 }
 

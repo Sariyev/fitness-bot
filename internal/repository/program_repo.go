@@ -58,6 +58,28 @@ func (r *programRepo) ListPrograms(ctx context.Context, format, goal, level stri
 	return programs, nil
 }
 
+func (r *programRepo) ListAllPrograms(ctx context.Context) ([]models.Program, error) {
+	rows, err := r.pool.Query(ctx,
+		`SELECT id, slug, name, COALESCE(description,''), goal, format, level, duration_weeks,
+			is_active, sort_order, created_at, updated_at
+		 FROM programs ORDER BY sort_order`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	programs := []models.Program{}
+	for rows.Next() {
+		var p models.Program
+		if err := rows.Scan(&p.ID, &p.Slug, &p.Name, &p.Description, &p.Goal, &p.Format,
+			&p.Level, &p.DurationWeeks, &p.IsActive, &p.SortOrder, &p.CreatedAt, &p.UpdatedAt); err != nil {
+			return nil, err
+		}
+		programs = append(programs, p)
+	}
+	return programs, nil
+}
+
 func (r *programRepo) GetProgramByID(ctx context.Context, id int) (*models.Program, error) {
 	p := &models.Program{}
 	err := r.pool.QueryRow(ctx,

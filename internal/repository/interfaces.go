@@ -98,6 +98,7 @@ type ScoreRepository interface {
 
 type ProgramRepository interface {
 	ListPrograms(ctx context.Context, format, goal, level string) ([]models.Program, error)
+	ListAllPrograms(ctx context.Context) ([]models.Program, error)
 	GetProgramByID(ctx context.Context, id int) (*models.Program, error)
 	CreateProgram(ctx context.Context, p *models.Program) error
 	UpdateProgram(ctx context.Context, p *models.Program) error
@@ -108,6 +109,7 @@ type ProgramRepository interface {
 
 type WorkoutRepository interface {
 	ListWorkouts(ctx context.Context, format, goal, level string) ([]models.Workout, error)
+	ListAllWorkouts(ctx context.Context) ([]models.Workout, error)
 	GetWorkoutByID(ctx context.Context, id int) (*models.Workout, error)
 	ListByProgram(ctx context.Context, programID int) ([]models.Workout, error)
 	CreateWorkout(ctx context.Context, w *models.Workout) error
@@ -138,12 +140,14 @@ type RehabRepository interface {
 
 type NutritionRepository interface {
 	ListPlans(ctx context.Context, goal string) ([]models.MealPlan, error)
+	ListAllPlans(ctx context.Context) ([]models.MealPlan, error)
 	GetPlanByID(ctx context.Context, id int) (*models.MealPlan, error)
 	CreatePlan(ctx context.Context, p *models.MealPlan) error
 	UpdatePlan(ctx context.Context, p *models.MealPlan) error
 	ListMeals(ctx context.Context, planID int) ([]models.Meal, error)
 	CreateMeal(ctx context.Context, m *models.Meal) error
 	UpdateMeal(ctx context.Context, m *models.Meal) error
+	GetMealByID(ctx context.Context, id int) (*models.Meal, error)
 }
 
 type FoodLogRepository interface {

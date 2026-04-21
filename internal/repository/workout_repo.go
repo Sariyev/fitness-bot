@@ -61,6 +61,31 @@ func (r *workoutRepo) ListWorkouts(ctx context.Context, format, goal, level stri
 	return workouts, nil
 }
 
+func (r *workoutRepo) ListAllWorkouts(ctx context.Context) ([]models.Workout, error) {
+	rows, err := r.pool.Query(ctx,
+		`SELECT id, program_id, slug, name, COALESCE(description,''), COALESCE(goal,''), COALESCE(format,''), COALESCE(level,''),
+			COALESCE(duration_minutes,0), equipment, COALESCE(expected_result,''), COALESCE(video_url,''), sort_order,
+			week_number, day_number, is_active, created_at, updated_at
+		 FROM workouts ORDER BY sort_order`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	workouts := []models.Workout{}
+	for rows.Next() {
+		var w models.Workout
+		if err := rows.Scan(&w.ID, &w.ProgramID, &w.Slug, &w.Name, &w.Description,
+			&w.Goal, &w.Format, &w.Level, &w.DurationMinutes, &w.Equipment,
+			&w.ExpectedResult, &w.VideoURL, &w.SortOrder, &w.WeekNumber, &w.DayNumber,
+			&w.IsActive, &w.CreatedAt, &w.UpdatedAt); err != nil {
+			return nil, err
+		}
+		workouts = append(workouts, w)
+	}
+	return workouts, nil
+}
+
 func (r *workoutRepo) GetWorkoutByID(ctx context.Context, id int) (*models.Workout, error) {
 	w := &models.Workout{}
 	err := r.pool.QueryRow(ctx,

@@ -416,6 +416,25 @@ export interface ReviewTagsResponse {
 
 // ====== ADMIN ======
 
+export interface Exercise {
+  id: number
+  name: string
+  technique: string
+  common_mistakes: string
+  easier_modification: string
+  harder_modification: string
+  rest_seconds: number
+}
+
+export interface WorkoutExerciseLink {
+  workout_id: number
+  exercise_id: number
+  sets: number
+  reps: string
+  duration_seconds: number
+  sort_order: number
+}
+
 export interface AdminUser {
   id: number
   telegram_id: number

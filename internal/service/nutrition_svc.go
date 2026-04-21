@@ -105,6 +105,30 @@ func CalculateMacroTargets(gender string, weightKg float64, heightCm, age int, g
 	}
 }
 
+func (s *NutritionService) ListAllPlans(ctx context.Context) ([]models.MealPlan, error) {
+	return s.nutritionRepo.ListAllPlans(ctx)
+}
+
+func (s *NutritionService) CreatePlan(ctx context.Context, p *models.MealPlan) error {
+	return s.nutritionRepo.CreatePlan(ctx, p)
+}
+
+func (s *NutritionService) UpdatePlan(ctx context.Context, p *models.MealPlan) error {
+	return s.nutritionRepo.UpdatePlan(ctx, p)
+}
+
+func (s *NutritionService) CreateMeal(ctx context.Context, m *models.Meal) error {
+	return s.nutritionRepo.CreateMeal(ctx, m)
+}
+
+func (s *NutritionService) UpdateMeal(ctx context.Context, m *models.Meal) error {
+	return s.nutritionRepo.UpdateMeal(ctx, m)
+}
+
+func (s *NutritionService) GetMeal(ctx context.Context, id int) (*models.Meal, error) {
+	return s.nutritionRepo.GetMealByID(ctx, id)
+}
+
 func (s *NutritionService) GetFoodLog(ctx context.Context, userID int64, date string) ([]models.FoodLogEntry, error) {
 	return s.foodLogRepo.ListByDate(ctx, userID, date)
 }

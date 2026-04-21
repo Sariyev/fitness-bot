@@ -51,6 +51,29 @@ func (r *nutritionRepo) ListPlans(ctx context.Context, goal string) ([]models.Me
 	return plans, nil
 }
 
+func (r *nutritionRepo) ListAllPlans(ctx context.Context) ([]models.MealPlan, error) {
+	rows, err := r.pool.Query(ctx,
+		`SELECT id, slug, name, goal, day_number, COALESCE(calories,0), COALESCE(protein,0), COALESCE(fat,0), COALESCE(carbs,0),
+			is_active, sort_order, created_at, updated_at
+		 FROM meal_plans ORDER BY sort_order`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	plans := []models.MealPlan{}
+	for rows.Next() {
+		var p models.MealPlan
+		if err := rows.Scan(&p.ID, &p.Slug, &p.Name, &p.Goal, &p.DayNumber,
+			&p.Calories, &p.Protein, &p.Fat, &p.Carbs,
+			&p.IsActive, &p.SortOrder, &p.CreatedAt, &p.UpdatedAt); err != nil {
+			return nil, err
+		}
+		plans = append(plans, p)
+	}
+	return plans, nil
+}
+
 func (r *nutritionRepo) GetPlanByID(ctx context.Context, id int) (*models.MealPlan, error) {
 	p := &models.MealPlan{}
 	err := r.pool.QueryRow(ctx,
@@ -127,4 +150,20 @@ func (r *nutritionRepo) UpdateMeal(ctx context.Context, m *models.Meal) error {
 		m.ID, m.MealPlanID, m.MealType, m.Name, m.Recipe, m.Calories,
 		m.Protein, m.Fat, m.Carbs, m.Alternatives, m.SortOrder)
 	return err
+}
+
+func (r *nutritionRepo) GetMealByID(ctx context.Context, id int) (*models.Meal, error) {
+	m := &models.Meal{}
+	err := r.pool.QueryRow(ctx,
+		`SELECT id, meal_plan_id, meal_type, name, COALESCE(recipe,''), COALESCE(calories,0),
+			COALESCE(protein,0), COALESCE(fat,0), COALESCE(carbs,0),
+			COALESCE(alternatives,''), sort_order, created_at, updated_at
+		 FROM meals WHERE id = $1`, id,
+	).Scan(&m.ID, &m.MealPlanID, &m.MealType, &m.Name, &m.Recipe,
+		&m.Calories, &m.Protein, &m.Fat, &m.Carbs,
+		&m.Alternatives, &m.SortOrder, &m.CreatedAt, &m.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }

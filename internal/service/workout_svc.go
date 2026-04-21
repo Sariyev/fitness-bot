@@ -78,6 +78,50 @@ func (s *WorkoutService) GetWorkoutExercisesWithDetails(ctx context.Context, wor
 	return result, nil
 }
 
+func (s *WorkoutService) ListAllPrograms(ctx context.Context) ([]models.Program, error) {
+	return s.programRepo.ListAllPrograms(ctx)
+}
+
+func (s *WorkoutService) CreateProgram(ctx context.Context, p *models.Program) error {
+	return s.programRepo.CreateProgram(ctx, p)
+}
+
+func (s *WorkoutService) UpdateProgram(ctx context.Context, p *models.Program) error {
+	return s.programRepo.UpdateProgram(ctx, p)
+}
+
+func (s *WorkoutService) ListAllWorkouts(ctx context.Context) ([]models.Workout, error) {
+	return s.workoutRepo.ListAllWorkouts(ctx)
+}
+
+func (s *WorkoutService) CreateWorkout(ctx context.Context, w *models.Workout) error {
+	return s.workoutRepo.CreateWorkout(ctx, w)
+}
+
+func (s *WorkoutService) UpdateWorkout(ctx context.Context, w *models.Workout) error {
+	return s.workoutRepo.UpdateWorkout(ctx, w)
+}
+
+func (s *WorkoutService) ListExercises(ctx context.Context) ([]models.Exercise, error) {
+	return s.exerciseRepo.List(ctx)
+}
+
+func (s *WorkoutService) GetExercise(ctx context.Context, id int) (*models.Exercise, error) {
+	return s.exerciseRepo.GetByID(ctx, id)
+}
+
+func (s *WorkoutService) CreateExercise(ctx context.Context, e *models.Exercise) error {
+	return s.exerciseRepo.Create(ctx, e)
+}
+
+func (s *WorkoutService) UpdateExercise(ctx context.Context, e *models.Exercise) error {
+	return s.exerciseRepo.Update(ctx, e)
+}
+
+func (s *WorkoutService) AddExerciseToWorkout(ctx context.Context, we *models.WorkoutExercise) error {
+	return s.workoutRepo.AddExercise(ctx, we)
+}
+
 func (s *WorkoutService) CompleteWorkout(ctx context.Context, userID int64, workoutID int) error {
 	completion := &models.DailyCompletion{
 		UserID:     userID,

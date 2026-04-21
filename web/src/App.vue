@@ -99,6 +99,17 @@ const routeDepth: Record<string, number> = {
   'admin-users': 3,
   'admin-user-detail': 4,
   'admin-content': 3,
+  'admin-program-new': 4,
+  'admin-program-edit': 4,
+  'admin-workout-new': 4,
+  'admin-workout-edit': 4,
+  'admin-exercises': 3,
+  'admin-exercise-new': 4,
+  'admin-exercise-edit': 4,
+  'admin-mealplan-new': 4,
+  'admin-mealplan-edit': 4,
+  'admin-meal-new': 5,
+  'admin-meal-edit': 5,
   'admin-reviews': 3,
 }
 

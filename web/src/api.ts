@@ -14,12 +14,16 @@ import type {
   Program,
   Workout,
   WorkoutWithExercises,
+  WorkoutExercise,
+  Exercise,
+  WorkoutExerciseLink,
   RehabCourse,
   RehabCourseWithSessions,
   RehabSession,
   RehabProgress,
   CompleteRehabRequest,
   MealPlan,
+  Meal,
   MealPlanWithMeals,
   MacroTargets,
   FoodLogEntry,
@@ -308,12 +312,82 @@ export const api = {
       body: JSON.stringify(data),
     })
   },
+  // Admin Programs CRUD
   getAdminPrograms(): Promise<Program[]> {
     return request('/app/api/admin/programs')
   },
+  getAdminProgram(id: number): Promise<Program> {
+    return request(`/app/api/admin/programs/${id}`)
+  },
+  createAdminProgram(data: Partial<Program>): Promise<Program> {
+    return request('/app/api/admin/programs', { method: 'POST', body: JSON.stringify(data) })
+  },
+  updateAdminProgram(id: number, data: Partial<Program>): Promise<Program> {
+    return request(`/app/api/admin/programs/${id}`, { method: 'PUT', body: JSON.stringify(data) })
+  },
+
+  // Admin Workouts CRUD
   getAdminWorkouts(): Promise<Workout[]> {
     return request('/app/api/admin/workouts')
   },
+  getAdminWorkout(id: number): Promise<{ workout: Workout; exercises: WorkoutExercise[] }> {
+    return request(`/app/api/admin/workouts/${id}`)
+  },
+  createAdminWorkout(data: Partial<Workout>): Promise<Workout> {
+    return request('/app/api/admin/workouts', { method: 'POST', body: JSON.stringify(data) })
+  },
+  updateAdminWorkout(id: number, data: Partial<Workout>): Promise<Workout> {
+    return request(`/app/api/admin/workouts/${id}`, { method: 'PUT', body: JSON.stringify(data) })
+  },
+
+  // Admin Exercises CRUD
+  getAdminExercises(): Promise<Exercise[]> {
+    return request('/app/api/admin/exercises')
+  },
+  getAdminExercise(id: number): Promise<Exercise> {
+    return request(`/app/api/admin/exercises/${id}`)
+  },
+  createAdminExercise(data: Partial<Exercise>): Promise<Exercise> {
+    return request('/app/api/admin/exercises', { method: 'POST', body: JSON.stringify(data) })
+  },
+  updateAdminExercise(id: number, data: Partial<Exercise>): Promise<Exercise> {
+    return request(`/app/api/admin/exercises/${id}`, { method: 'PUT', body: JSON.stringify(data) })
+  },
+
+  // Admin Workout Exercises
+  addWorkoutExercise(data: WorkoutExerciseLink): Promise<WorkoutExerciseLink> {
+    return request('/app/api/admin/workout-exercises', { method: 'POST', body: JSON.stringify(data) })
+  },
+
+  // Admin Meal Plans CRUD
+  getAdminMealPlans(): Promise<MealPlan[]> {
+    return request('/app/api/admin/meal-plans')
+  },
+  getAdminMealPlan(id: number): Promise<{ plan: MealPlan; meals: Meal[] }> {
+    return request(`/app/api/admin/meal-plans/${id}`)
+  },
+  createAdminMealPlan(data: Partial<MealPlan>): Promise<MealPlan> {
+    return request('/app/api/admin/meal-plans', { method: 'POST', body: JSON.stringify(data) })
+  },
+  updateAdminMealPlan(id: number, data: Partial<MealPlan>): Promise<MealPlan> {
+    return request(`/app/api/admin/meal-plans/${id}`, { method: 'PUT', body: JSON.stringify(data) })
+  },
+
+  // Admin Meals CRUD
+  getAdminMeals(planId: number): Promise<Meal[]> {
+    return request(`/app/api/admin/meals?plan_id=${planId}`)
+  },
+  getAdminMeal(id: number): Promise<Meal> {
+    return request(`/app/api/admin/meals/${id}`)
+  },
+  createAdminMeal(data: Partial<Meal>): Promise<Meal> {
+    return request('/app/api/admin/meals', { method: 'POST', body: JSON.stringify(data) })
+  },
+  updateAdminMeal(id: number, data: Partial<Meal>): Promise<Meal> {
+    return request(`/app/api/admin/meals/${id}`, { method: 'PUT', body: JSON.stringify(data) })
+  },
+
+  // Admin Reviews & Stats
   getAdminReviewsSummary(): Promise<ReviewSummary> {
     return request('/app/api/admin/reviews')
   },
