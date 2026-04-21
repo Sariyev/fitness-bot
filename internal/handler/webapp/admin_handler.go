@@ -343,6 +343,9 @@ func (h *AdminHandler) createWorkout(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, http.StatusBadRequest, "name is required")
 		return
 	}
+	if req.Equipment == nil {
+		req.Equipment = []string{}
+	}
 
 	wo := &models.Workout{
 		ProgramID: req.ProgramID, Slug: req.Slug, Name: req.Name,
@@ -370,6 +373,9 @@ func (h *AdminHandler) updateWorkout(w http.ResponseWriter, r *http.Request, id 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonError(w, http.StatusBadRequest, "invalid request body")
 		return
+	}
+	if req.Equipment == nil {
+		req.Equipment = []string{}
 	}
 
 	wo.ProgramID = req.ProgramID

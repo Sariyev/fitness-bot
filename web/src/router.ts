@@ -55,7 +55,7 @@ let authDone = false
 router.beforeEach(async (to) => {
   // Authenticate once on app start — get session token
   if (!authDone) {
-    await api.authenticate()
+    try { await api.authenticate() } catch { /* continue without token */ }
     authDone = true
   }
 

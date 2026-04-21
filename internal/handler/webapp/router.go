@@ -216,6 +216,9 @@ func (r *WebAppRouter) serveSPA(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	// Prevent stale caching of index.html in Telegram WebView
+	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+	w.Header().Set("Pragma", "no-cache")
 	http.ServeFile(w, req, indexPath)
 }
 

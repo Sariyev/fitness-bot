@@ -115,8 +115,7 @@ onMounted(loadUsers)
   justify-content: space-between;
   align-items: center;
   cursor: pointer;
-  opacity: 0;
-  animation: fadeSlideUp 0.3s ease forwards;
+  animation: fadeSlideUp 0.3s ease both;
 }
 
 .user-info {

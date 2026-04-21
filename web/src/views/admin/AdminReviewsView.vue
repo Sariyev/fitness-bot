@@ -77,8 +77,7 @@ onMounted(async () => {
   border-radius: 12px;
   padding: 32px 20px;
   text-align: center;
-  opacity: 0;
-  animation: fadeSlideUp 0.35s ease forwards;
+  animation: fadeSlideUp 0.35s ease both;
 }
 
 .stars {
