@@ -85,8 +85,7 @@ onMounted(async () => {
   border-radius: 12px;
   padding: 20px 16px;
   text-align: center;
-  opacity: 0;
-  animation: fadeSlideUp 0.35s ease forwards;
+  animation: fadeSlideUp 0.35s ease both;
 }
 
 .stat-value {
@@ -120,8 +119,9 @@ onMounted(async () => {
   color: var(--text-color);
   font-size: 16px;
   font-weight: 500;
-  opacity: 0;
-  animation: fadeSlideUp 0.35s ease forwards;
+  animation: fadeSlideUp 0.35s ease both;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .nav-card:nth-child(1) { animation-delay: 80ms; }

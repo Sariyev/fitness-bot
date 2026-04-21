@@ -158,13 +158,12 @@ onMounted(async () => {
   justify-content: space-between;
   align-items: center;
   cursor: pointer;
-  opacity: 0;
-  animation: fadeSlideUp 0.3s ease forwards;
+  animation: fadeSlideUp 0.3s ease both;
+  touch-action: manipulation;
 }
 
 .content-card.inactive {
-  opacity: 0;
-  animation: fadeSlideUp 0.3s ease forwards;
+  animation: fadeSlideUp 0.3s ease both;
 }
 .content-card.inactive .content-name {
   color: var(--hint-color);

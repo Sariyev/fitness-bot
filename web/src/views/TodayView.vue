@@ -237,8 +237,7 @@ onMounted(() => {
   border-radius: 12px;
   padding: 20px 16px;
   margin-bottom: 16px;
-  opacity: 0;
-  animation: fadeSlideUp 0.35s ease forwards;
+  animation: fadeSlideUp 0.35s ease both;
 }
 
 .greeting-text {
@@ -259,8 +258,7 @@ onMounted(() => {
   align-items: center;
   gap: 6px;
   margin-bottom: 16px;
-  opacity: 0;
-  animation: fadeSlideUp 0.35s ease forwards;
+  animation: fadeSlideUp 0.35s ease both;
   animation-delay: 80ms;
 }
 
@@ -285,8 +283,7 @@ onMounted(() => {
   flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 20px;
-  opacity: 0;
-  animation: fadeSlideUp 0.35s ease forwards;
+  animation: fadeSlideUp 0.35s ease both;
   animation-delay: 120ms;
 }
 
@@ -317,8 +314,7 @@ onMounted(() => {
   background: var(--secondary-bg);
   border-radius: 12px;
   padding: 16px;
-  opacity: 0;
-  animation: fadeSlideUp 0.35s ease forwards;
+  animation: fadeSlideUp 0.35s ease both;
   animation-delay: 160ms;
 }
 

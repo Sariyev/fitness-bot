@@ -245,6 +245,8 @@ body {
   font-size: 10px;
   gap: 2px;
   transition: color 0.2s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .nav-item.active { color: var(--button-color); }
@@ -270,7 +272,7 @@ body {
 /* Transitions */
 .slide-left-enter-active, .slide-left-leave-active,
 .slide-right-enter-active, .slide-right-leave-active {
-  transition: all 0.25s ease;
+  transition: opacity 0.25s ease, transform 0.25s ease;
 }
 .slide-left-enter-from { transform: translateX(30px); opacity: 0; }
 .slide-left-leave-to { transform: translateX(-30px); opacity: 0; }

@@ -58,7 +58,7 @@ onMounted(async () => {
 .content-card {
   background: var(--secondary-bg); border-radius: 12px; padding: 12px 16px; margin-bottom: 8px;
   display: flex; justify-content: space-between; align-items: center; cursor: pointer;
-  opacity: 0; animation: fadeSlideUp 0.3s ease forwards;
+  animation: fadeSlideUp 0.3s ease both; touch-action: manipulation;
 }
 .content-main { display: flex; flex-direction: column; }
 .content-name { font-weight: 500; font-size: 15px; }
