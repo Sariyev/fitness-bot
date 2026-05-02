@@ -1,6 +1,6 @@
 <template>
   <div class="admin-page">
-    <button class="back-btn" @click="router.push('/admin/content')">← Назад</button>
+    <button class="back-btn" @click="router.back()">← Назад</button>
     <div class="section-header">
       <h1 class="page-title">Упражнения</h1>
       <button class="add-btn" @click="router.push('/admin/exercises/new')">+</button>

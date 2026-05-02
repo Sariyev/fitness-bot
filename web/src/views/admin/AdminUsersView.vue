@@ -1,6 +1,6 @@
 <template>
   <div class="admin-page">
-    <button class="back-btn" @click="router.push('/admin')">← Назад</button>
+    <button class="back-btn" @click="router.back()">← Назад</button>
     <h1 class="page-title">Пользователи <span class="total-badge" v-if="total">({{ total }})</span></h1>
 
     <div v-if="loading" class="loading">Загрузка...</div>

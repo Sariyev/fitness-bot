@@ -1,6 +1,6 @@
 <template>
   <div class="admin-page">
-    <button class="back-btn" @click="router.push('/admin/users')">← Назад</button>
+    <button class="back-btn" @click="router.back()">← Назад</button>
 
     <div v-if="loading" class="loading">Загрузка...</div>
 

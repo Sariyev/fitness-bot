@@ -1,6 +1,6 @@
 <template>
   <div class="admin-page">
-    <button class="back-btn" @click="router.push('/admin/content')">← Назад</button>
+    <button class="back-btn" @click="router.back()">← Назад</button>
     <h1 class="page-title">{{ isEdit ? 'Редактировать тренировку' : 'Новая тренировка' }}</h1>
 
     <div v-if="loading" class="loading">Загрузка...</div>
@@ -223,7 +223,7 @@ async function save() {
     } else {
       await api.createAdminWorkout({ ...form })
     }
-    router.push('/admin/content')
+    router.replace('/admin/content')
   } catch (e: any) {
     error.value = e.message || 'Ошибка сохранения'
   } finally {

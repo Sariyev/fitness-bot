@@ -1,6 +1,6 @@
 <template>
   <div class="admin-page">
-    <button class="back-btn" @click="router.push('/profile')">← Назад</button>
+    <button class="back-btn" @click="router.back()">← Назад</button>
     <h1 class="page-title">Админ панель</h1>
 
     <div class="stats-grid">

@@ -96,11 +96,7 @@ const form = reactive({
 })
 
 function goBack() {
-  if (form.meal_plan_id) {
-    router.push(`/admin/meal-plans/${form.meal_plan_id}`)
-  } else {
-    router.push('/admin/content')
-  }
+  router.back()
 }
 
 onMounted(async () => {
@@ -131,9 +127,9 @@ async function save() {
       await api.createAdminMeal({ ...form })
     }
     if (form.meal_plan_id) {
-      router.push(`/admin/meal-plans/${form.meal_plan_id}`)
+      router.replace(`/admin/meal-plans/${form.meal_plan_id}`)
     } else {
-      router.push('/admin/content')
+      router.replace('/admin/content')
     }
   } catch (e: any) {
     error.value = e.message || 'Ошибка сохранения'
