@@ -143,9 +143,10 @@ func AuthHandler(botToken string, userSvc *service.UserService) http.HandlerFunc
 
 		log.Printf("[AUTH] token issued for telegram_id=%d", parsed.User.ID)
 		jsonResponse(w, http.StatusOK, map[string]interface{}{
-			"token":      token,
-			"expires_in": int(tokenTTL.Seconds()),
-			"role":       user.Role,
+			"token":          token,
+			"expires_in":     int(tokenTTL.Seconds()),
+			"role":           user.Role,
+			"is_registered":  user.IsRegistered,
 		})
 	}
 }

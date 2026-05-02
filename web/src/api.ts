@@ -48,6 +48,7 @@ function getInitData(): string {
 
 let authToken: string | null = null
 let userRole: string | null = null
+let isRegistered = false
 
 function getAuthHeaders(): Record<string, string> {
   if (authToken) {
@@ -96,6 +97,7 @@ async function authenticate(): Promise<void> {
       const data = await res.json()
       authToken = data.token
       userRole = data.role || 'client'
+      isRegistered = data.is_registered === true
     }
   } catch {
     // Auth failed silently — requests will fall back to initData
@@ -294,6 +296,13 @@ export const api = {
   },
   getReviewTags(referenceType: string): Promise<ReviewTagsResponse> {
     return request(`/app/api/reviews/tags?reference_type=${referenceType}`)
+  },
+
+  isRegistered(): boolean {
+    return isRegistered
+  },
+  markRegistered(): void {
+    isRegistered = true
   },
 
   // ====== ADMIN ======

@@ -49,11 +49,10 @@ const router = createRouter({
   ],
 })
 
-let onboardingDone = false
 let authDone = false
 
 router.beforeEach(async (to) => {
-  // Authenticate once on app start — get session token
+  // Authenticate once on app start — get session token + registration state
   if (!authDone) {
     try { await api.authenticate() } catch { /* continue without token */ }
     authDone = true
@@ -64,18 +63,18 @@ router.beforeEach(async (to) => {
     return { name: 'today' }
   }
 
-  // Always show onboarding first when app opens
-  if (!onboardingDone && to.name !== 'onboarding') {
+  // Force onboarding only for users who haven't completed registration
+  if (!api.isRegistered() && to.name !== 'onboarding') {
     return { name: 'onboarding' }
   }
-  if (onboardingDone && to.name === 'onboarding') {
+  if (api.isRegistered() && to.name === 'onboarding') {
     return { name: 'today' }
   }
   return true
 })
 
 export function markRegistered() {
-  onboardingDone = true
+  api.markRegistered()
 }
 
 export default router
