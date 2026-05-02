@@ -1,0 +1,5 @@
+BEGIN;
+
+ALTER TABLE users ADD COLUMN avatar_media_id BIGINT REFERENCES media(id) ON DELETE SET NULL;
+
+COMMIT;

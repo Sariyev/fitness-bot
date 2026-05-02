@@ -7,6 +7,7 @@ import (
 	"fitness-bot/internal/payment"
 	"fitness-bot/internal/repository"
 	"fitness-bot/internal/service"
+	"fitness-bot/internal/storage"
 	"log"
 	"net/http"
 )
@@ -77,6 +78,28 @@ func main() {
 	dashboardSvc := service.NewDashboardService(userSvc, workoutSvc, rehabSvc, nutritionSvc)
 	recommendSvc := service.NewRecommendationService(programRepo, rehabRepo, nutritionRepo)
 
+	// Media (R2) — optional. Empty AccessKeyID disables; routes won't register.
+	var mediaSvc *service.MediaService
+	if cfg.R2AccessKeyID != "" {
+		r2Provider, err := storage.NewR2Provider(storage.R2Config{
+			AccountID:       cfg.R2AccountID,
+			AccessKeyID:     cfg.R2AccessKeyID,
+			SecretAccessKey: cfg.R2SecretAccessKey,
+			BucketPrivate:   cfg.R2BucketPrivate,
+			BucketPublic:    cfg.R2BucketPublic,
+			PublicURL:       cfg.R2PublicURL,
+		})
+		if err != nil {
+			log.Fatalf("Failed to init R2 provider: %v", err)
+		}
+		mediaRepo := repository.NewMediaRepo(db.Pool)
+		mediaSvc = service.NewMediaService(mediaRepo, r2Provider, cfg.MediaQuotaBytes)
+		log.Printf("Media: R2 enabled (private=%s, public=%s, quota=%d bytes)",
+			cfg.R2BucketPrivate, cfg.R2BucketPublic, cfg.MediaQuotaBytes)
+	} else {
+		log.Println("Media: R2 not configured — media endpoints disabled")
+	}
+
 	// WebApp router
 	router := webapphandler.NewRouter(
 		cfg.TelegramToken,
@@ -90,6 +113,7 @@ func main() {
 		dashboardSvc,
 		recommendSvc,
 		scoreSvc,
+		mediaSvc,
 		"./static",
 		verifier,
 		cfg.WebAppURL,

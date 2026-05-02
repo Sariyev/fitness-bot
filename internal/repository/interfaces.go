@@ -175,3 +175,11 @@ type DailyCompletionRepository interface {
 	GetStreak(ctx context.Context, userID int64) (current int, longest int, err error)
 	GetCalendar(ctx context.Context, userID int64, year, month int) ([]string, error)
 }
+
+type MediaRepository interface {
+	Create(ctx context.Context, m *models.Media) error
+	GetByID(ctx context.Context, id int64) (*models.Media, error)
+	MarkConfirmed(ctx context.Context, id int64, sizeBytes int64) error
+	Delete(ctx context.Context, id int64) error
+	TotalConfirmedBytes(ctx context.Context) (int64, error)
+}

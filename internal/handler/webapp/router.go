@@ -24,6 +24,7 @@ type WebAppRouter struct {
 	dashboardSvc *service.DashboardService
 	recommendSvc *service.RecommendationService
 	scoreSvc     *service.ScoreService
+	mediaSvc     *service.MediaService // nil when R2 isn't configured
 	botToken     string
 	staticDir    string
 	verifier     payment.CallbackVerifier
@@ -42,6 +43,7 @@ func NewRouter(
 	dashboardSvc *service.DashboardService,
 	recommendSvc *service.RecommendationService,
 	scoreSvc *service.ScoreService,
+	mediaSvc *service.MediaService,
 	staticDir string,
 	verifier payment.CallbackVerifier,
 	webAppURL string,
@@ -58,6 +60,7 @@ func NewRouter(
 		dashboardSvc: dashboardSvc,
 		recommendSvc: recommendSvc,
 		scoreSvc:     scoreSvc,
+		mediaSvc:     mediaSvc,
 		botToken:     botToken,
 		staticDir:    staticDir,
 		verifier:     verifier,
@@ -157,6 +160,12 @@ func (r *WebAppRouter) setupRoutes() {
 	// Reviews
 	r.mux.Handle("/app/api/reviews", auth(http.HandlerFunc(reviewHandler.HandleReviewRoutes)))
 	r.mux.Handle("/app/api/reviews/", auth(http.HandlerFunc(reviewHandler.HandleReviewRoutes)))
+
+	// Media (skipped when R2 isn't configured)
+	if r.mediaSvc != nil {
+		mediaHandler := NewMediaHandler(r.mediaSvc)
+		r.mux.Handle("/app/api/media/", auth(http.HandlerFunc(mediaHandler.HandleMediaRoutes)))
+	}
 
 	// Admin routes (authenticated + admin role required)
 	adminHandler := NewAdminHandler(r.userSvc, r.workoutSvc, r.nutritionSvc, r.scoreSvc)
