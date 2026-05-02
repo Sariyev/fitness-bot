@@ -11,6 +11,7 @@ type UserRepository interface {
 	GetByTelegramID(ctx context.Context, telegramID int64) (*models.User, error)
 	Update(ctx context.Context, user *models.User) error
 	ListAll(ctx context.Context, limit, offset int) ([]models.User, int, error)
+	SetAvatarMediaID(ctx context.Context, userID int64, mediaID *int64) error
 	CreateProfile(ctx context.Context, profile *models.UserProfile) error
 	GetProfileByUserID(ctx context.Context, userID int64) (*models.UserProfile, error)
 	UpdateProfile(ctx context.Context, profile *models.UserProfile) error

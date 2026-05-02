@@ -112,6 +112,10 @@ func (s *UserService) UpdateUser(ctx context.Context, user *models.User) error {
 	return s.repo.Update(ctx, user)
 }
 
+func (s *UserService) SetAvatarMediaID(ctx context.Context, userID int64, mediaID *int64) error {
+	return s.repo.SetAvatarMediaID(ctx, userID, mediaID)
+}
+
 func (s *UserService) UpdateProfileFromData(ctx context.Context, userID int64, data models.RegistrationData) error {
 	profile, err := s.repo.GetProfileByUserID(ctx, userID)
 	if err != nil {

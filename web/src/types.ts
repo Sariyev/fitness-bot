@@ -87,6 +87,7 @@ export interface UserProfile {
   goals: string[]
   is_paid: boolean
   role: string
+  avatar_media_id?: number | null
   training_access?: string
   training_experience?: string
   has_pain?: boolean

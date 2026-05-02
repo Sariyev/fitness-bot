@@ -31,10 +31,10 @@ func (r *userRepo) Create(ctx context.Context, user *models.User) error {
 func (r *userRepo) GetByID(ctx context.Context, id int64) (*models.User, error) {
 	u := &models.User{}
 	err := r.pool.QueryRow(ctx,
-		`SELECT id, telegram_id, username, first_name, last_name, language_code, is_registered, is_paid, role, created_at, updated_at
+		`SELECT id, telegram_id, username, first_name, last_name, language_code, is_registered, is_paid, role, avatar_media_id, created_at, updated_at
 		 FROM users WHERE id = $1`, id,
 	).Scan(&u.ID, &u.TelegramID, &u.Username, &u.FirstName, &u.LastName,
-		&u.LanguageCode, &u.IsRegistered, &u.IsPaid, &u.Role, &u.CreatedAt, &u.UpdatedAt)
+		&u.LanguageCode, &u.IsRegistered, &u.IsPaid, &u.Role, &u.AvatarMediaID, &u.CreatedAt, &u.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -44,14 +44,21 @@ func (r *userRepo) GetByID(ctx context.Context, id int64) (*models.User, error) 
 func (r *userRepo) GetByTelegramID(ctx context.Context, telegramID int64) (*models.User, error) {
 	u := &models.User{}
 	err := r.pool.QueryRow(ctx,
-		`SELECT id, telegram_id, username, first_name, last_name, language_code, is_registered, is_paid, role, created_at, updated_at
+		`SELECT id, telegram_id, username, first_name, last_name, language_code, is_registered, is_paid, role, avatar_media_id, created_at, updated_at
 		 FROM users WHERE telegram_id = $1`, telegramID,
 	).Scan(&u.ID, &u.TelegramID, &u.Username, &u.FirstName, &u.LastName,
-		&u.LanguageCode, &u.IsRegistered, &u.IsPaid, &u.Role, &u.CreatedAt, &u.UpdatedAt)
+		&u.LanguageCode, &u.IsRegistered, &u.IsPaid, &u.Role, &u.AvatarMediaID, &u.CreatedAt, &u.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
 	return u, nil
+}
+
+func (r *userRepo) SetAvatarMediaID(ctx context.Context, userID int64, mediaID *int64) error {
+	_, err := r.pool.Exec(ctx,
+		`UPDATE users SET avatar_media_id = $2, updated_at = NOW() WHERE id = $1`,
+		userID, mediaID)
+	return err
 }
 
 func (r *userRepo) Update(ctx context.Context, user *models.User) error {
@@ -72,7 +79,7 @@ func (r *userRepo) ListAll(ctx context.Context, limit, offset int) ([]models.Use
 
 	rows, err := r.pool.Query(ctx,
 		`SELECT id, telegram_id, username, first_name, last_name, language_code,
-				is_registered, is_paid, role, created_at, updated_at
+				is_registered, is_paid, role, avatar_media_id, created_at, updated_at
 		 FROM users ORDER BY created_at DESC LIMIT $1 OFFSET $2`, limit, offset)
 	if err != nil {
 		return nil, 0, err
@@ -83,7 +90,7 @@ func (r *userRepo) ListAll(ctx context.Context, limit, offset int) ([]models.Use
 	for rows.Next() {
 		var u models.User
 		if err := rows.Scan(&u.ID, &u.TelegramID, &u.Username, &u.FirstName, &u.LastName,
-			&u.LanguageCode, &u.IsRegistered, &u.IsPaid, &u.Role, &u.CreatedAt, &u.UpdatedAt); err != nil {
+			&u.LanguageCode, &u.IsRegistered, &u.IsPaid, &u.Role, &u.AvatarMediaID, &u.CreatedAt, &u.UpdatedAt); err != nil {
 			return nil, 0, err
 		}
 		users = append(users, u)

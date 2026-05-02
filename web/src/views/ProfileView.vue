@@ -9,9 +9,24 @@
     <div v-else-if="profile" class="profile-content">
       <div class="profile-header">
         <div class="header-gradient"></div>
-        <div class="avatar">{{ initials }}</div>
+        <div class="avatar avatar-button" @click="pickAvatar" :class="{ uploading: avatarUploading }">
+          <img v-if="avatarUrl" :src="avatarUrl" alt="avatar" class="avatar-img" />
+          <span v-else>{{ initials }}</span>
+          <div v-if="avatarUploading" class="avatar-overlay">
+            <span>{{ Math.round(avatarProgress * 100) }}%</span>
+          </div>
+          <div v-else class="avatar-edit-badge">📷</div>
+        </div>
+        <input
+          ref="avatarInput"
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          @change="handleAvatarChange"
+          style="display: none"
+        />
         <h2>{{ profile.first_name }} {{ profile.last_name }}</h2>
         <p v-if="profile.username" class="username">@{{ profile.username }}</p>
+        <p v-if="avatarError" class="avatar-error">{{ avatarError }}</p>
         <button class="edit-toggle" @click="toggleEdit">
           {{ editing ? 'Отмена' : 'Редактировать' }}
         </button>
@@ -180,6 +195,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { api } from '../api'
 import type { UserProfile } from '../types'
 import SkeletonCard from '../components/SkeletonCard.vue'
+import { useMediaUpload } from '../composables/useMediaUpload'
 
 const route = useRoute()
 const router = useRouter()
@@ -328,9 +344,53 @@ const timeLabel = computed(() => {
   return timeLabels[profile.value?.preferred_time || ''] || profile.value?.preferred_time || ''
 })
 
+// Avatar upload
+const avatarInput = ref<HTMLInputElement | null>(null)
+const avatarUrl = ref<string | null>(null)
+const avatarError = ref('')
+const { uploading: avatarUploading, progress: avatarProgress, upload: uploadAvatar } = useMediaUpload()
+
+async function loadAvatar(mediaId: number | null | undefined) {
+  if (!mediaId) {
+    avatarUrl.value = null
+    return
+  }
+  try {
+    const res = await api.getMediaURL(mediaId)
+    avatarUrl.value = res.url
+  } catch {
+    avatarUrl.value = null
+  }
+}
+
+function pickAvatar() {
+  if (avatarUploading.value) return
+  avatarInput.value?.click()
+}
+
+async function handleAvatarChange(e: Event) {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  // Reset the input so picking the same file again still triggers change
+  input.value = ''
+  avatarError.value = ''
+  try {
+    const result = await uploadAvatar(file, { reference_type: 'user_avatar' })
+    await api.updateProfile({ avatar_media_id: result.media_id } as any)
+    if (profile.value) profile.value.avatar_media_id = result.media_id
+    await loadAvatar(result.media_id)
+  } catch (err: any) {
+    avatarError.value = err.message || 'Ошибка загрузки фото'
+  }
+}
+
 onMounted(async () => {
   try {
     profile.value = await api.getProfile()
+    if (profile.value?.avatar_media_id) {
+      await loadAvatar(profile.value.avatar_media_id)
+    }
   } catch {
     profile.value = null
   } finally {
@@ -397,6 +457,62 @@ onMounted(async () => {
   margin: 0 auto 12px;
   position: relative;
   z-index: 1;
+  overflow: hidden;
+}
+
+.avatar-button {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.1s;
+}
+
+.avatar-button:active {
+  transform: scale(0.95);
+}
+
+.avatar-button.uploading {
+  cursor: wait;
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.avatar-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 50%;
+}
+
+.avatar-edit-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 22px;
+  height: 22px;
+  background: var(--bg-color);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  border: 2px solid var(--secondary-bg);
+}
+
+.avatar-error {
+  color: #ff3b30;
+  font-size: 13px;
+  margin-top: 6px;
 }
 
 .username {

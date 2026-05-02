@@ -8,17 +8,18 @@ const (
 )
 
 type User struct {
-	ID           int64     `json:"id"`
-	TelegramID   int64     `json:"telegram_id"`
-	Username     string    `json:"username"`
-	FirstName    string    `json:"first_name"`
-	LastName     string    `json:"last_name"`
-	LanguageCode string    `json:"language_code"`
-	Role         string    `json:"role"`
-	IsRegistered bool      `json:"is_registered"`
-	IsPaid       bool      `json:"is_paid"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
+	ID            int64     `json:"id"`
+	TelegramID    int64     `json:"telegram_id"`
+	Username      string    `json:"username"`
+	FirstName     string    `json:"first_name"`
+	LastName      string    `json:"last_name"`
+	LanguageCode  string    `json:"language_code"`
+	Role          string    `json:"role"`
+	IsRegistered  bool      `json:"is_registered"`
+	IsPaid        bool      `json:"is_paid"`
+	AvatarMediaID *int64    `json:"avatar_media_id,omitempty"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
 }
 
 func (u *User) IsAdmin() bool {
