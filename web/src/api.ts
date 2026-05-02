@@ -40,6 +40,10 @@ import type {
   ReviewSummary,
   ReviewTagsResponse,
   AdminUser,
+  MediaPresignRequest,
+  MediaPresignResponse,
+  MediaConfirmResponse,
+  MediaURLResponse,
 } from './types'
 
 function getInitData(): string {
@@ -294,6 +298,23 @@ export const api = {
   },
   getReviewTags(referenceType: string): Promise<ReviewTagsResponse> {
     return request(`/app/api/reviews/tags?reference_type=${referenceType}`)
+  },
+
+  // ====== MEDIA ======
+  presignMediaUpload(req: MediaPresignRequest): Promise<MediaPresignResponse> {
+    return request('/app/api/media/presign', {
+      method: 'POST',
+      body: JSON.stringify(req),
+    })
+  },
+  confirmMediaUpload(id: number): Promise<MediaConfirmResponse> {
+    return request(`/app/api/media/${id}/confirm`, { method: 'POST' })
+  },
+  getMediaURL(id: number): Promise<MediaURLResponse> {
+    return request(`/app/api/media/${id}`)
+  },
+  deleteMedia(id: number): Promise<{ success: boolean }> {
+    return request(`/app/api/media/${id}`, { method: 'DELETE' })
   },
 
   // ====== ADMIN ======

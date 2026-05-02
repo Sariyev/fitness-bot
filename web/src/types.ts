@@ -448,3 +448,29 @@ export interface AdminUser {
   created_at: string
   updated_at: string
 }
+
+// ====== MEDIA ======
+
+export interface MediaPresignRequest {
+  content_type: string
+  size_bytes: number
+  reference_type?: string
+  reference_id?: number | null
+  is_public?: boolean
+}
+
+export interface MediaPresignResponse {
+  upload_url: string
+  media_id: number
+  key: string
+}
+
+export interface MediaConfirmResponse {
+  success: boolean
+  media_id: number
+  size_bytes: number
+}
+
+export interface MediaURLResponse {
+  url: string
+}
