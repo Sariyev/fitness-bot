@@ -149,6 +149,11 @@ func (s *MediaService) RequestUpload(ctx context.Context, user *models.User, req
 		return nil, fmt.Errorf("media: presign: %w", err)
 	}
 
+	// TEMPORARY DEBUG: log presigned URL so we can curl-test it from a server
+	// to isolate browser-side vs URL/credentials issues.
+	log.Printf("[MEDIA-DEBUG] presigned PUT for media_id=%d key=%s ct=%s size=%d url=%s",
+		media.ID, key, req.ContentType, req.SizeBytes, uploadURL)
+
 	return &UploadResult{
 		UploadURL: uploadURL,
 		MediaID:   media.ID,
