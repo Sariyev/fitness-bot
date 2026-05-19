@@ -1,6 +1,5 @@
 <template>
   <div class="course-page">
-    <button class="back-btn" @click="router.back()">← Назад</button>
 
     <div v-if="loading" class="skeleton-list">
       <SkeletonCard v-for="i in 5" :key="i" />
@@ -185,15 +184,6 @@ onMounted(async () => {
   margin: 0 auto;
 }
 
-.back-btn {
-  background: none;
-  border: none;
-  color: var(--button-color);
-  font-size: 16px;
-  cursor: pointer;
-  padding: 4px 0;
-  margin-bottom: 12px;
-}
 
 .skeleton-list {
   display: flex;

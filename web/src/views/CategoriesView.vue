@@ -34,7 +34,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '../api'
 import { useTelegram } from '../composables/useTelegram'
@@ -53,17 +53,9 @@ function openCategory(id: number) {
   router.push({ name: 'lessons', params: { id } })
 }
 
-function goBack() {
-  router.push({ name: 'modules' })
-}
+// BackButton is wired centrally in router.ts (top-left back arrow).
 
 onMounted(async () => {
-  const backBtn = window.Telegram?.WebApp?.BackButton
-  if (backBtn) {
-    backBtn.show()
-    backBtn.onClick(goBack)
-  }
-
   try {
     categories.value = await api.getCategories(Number(props.id))
   } catch (e) {
@@ -71,10 +63,6 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
-})
-
-onUnmounted(() => {
-  window.Telegram?.WebApp?.BackButton?.offClick(goBack)
 })
 </script>
 

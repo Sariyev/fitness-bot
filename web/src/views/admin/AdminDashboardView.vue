@@ -1,6 +1,5 @@
 <template>
   <div class="admin-page">
-    <button class="back-btn" @click="router.back()">← Назад</button>
     <h1 class="page-title">Админ панель</h1>
 
     <div class="stats-grid">
@@ -57,15 +56,6 @@ onMounted(async () => {
   margin: 0 auto;
 }
 
-.back-btn {
-  background: none;
-  border: none;
-  color: var(--button-color);
-  font-size: 16px;
-  cursor: pointer;
-  padding: 4px 0;
-  margin-bottom: 12px;
-}
 
 .page-title {
   font-size: 22px;

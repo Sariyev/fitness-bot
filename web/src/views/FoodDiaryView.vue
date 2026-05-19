@@ -2,7 +2,6 @@
   <div class="diary-page">
     <!-- Header -->
     <div class="header">
-      <button class="back-btn" @click="router.back()">← Назад</button>
       <h1 class="page-title">Дневник питания</h1>
     </div>
 
@@ -455,15 +454,6 @@ onUnmounted(() => setClosingGuard(false))
   margin-bottom: 16px;
 }
 
-.back-btn {
-  background: none;
-  border: none;
-  color: var(--button-color);
-  font-size: 16px;
-  cursor: pointer;
-  padding: 4px 0;
-  margin-bottom: 8px;
-}
 
 .page-title {
   font-size: 22px;

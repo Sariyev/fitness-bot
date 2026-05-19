@@ -1,6 +1,5 @@
 <template>
   <div class="admin-page">
-    <button class="back-btn" @click="router.back()">← Назад</button>
     <h1 class="page-title">Контент</h1>
 
     <div v-if="loading" class="loading">Загрузка...</div>
@@ -99,15 +98,6 @@ onMounted(async () => {
   padding-bottom: 24px;
 }
 
-.back-btn {
-  background: none;
-  border: none;
-  color: var(--button-color);
-  font-size: 16px;
-  cursor: pointer;
-  padding: 4px 0;
-  margin-bottom: 12px;
-}
 
 .page-title {
   font-size: 20px;

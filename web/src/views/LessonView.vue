@@ -66,19 +66,11 @@ async function markComplete() {
   }
 }
 
-function goBack() {
-  router.back()
-}
+// BackButton is wired centrally in router.ts (top-left back arrow).
 
 const markCompleteRef = markComplete
 
 onMounted(async () => {
-  const backBtn = window.Telegram?.WebApp?.BackButton
-  if (backBtn) {
-    backBtn.show()
-    backBtn.onClick(goBack)
-  }
-
   try {
     const data = await api.getLesson(Number(props.id))
     lesson.value = data
@@ -98,7 +90,6 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-  window.Telegram?.WebApp?.BackButton?.offClick(goBack)
   hideMainButton()
 })
 </script>

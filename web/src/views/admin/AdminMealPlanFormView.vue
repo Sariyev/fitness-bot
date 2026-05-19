@@ -1,6 +1,5 @@
 <template>
   <div class="admin-page">
-    <button class="back-btn" @click="router.back()">← Назад</button>
     <h1 class="page-title">{{ isEdit ? 'Редактировать план питания' : 'Новый план питания' }}</h1>
 
     <div v-if="loading" class="loading">Загрузка...</div>
@@ -153,7 +152,6 @@ async function save() {
 
 <style scoped>
 .admin-page { max-width: 400px; margin: 0 auto; padding-bottom: 24px; }
-.back-btn { background: none; border: none; color: var(--button-color); font-size: 16px; cursor: pointer; padding: 4px 0; margin-bottom: 12px; }
 .page-title { font-size: 20px; font-weight: 700; margin-bottom: 16px; }
 .loading { text-align: center; color: var(--hint-color); padding: 40px; }
 .empty { text-align: center; color: var(--hint-color); padding: 20px; }

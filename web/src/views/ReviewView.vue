@@ -1,6 +1,5 @@
 <template>
   <div class="review-page">
-    <button class="back-btn" @click="router.back()">← Назад</button>
 
     <!-- Bot review summary -->
     <div class="summary-card" v-if="summary">
@@ -223,15 +222,6 @@ onMounted(async () => {
   padding-bottom: 24px;
 }
 
-.back-btn {
-  background: none;
-  border: none;
-  color: var(--button-color);
-  font-size: 16px;
-  cursor: pointer;
-  padding: 4px 0;
-  margin-bottom: 12px;
-}
 
 .summary-card {
   background: var(--secondary-bg);

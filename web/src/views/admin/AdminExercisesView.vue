@@ -1,6 +1,5 @@
 <template>
   <div class="admin-page">
-    <button class="back-btn" @click="router.back()">← Назад</button>
     <div class="section-header">
       <h1 class="page-title">Упражнения</h1>
       <button class="add-btn" @click="router.push('/admin/exercises/new')">+</button>
@@ -44,7 +43,6 @@ onMounted(async () => {
 
 <style scoped>
 .admin-page { max-width: 400px; margin: 0 auto; padding-bottom: 24px; }
-.back-btn { background: none; border: none; color: var(--button-color); font-size: 16px; cursor: pointer; padding: 4px 0; margin-bottom: 12px; }
 .page-title { font-size: 20px; font-weight: 700; }
 .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
 .loading { text-align: center; color: var(--hint-color); padding: 40px; }

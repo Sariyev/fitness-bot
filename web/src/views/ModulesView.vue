@@ -46,8 +46,6 @@ function openModule(id: number) {
 }
 
 onMounted(async () => {
-  window.Telegram?.WebApp?.BackButton?.hide()
-
   try {
     modules.value = await api.getModules()
   } catch (e) {

@@ -34,7 +34,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '../api'
 import { useTelegram } from '../composables/useTelegram'
@@ -52,17 +52,9 @@ function openLesson(id: number) {
   router.push({ name: 'lesson', params: { id } })
 }
 
-function goBack() {
-  router.back()
-}
+// BackButton is wired centrally in router.ts (top-left back arrow).
 
 onMounted(async () => {
-  const backBtn = window.Telegram?.WebApp?.BackButton
-  if (backBtn) {
-    backBtn.show()
-    backBtn.onClick(goBack)
-  }
-
   try {
     lessons.value = await api.getLessons(Number(props.id))
   } catch (e) {
@@ -70,10 +62,6 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
-})
-
-onUnmounted(() => {
-  window.Telegram?.WebApp?.BackButton?.offClick(goBack)
 })
 </script>
 

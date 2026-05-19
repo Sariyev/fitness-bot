@@ -1,8 +1,5 @@
 <template>
   <div class="lfk-session-page">
-    <!-- Back button -->
-    <button class="back-btn" @click="router.back()">← Назад</button>
-
     <!-- Loading state -->
     <div v-if="loading" class="skeleton-list">
       <SkeletonCard v-for="i in 4" :key="i" />
@@ -128,7 +125,6 @@
     <!-- Not found state -->
     <div v-else class="empty">
       <p>Сессия не найдена</p>
-      <button class="btn btn-secondary" @click="router.back()">Назад</button>
     </div>
   </div>
 </template>
@@ -250,15 +246,6 @@ onUnmounted(() => setClosingGuard(false))
   padding-bottom: 40px;
 }
 
-.back-btn {
-  background: none;
-  border: none;
-  color: var(--button-color);
-  font-size: 16px;
-  cursor: pointer;
-  padding: 4px 0;
-  margin-bottom: 12px;
-}
 
 .skeleton-list {
   display: flex;

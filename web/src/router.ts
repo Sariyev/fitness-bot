@@ -1,6 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { api } from './api'
 
+// Root tabs — Telegram's BackButton is hidden on these. Everything else
+// is treated as a child route and gets the back arrow.
+const ROOT_TABS = new Set(['today', 'workouts', 'lfk', 'nutrition', 'progress', 'modules'])
+
 const router = createRouter({
   history: createWebHistory(),
   routes: [
@@ -8,7 +12,9 @@ const router = createRouter({
       path: '/onboarding',
       name: 'onboarding',
       component: () => import('./views/OnboardingView.vue'),
-      meta: { hideNav: true },
+      // customBackButton: OnboardingView manages BackButton itself (slide-based,
+      // back goes to previous slide rather than previous route).
+      meta: { hideNav: true, customBackButton: true },
     },
     { path: '/', name: 'today', component: () => import('./views/TodayView.vue') },
     { path: '/workouts', name: 'workouts', component: () => import('./views/WorkoutsView.vue') },
@@ -76,6 +82,25 @@ router.beforeEach(async (to) => {
 
 export function markRegistered() {
   onboardingDone = true
+}
+
+// Centralized Telegram BackButton: one back affordance per non-root page,
+// in Telegram's own chrome (top-left of the WebView header). Replaces the
+// per-view `<button class="back-btn">← Назад</button>` we used to render.
+{
+  const tg = window.Telegram?.WebApp
+  if (tg?.BackButton) {
+    tg.BackButton.onClick(() => router.back())
+    router.afterEach((to) => {
+      if (to.meta.customBackButton) return // OnboardingView handles its own
+      const name = to.name as string
+      if (ROOT_TABS.has(name)) {
+        tg.BackButton.hide()
+      } else {
+        tg.BackButton.show()
+      }
+    })
+  }
 }
 
 export default router
