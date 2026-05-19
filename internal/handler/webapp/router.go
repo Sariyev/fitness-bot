@@ -3,9 +3,11 @@ package webapp
 import (
 	"encoding/json"
 	"io/fs"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"strings"
 
 	"fitness-bot/internal/payment"
@@ -72,8 +74,22 @@ func NewRouter(
 }
 
 func (r *WebAppRouter) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	// Set CORS headers for Telegram Mini App
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	defer func() {
+		if rec := recover(); rec != nil {
+			log.Printf("PANIC %s %s: %v\n%s", req.Method, req.URL.Path, rec, debug.Stack())
+			jsonError(w, http.StatusInternalServerError, "internal server error")
+		}
+	}()
+
+	// CORS: lock to the configured Mini App origin in prod. With WEBAPP_URL
+	// unset (local dev / vite proxy), fall back to "*" — fine because the
+	// dev DB and bot token are not real.
+	origin := "*"
+	if r.webAppURL != "" {
+		origin = r.webAppURL
+		w.Header().Set("Vary", "Origin")
+	}
+	w.Header().Set("Access-Control-Allow-Origin", origin)
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-Telegram-Init-Data, Authorization")
 

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"fitness-bot/internal/config"
 	"fitness-bot/internal/database"
 	webapphandler "fitness-bot/internal/handler/webapp"
@@ -10,13 +12,16 @@ import (
 	"fitness-bot/internal/storage"
 	"log"
 	"net/http"
+	"os/signal"
+	"syscall"
+	"time"
 )
 
 func main() {
 	cfg := config.Load()
 
-	if cfg.TelegramToken == "" {
-		log.Fatal("TELEGRAM_BOT_TOKEN is required")
+	if err := cfg.Validate(config.RoleWebApp); err != nil {
+		log.Fatalf("config: %v", err)
 	}
 
 	// Database
@@ -119,8 +124,32 @@ func main() {
 		cfg.WebAppURL,
 	)
 
-	log.Printf("WebApp server listening on :%s", cfg.WebAppPort)
-	if err := http.ListenAndServe(":"+cfg.WebAppPort, router); err != nil {
-		log.Fatalf("WebApp server failed: %v", err)
+	srv := &http.Server{
+		Addr:              ":" + cfg.WebAppPort,
+		Handler:           router,
+		ReadTimeout:       15 * time.Second,
+		ReadHeaderTimeout: 5 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       60 * time.Second,
+		MaxHeaderBytes:    1 << 20,
+	}
+
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	go func() {
+		log.Printf("WebApp server listening on :%s", cfg.WebAppPort)
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("WebApp server failed: %v", err)
+		}
+	}()
+
+	<-ctx.Done()
+	log.Println("Shutting down webapp...")
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		log.Printf("WebApp shutdown error: %v", err)
 	}
 }

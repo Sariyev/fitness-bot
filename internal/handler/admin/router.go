@@ -3,7 +3,9 @@ package admin
 import (
 	"encoding/json"
 	"fitness-bot/internal/repository"
+	"log"
 	"net/http"
+	"runtime/debug"
 	"strings"
 )
 
@@ -50,18 +52,22 @@ func (r *Router) routes() {
 }
 
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	defer func() {
+		if rec := recover(); rec != nil {
+			log.Printf("PANIC %s %s: %v\n%s", req.Method, req.URL.Path, rec, debug.Stack())
+			jsonError(w, http.StatusInternalServerError, "internal server error")
+		}
+	}()
 	r.mux.ServeHTTP(w, req)
 }
 
 func (r *Router) auth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		if r.apiKey != "" {
-			auth := req.Header.Get("Authorization")
-			token := strings.TrimPrefix(auth, "Bearer ")
-			if token != r.apiKey {
-				jsonError(w, http.StatusUnauthorized, "unauthorized")
-				return
-			}
+		auth := req.Header.Get("Authorization")
+		token := strings.TrimPrefix(auth, "Bearer ")
+		if token == "" || token != r.apiKey {
+			jsonError(w, http.StatusUnauthorized, "unauthorized")
+			return
 		}
 		next(w, req)
 	}

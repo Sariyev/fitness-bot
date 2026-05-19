@@ -1,11 +1,22 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/joho/godotenv"
+)
+
+// Role identifies which binary is loading the config, for Validate().
+type Role string
+
+const (
+	RoleBot     Role = "bot"
+	RoleAdmin   Role = "admin"
+	RoleWebApp  Role = "webapp"
 )
 
 type Config struct {
@@ -50,9 +61,9 @@ func Load() *Config {
 		Debug:         getEnv("DEBUG", "false") == "true",
 		DBHost:        getEnv("DB_HOST", "localhost"),
 		DBPort:        getEnv("DB_PORT", "5432"),
-		DBUser:        getEnv("DB_USER", "fitbot"),
-		DBPassword:    getEnv("DB_PASSWORD", "fitbot_password"),
-		DBName:        getEnv("DB_NAME", "fitness_bot"),
+		DBUser:        getEnv("DB_USER", ""),
+		DBPassword:    getEnv("DB_PASSWORD", ""),
+		DBName:        getEnv("DB_NAME", ""),
 		DBSSLMode:     getEnv("DB_SSLMODE", "disable"),
 		AdminPort:     getEnv("ADMIN_PORT", "8080"),
 		AdminAPIKey:   getEnv("ADMIN_API_KEY", ""),
@@ -87,6 +98,37 @@ func getEnvInt64(key string, fallback int64) int64 {
 func (c *Config) GetDatabaseURL() string {
 	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
 		c.DBUser, c.DBPassword, c.DBHost, c.DBPort, c.DBName, c.DBSSLMode)
+}
+
+// Validate checks that all required env vars are set for the given role.
+// Returns a multi-line error listing every missing var so the operator fixes
+// them in one go instead of one-at-a-time.
+func (c *Config) Validate(role Role) error {
+	var missing []string
+	require := func(name, value string) {
+		if value == "" {
+			missing = append(missing, name)
+		}
+	}
+
+	require("DB_USER", c.DBUser)
+	require("DB_PASSWORD", c.DBPassword)
+	require("DB_NAME", c.DBName)
+	require("DB_HOST", c.DBHost)
+
+	switch role {
+	case RoleBot:
+		require("TELEGRAM_BOT_TOKEN", c.TelegramToken)
+	case RoleAdmin:
+		require("ADMIN_API_KEY", c.AdminAPIKey)
+	case RoleWebApp:
+		require("TELEGRAM_BOT_TOKEN", c.TelegramToken)
+	}
+
+	if len(missing) > 0 {
+		return errors.New("missing required env vars: " + strings.Join(missing, ", "))
+	}
+	return nil
 }
 
 func getEnv(key, fallback string) string {

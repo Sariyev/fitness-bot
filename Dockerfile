@@ -24,7 +24,7 @@ COPY web/ .
 RUN npm run build
 
 # Bot image
-FROM alpine:latest AS bot
+FROM alpine:3.20 AS bot
 RUN apk --no-cache add ca-certificates
 WORKDIR /app
 COPY --from=builder /bot .
@@ -32,7 +32,7 @@ COPY --from=builder /app/migrations ./migrations
 CMD ["./bot"]
 
 # Admin image
-FROM alpine:latest AS admin
+FROM alpine:3.20 AS admin
 RUN apk --no-cache add ca-certificates
 WORKDIR /app
 COPY --from=builder /admin .
@@ -40,7 +40,7 @@ COPY --from=builder /app/migrations ./migrations
 CMD ["./admin"]
 
 # WebApp image
-FROM alpine:latest AS webapp
+FROM alpine:3.20 AS webapp
 RUN apk --no-cache add ca-certificates
 WORKDIR /app
 COPY --from=builder /webapp .

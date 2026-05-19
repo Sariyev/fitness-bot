@@ -19,8 +19,8 @@ import (
 func main() {
 	cfg := config.Load()
 
-	if cfg.TelegramToken == "" {
-		log.Fatal("TELEGRAM_BOT_TOKEN is required")
+	if err := cfg.Validate(config.RoleBot); err != nil {
+		log.Fatalf("config: %v", err)
 	}
 
 	// Database
