@@ -26,6 +26,9 @@ interface TelegramWebApp {
   expand(): void
   close(): void
   openLink(url: string): void
+  enableClosingConfirmation?(): void
+  disableClosingConfirmation?(): void
+  isClosingConfirmationEnabled?: boolean
   MainButton: {
     text: string
     color: string

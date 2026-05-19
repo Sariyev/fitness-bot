@@ -107,11 +107,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { api } from '../api'
+import { useTelegram } from '../composables/useTelegram'
 import type { WorkoutWithExercises, WorkoutExercise } from '../types'
 import SkeletonCard from '../components/SkeletonCard.vue'
+
+const { setClosingGuard } = useTelegram()
 
 const props = defineProps<{ id: string }>()
 const route = useRoute()
@@ -146,6 +149,8 @@ async function complete() {
 }
 
 onMounted(async () => {
+  // Guard against accidental close during an active workout.
+  setClosingGuard(true)
   try {
     workout.value = await api.getWorkout(Number(props.id))
   } catch (e) {
@@ -154,6 +159,8 @@ onMounted(async () => {
     loading.value = false
   }
 })
+
+onUnmounted(() => setClosingGuard(false))
 </script>
 
 <style scoped>

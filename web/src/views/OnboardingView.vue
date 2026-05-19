@@ -52,7 +52,7 @@ import FitnessLevelSlide from './onboarding/FitnessLevelSlide.vue'
 import SuccessSlide from './onboarding/SuccessSlide.vue'
 
 const router = useRouter()
-const { hapticImpact, hapticNotification, showMainButton, hideMainButton, showBackButton, hideBackButton } = useTelegram()
+const { hapticImpact, hapticNotification, showMainButton, hideMainButton, showBackButton, hideBackButton, setClosingGuard } = useTelegram()
 
 const currentSlide = ref(0)
 const slideDirection = ref('slide-left')
@@ -178,6 +178,10 @@ function updateButtons() {
 watch(currentSlide, updateButtons)
 
 onMounted(async () => {
+  // Guard against accidental "Закрыть" — the Mini App close button has been
+  // a major source of bounce during onboarding.
+  setClosingGuard(true)
+
   // Pre-fill from existing profile
   try {
     const profile = await api.getProfile()
@@ -204,9 +208,16 @@ onMounted(async () => {
   updateButtons()
 })
 
+// Once the user reaches the success slide, registration is committed and there's
+// nothing left to lose — release the guard so they can leave freely.
+watch(currentSlide, (slide) => {
+  if (slide === 3) setClosingGuard(false)
+})
+
 onUnmounted(() => {
   hideMainButton()
   hideBackButton()
+  setClosingGuard(false)
 })
 </script>
 

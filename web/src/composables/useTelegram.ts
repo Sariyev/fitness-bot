@@ -36,6 +36,18 @@ export function useTelegram() {
     tg?.BackButton?.hide()
   }
 
+  // setClosingGuard toggles Telegram's native "Закрыть приложение?" confirmation
+  // for the WebView's close button. Enable while there's in-progress user work
+  // (active workout, dirty form, mid-onboarding) and disable on unmount.
+  function setClosingGuard(enabled: boolean) {
+    if (!tg) return
+    if (enabled) {
+      tg.enableClosingConfirmation?.()
+    } else {
+      tg.disableClosingConfirmation?.()
+    }
+  }
+
   return {
     tg,
     hapticImpact,
@@ -45,5 +57,6 @@ export function useTelegram() {
     hideMainButton,
     showBackButton,
     hideBackButton,
+    setClosingGuard,
   }
 }

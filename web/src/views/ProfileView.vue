@@ -190,12 +190,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { api } from '../api'
 import type { UserProfile } from '../types'
 import SkeletonCard from '../components/SkeletonCard.vue'
 import { useMediaUpload } from '../composables/useMediaUpload'
+import { useTelegram } from '../composables/useTelegram'
+
+const { setClosingGuard } = useTelegram()
 
 const route = useRoute()
 const router = useRouter()
@@ -385,6 +388,10 @@ async function handleAvatarChange(e: Event) {
   }
 }
 
+// Guard the close button only while the form is in edit mode (dirty surface).
+// Browsing the read-only profile is safe to leave at any time.
+watch(editing, (val) => setClosingGuard(val))
+
 onMounted(async () => {
   try {
     profile.value = await api.getProfile()
@@ -397,6 +404,8 @@ onMounted(async () => {
     loading.value = false
   }
 })
+
+onUnmounted(() => setClosingGuard(false))
 </script>
 
 <style scoped>

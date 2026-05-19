@@ -134,11 +134,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { api } from '../api'
+import { useTelegram } from '../composables/useTelegram'
 import type { RehabSession } from '../types'
 import SkeletonCard from '../components/SkeletonCard.vue'
+
+const { setClosingGuard } = useTelegram()
 
 const props = defineProps<{ id: string }>()
 const route = useRoute()
@@ -221,6 +224,8 @@ function confettiStyle(i: number): Record<string, string> {
 // ---------- Lifecycle ----------
 
 onMounted(async () => {
+  // Guard against accidental close during an active LFK session.
+  setClosingGuard(true)
   try {
     session.value = await api.getRehabSession(Number(props.id))
   } catch (e) {
@@ -229,6 +234,13 @@ onMounted(async () => {
     loading.value = false
   }
 })
+
+// Once the session is marked completed, lift the guard — nothing left to lose.
+watch(completed, (done) => {
+  if (done) setClosingGuard(false)
+})
+
+onUnmounted(() => setClosingGuard(false))
 </script>
 
 <style scoped>

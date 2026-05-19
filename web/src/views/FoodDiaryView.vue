@@ -210,11 +210,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '../api'
 import type { FoodLogEntry, DailySummary } from '../types'
 import SkeletonCard from '../components/SkeletonCard.vue'
+import { useTelegram } from '../composables/useTelegram'
+
+const { setClosingGuard } = useTelegram()
 
 const router = useRouter()
 
@@ -429,9 +432,15 @@ watch(currentDate, () => {
   loadData()
 })
 
+// Guard the close button only while the entry form is open (dirty surface).
+// Read-only diary browsing is safe to leave at any time.
+watch(showForm, (val) => setClosingGuard(val))
+
 onMounted(() => {
   loadData()
 })
+
+onUnmounted(() => setClosingGuard(false))
 </script>
 
 <style scoped>
