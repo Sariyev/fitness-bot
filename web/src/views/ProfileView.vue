@@ -9,12 +9,14 @@
       <div class="profile-header">
         <div class="header-gradient"></div>
         <div class="avatar avatar-button" @click="pickAvatar" :class="{ uploading: avatarUploading }">
-          <img v-if="avatarUrl" :src="avatarUrl" alt="avatar" class="avatar-img" />
-          <span v-else>{{ initials }}</span>
-          <div v-if="avatarUploading" class="avatar-overlay">
-            <span>{{ Math.round(avatarProgress * 100) }}%</span>
+          <div class="avatar-circle">
+            <img v-if="avatarUrl" :src="avatarUrl" alt="avatar" class="avatar-img" />
+            <span v-else>{{ initials }}</span>
+            <div v-if="avatarUploading" class="avatar-overlay">
+              <span>{{ Math.round(avatarProgress * 100) }}%</span>
+            </div>
           </div>
-          <div v-else class="avatar-edit-badge">📷</div>
+          <div v-if="!avatarUploading" class="avatar-edit-badge" aria-label="Изменить фото">📷</div>
         </div>
         <input
           ref="avatarInput"
@@ -23,9 +25,26 @@
           @change="handleAvatarChange"
           style="display: none"
         />
-        <h2>{{ profile.first_name }} {{ profile.last_name }}</h2>
+        <h2 class="profile-name">{{ profile.first_name }} {{ profile.last_name }}</h2>
         <p v-if="profile.username" class="username">@{{ profile.username }}</p>
         <p v-if="avatarError" class="avatar-error">{{ avatarError }}</p>
+
+        <!-- Vitals row — quick-glance stats, only in read mode -->
+        <div v-if="!editing && (profile.age || profile.height_cm || profile.weight_kg)" class="vitals-row">
+          <div class="vital-tile" v-if="profile.age">
+            <span class="vital-value">{{ profile.age }}</span>
+            <span class="vital-label">Возраст</span>
+          </div>
+          <div class="vital-tile" v-if="profile.height_cm">
+            <span class="vital-value">{{ profile.height_cm }}</span>
+            <span class="vital-label">Рост, см</span>
+          </div>
+          <div class="vital-tile" v-if="profile.weight_kg">
+            <span class="vital-value">{{ profile.weight_kg }}</span>
+            <span class="vital-label">Вес, кг</span>
+          </div>
+        </div>
+
         <button class="edit-toggle" @click="toggleEdit">
           {{ editing ? 'Отмена' : 'Редактировать' }}
         </button>
@@ -74,8 +93,8 @@
       </div>
 
       <!-- Goals -->
-      <div class="info-card" v-if="profile.goals && profile.goals.length" style="animation-delay: 160ms">
-        <h3>Цели</h3>
+      <div class="info-card section-goals" v-if="profile.goals && profile.goals.length" style="animation-delay: 160ms">
+        <h3><span class="section-icon">🎯</span> Цели</h3>
         <div class="goals-list">
           <span
             v-for="(goal, index) in profile.goals"
@@ -87,8 +106,8 @@
       </div>
 
       <!-- Training info -->
-      <div class="info-card" v-if="profile.training_access || profile.training_experience" style="animation-delay: 240ms">
-        <h3>Тренировки</h3>
+      <div class="info-card section-training" v-if="profile.training_access || profile.training_experience" style="animation-delay: 240ms">
+        <h3><span class="section-icon">💪</span> Тренировки</h3>
         <div class="info-row" v-if="profile.training_access">
           <span class="label">Доступ</span>
           <span class="value">{{ accessLabel }}</span>
@@ -100,8 +119,8 @@
       </div>
 
       <!-- Schedule -->
-      <div class="info-card" v-if="editing || profile.days_per_week || profile.session_duration || profile.preferred_time" style="animation-delay: 320ms">
-        <h3>Расписание</h3>
+      <div class="info-card section-schedule" v-if="editing || profile.days_per_week || profile.session_duration || profile.preferred_time" style="animation-delay: 320ms">
+        <h3><span class="section-icon">📅</span> Расписание</h3>
         <div class="info-row">
           <span class="label">Дней в неделю</span>
           <input v-if="editing" v-model.number="editData.days_per_week" type="number" min="1" max="7" class="edit-input" />
@@ -133,7 +152,7 @@
 
       <!-- Health info -->
       <div class="info-card health-card" v-if="profile.has_pain" style="animation-delay: 400ms">
-        <h3>Здоровье</h3>
+        <h3><span class="section-icon">❤️</span> Здоровье</h3>
         <div class="info-row" v-if="profile.pain_locations && profile.pain_locations.length">
           <span class="label">Зоны боли</span>
           <span class="value">{{ painLocationsText }}</span>
@@ -480,10 +499,10 @@ onUnmounted(() => setClosingGuard(false))
 
 .profile-header {
   text-align: center;
-  margin-bottom: 20px;
-  padding: 24px 16px 16px;
+  margin-bottom: 16px;
+  padding: 32px 16px 20px;
   background: var(--secondary-bg);
-  border-radius: 12px;
+  border-radius: 16px;
   position: relative;
   overflow: hidden;
   opacity: 0;
@@ -495,36 +514,45 @@ onUnmounted(() => setClosingGuard(false))
   top: 0;
   left: 0;
   right: 0;
-  height: 60px;
+  height: 96px;
   background: linear-gradient(135deg, var(--button-color), var(--link-color));
-  opacity: 0.15;
+  opacity: 0.22;
 }
 
+/* Outer .avatar is the positioning context for the edit badge.
+   Inner .avatar-circle does the circular masking. This split lets the
+   badge sit OUTSIDE the circle's boundary while still inside the card. */
 .avatar {
-  width: 64px;
-  height: 64px;
+  width: 104px;
+  height: 104px;
+  margin: 0 auto 14px;
+  position: relative;
+  z-index: 1;
+}
+
+.avatar-circle {
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
-  background: var(--button-color);
+  background: linear-gradient(135deg, var(--button-color), var(--link-color));
   color: var(--button-text-color);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  font-size: 38px;
   font-weight: 700;
-  margin: 0 auto 12px;
-  position: relative;
-  z-index: 1;
   overflow: hidden;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  transition: transform 0.12s;
 }
 
 .avatar-button {
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: transform 0.1s;
 }
 
-.avatar-button:active {
-  transform: scale(0.95);
+.avatar-button:active .avatar-circle {
+  transform: scale(0.96);
 }
 
 .avatar-button.uploading {
@@ -535,7 +563,6 @@ onUnmounted(() => setClosingGuard(false))
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 50%;
 }
 
 .avatar-overlay {
@@ -546,24 +573,30 @@ onUnmounted(() => setClosingGuard(false))
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   border-radius: 50%;
 }
 
+/* Floating edit badge — anchored at the bottom-right of the avatar
+   bounding box (outside the inscribed circle). Thick page-bg border +
+   shadow gives the iOS-style "floats above" feel. */
 .avatar-edit-badge {
   position: absolute;
   bottom: -2px;
   right: -2px;
-  width: 22px;
-  height: 22px;
-  background: var(--bg-color);
+  width: 34px;
+  height: 34px;
+  background: var(--button-color);
+  color: var(--button-text-color);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
-  border: 2px solid var(--secondary-bg);
+  font-size: 15px;
+  border: 3px solid var(--bg-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  z-index: 2;
 }
 
 .avatar-error {
@@ -572,9 +605,50 @@ onUnmounted(() => setClosingGuard(false))
   margin-top: 6px;
 }
 
+.profile-name {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 4px 0 2px;
+  letter-spacing: -0.2px;
+}
+
 .username {
   color: var(--hint-color);
   font-size: 14px;
+}
+
+/* Vitals tile row — Apple-Health-style quick-glance stats */
+.vitals-row {
+  display: flex;
+  gap: 8px;
+  margin: 16px 0 4px;
+  justify-content: center;
+}
+
+.vital-tile {
+  flex: 1;
+  max-width: 110px;
+  background: var(--bg-color);
+  border-radius: 12px;
+  padding: 10px 8px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.vital-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-color);
+  line-height: 1.1;
+}
+
+.vital-label {
+  font-size: 11px;
+  color: var(--hint-color);
+  margin-top: 4px;
+  letter-spacing: 0.1px;
 }
 
 .info-card {
@@ -590,11 +664,31 @@ onUnmounted(() => setClosingGuard(false))
   margin-bottom: 12px;
   font-size: 18px;
   font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.health-card {
-  border-left: 3px solid #ff3b30;
+.section-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  font-size: 16px;
+  flex-shrink: 0;
 }
+
+.section-goals .section-icon { background: rgba(52, 199, 89, 0.18); }
+.section-training .section-icon { background: rgba(36, 129, 204, 0.18); }
+.section-schedule .section-icon { background: rgba(255, 149, 0, 0.18); }
+.health-card .section-icon { background: rgba(255, 59, 48, 0.18); }
+
+.section-goals { border-left: 3px solid #34c759; }
+.section-training { border-left: 3px solid var(--button-color); }
+.section-schedule { border-left: 3px solid #ff9500; }
+.health-card { border-left: 3px solid #ff3b30; }
 
 .info-row {
   display: flex;
@@ -670,16 +764,24 @@ onUnmounted(() => setClosingGuard(false))
 }
 
 .edit-toggle {
-  background: none;
-  border: 1px solid var(--button-color);
+  background: var(--bg-color);
+  border: none;
   color: var(--button-color);
-  padding: 6px 16px;
-  border-radius: 16px;
-  font-size: 13px;
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-  margin-top: 10px;
+  margin-top: 16px;
   position: relative;
   z-index: 1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.edit-toggle:active {
+  transform: scale(0.97);
 }
 
 .edit-input {
