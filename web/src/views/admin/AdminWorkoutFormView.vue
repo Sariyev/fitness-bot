@@ -4,104 +4,121 @@
 
     <div v-if="loading" class="loading">Загрузка...</div>
 
-    <form v-else class="form" @submit.prevent="save">
-      <div class="field">
-        <label>Название *</label>
-        <input v-model="form.name" required />
-      </div>
-      <div class="field">
-        <label>Slug</label>
-        <input v-model="form.slug" placeholder="auto-from-name" />
-      </div>
-      <div class="field">
-        <label>Описание</label>
-        <textarea v-model="form.description" rows="3"></textarea>
-      </div>
-      <div class="field">
-        <label>Программа</label>
-        <select v-model="form.program_id">
-          <option :value="undefined">— Без программы —</option>
-          <option v-for="p in programs" :key="p.id" :value="p.id">{{ p.name }}</option>
-        </select>
-      </div>
-      <div class="row">
+    <form v-else class="admin-form" @submit.prevent="save">
+      <fieldset class="admin-section">
+        <legend class="admin-section-title">Основные данные</legend>
         <div class="field">
-          <label>Цель</label>
-          <select v-model="form.goal">
-            <option value="">—</option>
-            <option value="weight_loss">Похудение</option>
-            <option value="muscle_gain">Набор массы</option>
-            <option value="general_fitness">Общая форма</option>
+          <label>Название *</label>
+          <input v-model="form.name" required />
+        </div>
+        <div class="field">
+          <label>Slug</label>
+          <input v-model="form.slug" placeholder="auto-from-name" />
+        </div>
+        <div class="field">
+          <label>Описание</label>
+          <textarea v-model="form.description" rows="3"></textarea>
+        </div>
+        <div class="field">
+          <label>Программа</label>
+          <select v-model="form.program_id">
+            <option :value="undefined">— Без программы —</option>
+            <option v-for="p in programs" :key="p.id" :value="p.id">{{ p.name }}</option>
           </select>
         </div>
-        <div class="field">
-          <label>Формат</label>
-          <select v-model="form.format">
-            <option value="">—</option>
-            <option value="home">Дома</option>
-            <option value="gym">Зал</option>
-          </select>
-        </div>
-      </div>
-      <div class="row">
-        <div class="field">
-          <label>Уровень</label>
-          <select v-model="form.level">
-            <option value="">—</option>
-            <option value="beginner">Начинающий</option>
-            <option value="intermediate">Средний</option>
-            <option value="advanced">Продвинутый</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Минут</label>
-          <input v-model.number="form.duration_minutes" type="number" min="1" />
-        </div>
-      </div>
-      <div class="field">
-        <label>Оборудование (через запятую)</label>
-        <input v-model="equipmentStr" />
-      </div>
-      <div class="field">
-        <label>Ожидаемый результат</label>
-        <textarea v-model="form.expected_result" rows="2"></textarea>
-      </div>
-      <div class="field">
-        <label>Видео (загрузка в R2)</label>
-        <VideoUploader v-model="form.video_media_id" reference-type="workout_video" />
-      </div>
-      <div class="field">
-        <label>Или внешняя ссылка (YouTube и т.п.)</label>
-        <input v-model="form.video_url" placeholder="Использовать вместо загрузки" />
-      </div>
-      <div v-if="form.program_id" class="row">
-        <div class="field">
-          <label>Неделя</label>
-          <input v-model.number="form.week_number" type="number" min="1" />
-        </div>
-        <div class="field">
-          <label>День</label>
-          <input v-model.number="form.day_number" type="number" min="1" />
-        </div>
-      </div>
-      <div class="row">
-        <div class="field">
-          <label>Порядок</label>
-          <input v-model.number="form.sort_order" type="number" />
-        </div>
-        <div class="field">
-          <label>Активна</label>
-          <div class="toggle-group">
-            <button type="button" :class="{ active: form.is_active }" @click="form.is_active = true">Да</button>
-            <button type="button" :class="{ active: !form.is_active }" @click="form.is_active = false">Нет</button>
+      </fieldset>
+
+      <fieldset class="admin-section">
+        <legend class="admin-section-title">Параметры тренировки</legend>
+        <div class="row">
+          <div class="field">
+            <label>Цель</label>
+            <select v-model="form.goal">
+              <option value="">—</option>
+              <option value="weight_loss">Похудение</option>
+              <option value="muscle_gain">Набор массы</option>
+              <option value="general_fitness">Общая форма</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Формат</label>
+            <select v-model="form.format">
+              <option value="">—</option>
+              <option value="home">Дома</option>
+              <option value="gym">Зал</option>
+            </select>
           </div>
         </div>
-      </div>
+        <div class="row">
+          <div class="field">
+            <label>Уровень</label>
+            <select v-model="form.level">
+              <option value="">—</option>
+              <option value="beginner">Начинающий</option>
+              <option value="intermediate">Средний</option>
+              <option value="advanced">Продвинутый</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Минут</label>
+            <input v-model.number="form.duration_minutes" type="number" min="1" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Оборудование (через запятую)</label>
+          <input v-model="equipmentStr" />
+        </div>
+        <div class="field">
+          <label>Ожидаемый результат</label>
+          <textarea v-model="form.expected_result" rows="2"></textarea>
+        </div>
+        <div v-if="form.program_id" class="row">
+          <div class="field">
+            <label>Неделя</label>
+            <input v-model.number="form.week_number" type="number" min="1" />
+          </div>
+          <div class="field">
+            <label>День</label>
+            <input v-model.number="form.day_number" type="number" min="1" />
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="admin-section">
+        <legend class="admin-section-title">Видео</legend>
+        <div class="field">
+          <label>Загрузить видео (MP4 в R2)</label>
+          <VideoUploader v-model="form.video_media_id" reference-type="workout_video" />
+        </div>
+        <div class="field">
+          <label>Или внешняя ссылка (YouTube и т.п.)</label>
+          <input v-model="form.video_url" placeholder="Использовать вместо загрузки" />
+        </div>
+      </fieldset>
+
+      <fieldset class="admin-section">
+        <legend class="admin-section-title">Статус</legend>
+        <div class="row">
+          <div class="field">
+            <label>Порядок</label>
+            <input v-model.number="form.sort_order" type="number" />
+          </div>
+          <div class="field">
+            <label>Активна</label>
+            <div class="toggle-group">
+              <button type="button" :class="{ active: form.is_active }" @click="form.is_active = true">Да</button>
+              <button type="button" :class="{ active: !form.is_active }" @click="form.is_active = false">Нет</button>
+            </div>
+          </div>
+        </div>
+      </fieldset>
 
       <div v-if="error" class="error-msg">{{ error }}</div>
-      <button type="submit" class="btn btn-primary" :disabled="saving">
-        {{ saving ? 'Сохранение...' : 'Сохранить' }}
-      </button>
+      <div class="admin-save-bar">
+        <button type="submit" class="admin-save-btn" :disabled="saving">
+          {{ saving ? 'Сохранение...' : 'Сохранить' }}
+        </button>
+      </div>
     </form>
 
     <!-- Exercises section for edit mode -->

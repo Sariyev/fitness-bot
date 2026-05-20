@@ -1,0 +1,85 @@
+/* Shared visual language for admin forms. Apply by adding `class="admin-form"`
+   to the <form> element. Section cards: wrap related fields in
+   <fieldset class="admin-section"> with an <legend class="admin-section-title">.
+   These are unscoped global classes (Vue's scoped attribute won't apply). */
+
+.admin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.admin-section {
+  background: var(--secondary-bg);
+  border: none;
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+}
+
+.admin-section-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 4px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-section-title .icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  font-size: 16px;
+  flex-shrink: 0;
+  background: rgba(36, 129, 204, 0.18);
+}
+
+.admin-section-title.icon-goals .icon { background: rgba(52, 199, 89, 0.18); }
+.admin-section-title.icon-schedule .icon { background: rgba(255, 149, 0, 0.18); }
+.admin-section-title.icon-media .icon { background: rgba(175, 82, 222, 0.18); }
+.admin-section-title.icon-status .icon { background: rgba(255, 59, 48, 0.18); }
+
+/* The save bar pinned to the bottom of the form. */
+.admin-save-bar {
+  position: sticky;
+  bottom: 0;
+  background: linear-gradient(to top, var(--bg-color) 70%, rgba(0,0,0,0));
+  padding: 12px 0 16px;
+  margin: 8px -16px -16px;
+  padding-left: 16px;
+  padding-right: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 5;
+}
+
+.admin-save-btn {
+  padding: 14px;
+  border-radius: 14px;
+  border: none;
+  background: var(--button-color);
+  color: var(--button-text-color);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  transition: transform 0.1s, opacity 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.admin-save-btn:active { transform: scale(0.98); }
+.admin-save-btn:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+
+.admin-save-btn.dirty::after {
+  content: " •";
+  color: rgba(255, 255, 255, 0.85);
+}

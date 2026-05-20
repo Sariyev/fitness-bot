@@ -4,68 +4,81 @@
 
     <div v-if="loading" class="loading">Загрузка...</div>
 
-    <form v-else class="form" @submit.prevent="save">
-      <div class="field">
-        <label>Наз��ание *</label>
-        <input v-model="form.name" required />
-      </div>
-      <div class="field">
-        <label>Slug</label>
-        <input v-model="form.slug" placeholder="auto-from-name" />
-      </div>
-      <div class="row">
+    <form v-else class="admin-form" @submit.prevent="save">
+      <fieldset class="admin-section">
+        <legend class="admin-section-title">Основные данные</legend>
         <div class="field">
-          <label>Цель</label>
-          <select v-model="form.goal">
-            <option value="">—</option>
-            <option value="weight_loss">Похудение</option>
-            <option value="muscle_gain">Набор массы</option>
-            <option value="maintenance">Поддержание</option>
-          </select>
+          <label>Название *</label>
+          <input v-model="form.name" required />
         </div>
         <div class="field">
-          <label>День</label>
-          <input v-model.number="form.day_number" type="number" min="1" />
+          <label>Slug</label>
+          <input v-model="form.slug" placeholder="auto-from-name" />
         </div>
-      </div>
-      <div class="row">
-        <div class="field">
-          <label>Калории</label>
-          <input v-model.number="form.calories" type="number" />
-        </div>
-        <div class="field">
-          <label>Белки (г)</label>
-          <input v-model.number="form.protein" type="number" step="0.1" />
-        </div>
-      </div>
-      <div class="row">
-        <div class="field">
-          <label>Жиры (г)</label>
-          <input v-model.number="form.fat" type="number" step="0.1" />
-        </div>
-        <div class="field">
-          <label>Углеводы (г)</label>
-          <input v-model.number="form.carbs" type="number" step="0.1" />
-        </div>
-      </div>
-      <div class="row">
-        <div class="field">
-          <label>Порядок</label>
-          <input v-model.number="form.sort_order" type="number" />
-        </div>
-        <div class="field">
-          <label>Активен</label>
-          <div class="toggle-group">
-            <button type="button" :class="{ active: form.is_active }" @click="form.is_active = true">Да</button>
-            <button type="button" :class="{ active: !form.is_active }" @click="form.is_active = false">Нет</button>
+        <div class="row">
+          <div class="field">
+            <label>Цель</label>
+            <select v-model="form.goal">
+              <option value="">—</option>
+              <option value="weight_loss">Похудение</option>
+              <option value="muscle_gain">Набор массы</option>
+              <option value="maintenance">Поддержание</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>День</label>
+            <input v-model.number="form.day_number" type="number" min="1" />
           </div>
         </div>
-      </div>
+      </fieldset>
+
+      <fieldset class="admin-section">
+        <legend class="admin-section-title">Питательная ценность</legend>
+        <div class="row">
+          <div class="field">
+            <label>Калории</label>
+            <input v-model.number="form.calories" type="number" />
+          </div>
+          <div class="field">
+            <label>Белки (г)</label>
+            <input v-model.number="form.protein" type="number" step="0.1" />
+          </div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>Жиры (г)</label>
+            <input v-model.number="form.fat" type="number" step="0.1" />
+          </div>
+          <div class="field">
+            <label>Углеводы (г)</label>
+            <input v-model.number="form.carbs" type="number" step="0.1" />
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="admin-section">
+        <legend class="admin-section-title">Статус</legend>
+        <div class="row">
+          <div class="field">
+            <label>Порядок</label>
+            <input v-model.number="form.sort_order" type="number" />
+          </div>
+          <div class="field">
+            <label>Активен</label>
+            <div class="toggle-group">
+              <button type="button" :class="{ active: form.is_active }" @click="form.is_active = true">Да</button>
+              <button type="button" :class="{ active: !form.is_active }" @click="form.is_active = false">Нет</button>
+            </div>
+          </div>
+        </div>
+      </fieldset>
 
       <div v-if="error" class="error-msg">{{ error }}</div>
-      <button type="submit" class="btn btn-primary" :disabled="saving">
-        {{ saving ? 'Сохранение...' : 'Сохранить' }}
-      </button>
+      <div class="admin-save-bar">
+        <button type="submit" class="admin-save-btn" :disabled="saving">
+          {{ saving ? 'Сохранение...' : 'Сохранить' }}
+        </button>
+      </div>
     </form>
 
     <!-- Meals section for edit mode -->

@@ -4,51 +4,60 @@
 
     <div v-if="loading" class="loading">Загрузка...</div>
 
-    <form v-else class="form" @submit.prevent="save">
-      <div class="field">
-        <label>Курс ID *</label>
-        <input v-model.number="form.course_id" type="number" required :disabled="isEdit" />
-      </div>
-      <div class="row">
+    <form v-else class="admin-form" @submit.prevent="save">
+      <fieldset class="admin-section">
+        <legend class="admin-section-title">Основные данные</legend>
         <div class="field">
-          <label>День</label>
-          <input v-model.number="form.day_number" type="number" min="1" />
+          <label>Курс ID *</label>
+          <input v-model.number="form.course_id" type="number" required :disabled="isEdit" />
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>День</label>
+            <input v-model.number="form.day_number" type="number" min="1" />
+          </div>
+          <div class="field">
+            <label>Этап</label>
+            <input v-model.number="form.stage" type="number" min="1" max="3" />
+          </div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>Длительность (мин)</label>
+            <input v-model.number="form.duration_minutes" type="number" min="0" />
+          </div>
+          <div class="field">
+            <label>Порядок</label>
+            <input v-model.number="form.sort_order" type="number" />
+          </div>
         </div>
         <div class="field">
-          <label>Этап</label>
-          <input v-model.number="form.stage" type="number" min="1" max="3" />
+          <label>Описание</label>
+          <textarea v-model="form.description" rows="3"></textarea>
         </div>
-      </div>
-      <div class="row">
+      </fieldset>
+
+      <fieldset class="admin-section">
+        <legend class="admin-section-title">Видео</legend>
         <div class="field">
-          <label>Длительность (мин)</label>
-          <input v-model.number="form.duration_minutes" type="number" min="0" />
+          <label>Загрузить видео (MP4 в R2)</label>
+          <VideoUploader v-model="form.video_media_id" reference-type="rehab_session_video" />
         </div>
         <div class="field">
-          <label>Порядок</label>
-          <input v-model.number="form.sort_order" type="number" />
+          <label>Или внешняя ссылка (YouTube и т.п.)</label>
+          <input v-model="form.video_url" placeholder="Использовать вместо загрузки" />
         </div>
-      </div>
-      <div class="field">
-        <label>Описание</label>
-        <textarea v-model="form.description" rows="3"></textarea>
-      </div>
-      <div class="field">
-        <label>Видео (загрузка в R2)</label>
-        <VideoUploader v-model="form.video_media_id" reference-type="rehab_session_video" />
-      </div>
-      <div class="field">
-        <label>Или внешняя ссылка (YouTube и т.п.)</label>
-        <input v-model="form.video_url" placeholder="Использовать вместо загрузки" />
-      </div>
+      </fieldset>
 
       <div v-if="error" class="error-msg">{{ error }}</div>
-      <button type="submit" class="btn btn-primary" :disabled="saving">
-        {{ saving ? 'Сохранение...' : 'Сохранить' }}
-      </button>
-      <button v-if="form.course_id" type="button" class="btn btn-secondary" @click="router.push(`/admin/rehab/courses/${form.course_id}`)">
-        Назад к курсу
-      </button>
+      <div class="admin-save-bar">
+        <button type="submit" class="admin-save-btn" :disabled="saving">
+          {{ saving ? 'Сохранение...' : 'Сохранить' }}
+        </button>
+        <button v-if="form.course_id" type="button" class="btn-secondary" @click="router.push(`/admin/rehab/courses/${form.course_id}`)">
+          Назад к курсу
+        </button>
+      </div>
     </form>
   </div>
 </template>

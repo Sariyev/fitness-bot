@@ -4,36 +4,45 @@
 
     <div v-if="loading" class="loading">Загрузка...</div>
 
-    <form v-else class="form" @submit.prevent="save">
-      <div class="field">
-        <label>Название *</label>
-        <input v-model="form.name" required />
-      </div>
-      <div class="field">
-        <label>Техника выполнения</label>
-        <textarea v-model="form.technique" rows="3"></textarea>
-      </div>
-      <div class="field">
-        <label>Частые ошибки</label>
-        <textarea v-model="form.common_mistakes" rows="3"></textarea>
-      </div>
-      <div class="field">
-        <label>Упрощение</label>
-        <textarea v-model="form.easier_modification" rows="2"></textarea>
-      </div>
-      <div class="field">
-        <label>Усложнение</label>
-        <textarea v-model="form.harder_modification" rows="2"></textarea>
-      </div>
-      <div class="field">
-        <label>Отдых (сек)</label>
-        <input v-model.number="form.rest_seconds" type="number" min="0" />
-      </div>
+    <form v-else class="admin-form" @submit.prevent="save">
+      <fieldset class="admin-section">
+        <legend class="admin-section-title">Основные данные</legend>
+        <div class="field">
+          <label>Название *</label>
+          <input v-model="form.name" required />
+        </div>
+        <div class="field">
+          <label>Техника выполнения</label>
+          <textarea v-model="form.technique" rows="3"></textarea>
+        </div>
+        <div class="field">
+          <label>Частые ошибки</label>
+          <textarea v-model="form.common_mistakes" rows="3"></textarea>
+        </div>
+      </fieldset>
+
+      <fieldset class="admin-section">
+        <legend class="admin-section-title">Варианты выполнения</legend>
+        <div class="field">
+          <label>Упрощение</label>
+          <textarea v-model="form.easier_modification" rows="2"></textarea>
+        </div>
+        <div class="field">
+          <label>Усложнение</label>
+          <textarea v-model="form.harder_modification" rows="2"></textarea>
+        </div>
+        <div class="field">
+          <label>Отдых (сек)</label>
+          <input v-model.number="form.rest_seconds" type="number" min="0" />
+        </div>
+      </fieldset>
 
       <div v-if="error" class="error-msg">{{ error }}</div>
-      <button type="submit" class="btn btn-primary" :disabled="saving">
-        {{ saving ? 'Сохранение...' : 'Сохранить' }}
-      </button>
+      <div class="admin-save-bar">
+        <button type="submit" class="admin-save-btn" :disabled="saving">
+          {{ saving ? 'Сохранение...' : 'Сохранить' }}
+        </button>
+      </div>
     </form>
   </div>
 </template>

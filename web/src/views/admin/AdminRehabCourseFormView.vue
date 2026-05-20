@@ -4,53 +4,62 @@
 
     <div v-if="loading" class="loading">Загрузка...</div>
 
-    <form v-else class="form" @submit.prevent="save">
-      <div class="field">
-        <label>Название *</label>
-        <input v-model="form.name" required />
-      </div>
-      <div class="field">
-        <label>Slug</label>
-        <input v-model="form.slug" placeholder="auto-from-name" />
-      </div>
-      <div class="row">
+    <form v-else class="admin-form" @submit.prevent="save">
+      <fieldset class="admin-section">
+        <legend class="admin-section-title">Основные данные</legend>
         <div class="field">
-          <label>Категория</label>
-          <select v-model="form.category">
-            <option value="">—</option>
-            <option value="back">Спина</option>
-            <option value="lower_back">Поясница</option>
-            <option value="neck">Шея</option>
-            <option value="shoulder">Плечо</option>
-            <option value="knee">Колено</option>
-            <option value="general">Общая</option>
-          </select>
+          <label>Название *</label>
+          <input v-model="form.name" required />
         </div>
         <div class="field">
-          <label>Порядок</label>
-          <input v-model.number="form.sort_order" type="number" />
+          <label>Slug</label>
+          <input v-model="form.slug" placeholder="auto-from-name" />
         </div>
-      </div>
-      <div class="field">
-        <label>Описание</label>
-        <textarea v-model="form.description" rows="3"></textarea>
-      </div>
-      <div class="field">
-        <label>Предупреждения</label>
-        <textarea v-model="form.warnings" rows="2" placeholder="Противопоказания, важные замечания"></textarea>
-      </div>
-      <div class="field">
-        <label>Активен</label>
-        <div class="toggle-group">
-          <button type="button" :class="{ active: form.is_active }" @click="form.is_active = true">Да</button>
-          <button type="button" :class="{ active: !form.is_active }" @click="form.is_active = false">Нет</button>
+        <div class="row">
+          <div class="field">
+            <label>Категория</label>
+            <select v-model="form.category">
+              <option value="">—</option>
+              <option value="back">Спина</option>
+              <option value="lower_back">Поясница</option>
+              <option value="neck">Шея</option>
+              <option value="shoulder">Плечо</option>
+              <option value="knee">Колено</option>
+              <option value="general">Общая</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Порядок</label>
+            <input v-model.number="form.sort_order" type="number" />
+          </div>
         </div>
-      </div>
+        <div class="field">
+          <label>Описание</label>
+          <textarea v-model="form.description" rows="3"></textarea>
+        </div>
+        <div class="field">
+          <label>Предупреждения</label>
+          <textarea v-model="form.warnings" rows="2" placeholder="Противопоказания, важные замечания"></textarea>
+        </div>
+      </fieldset>
+
+      <fieldset class="admin-section">
+        <legend class="admin-section-title">Статус</legend>
+        <div class="field">
+          <label>Активен</label>
+          <div class="toggle-group">
+            <button type="button" :class="{ active: form.is_active }" @click="form.is_active = true">Да</button>
+            <button type="button" :class="{ active: !form.is_active }" @click="form.is_active = false">Нет</button>
+          </div>
+        </div>
+      </fieldset>
 
       <div v-if="error" class="error-msg">{{ error }}</div>
-      <button type="submit" class="btn btn-primary" :disabled="saving">
-        {{ saving ? 'Сохранение...' : 'Сохранить' }}
-      </button>
+      <div class="admin-save-bar">
+        <button type="submit" class="admin-save-btn" :disabled="saving">
+          {{ saving ? 'Сохранение...' : 'Сохранить' }}
+        </button>
+      </div>
     </form>
 
     <!-- Sessions list (only for existing course) -->

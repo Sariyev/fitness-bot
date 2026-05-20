@@ -4,64 +4,73 @@
 
     <div v-if="loading" class="loading">Загрузка...</div>
 
-    <form v-else class="form" @submit.prevent="save">
-      <div class="field">
-        <label>План питания</label>
-        <select v-model.number="form.meal_plan_id" required>
-          <option :value="0">— Выбрать —</option>
-          <option v-for="p in plans" :key="p.id" :value="p.id">{{ p.name }}</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>Тип приёма</label>
-        <select v-model="form.meal_type">
-          <option value="breakfast">Завтрак</option>
-          <option value="lunch">Обед</option>
-          <option value="dinner">Ужин</option>
-          <option value="snack">Перекус</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>Название *</label>
-        <input v-model="form.name" required />
-      </div>
-      <div class="field">
-        <label>Рецепт</label>
-        <textarea v-model="form.recipe" rows="4"></textarea>
-      </div>
-      <div class="row">
+    <form v-else class="admin-form" @submit.prevent="save">
+      <fieldset class="admin-section">
+        <legend class="admin-section-title">Основные данные</legend>
         <div class="field">
-          <label>Калории</label>
-          <input v-model.number="form.calories" type="number" />
+          <label>План питания</label>
+          <select v-model.number="form.meal_plan_id" required>
+            <option :value="0">— Выбрать —</option>
+            <option v-for="p in plans" :key="p.id" :value="p.id">{{ p.name }}</option>
+          </select>
         </div>
         <div class="field">
-          <label>Белки (г)</label>
-          <input v-model.number="form.protein" type="number" step="0.1" />
+          <label>Тип приёма</label>
+          <select v-model="form.meal_type">
+            <option value="breakfast">Завтрак</option>
+            <option value="lunch">Обед</option>
+            <option value="dinner">Ужин</option>
+            <option value="snack">Перекус</option>
+          </select>
         </div>
-      </div>
-      <div class="row">
         <div class="field">
-          <label>Жиры (г)</label>
-          <input v-model.number="form.fat" type="number" step="0.1" />
+          <label>Название *</label>
+          <input v-model="form.name" required />
         </div>
         <div class="field">
-          <label>Углеводы (г)</label>
-          <input v-model.number="form.carbs" type="number" step="0.1" />
+          <label>Рецепт</label>
+          <textarea v-model="form.recipe" rows="4"></textarea>
         </div>
-      </div>
-      <div class="field">
-        <label>Альтернативы</label>
-        <textarea v-model="form.alternatives" rows="2"></textarea>
-      </div>
-      <div class="field">
-        <label>Порядок</label>
-        <input v-model.number="form.sort_order" type="number" />
-      </div>
+        <div class="field">
+          <label>Альтернативы</label>
+          <textarea v-model="form.alternatives" rows="2"></textarea>
+        </div>
+      </fieldset>
+
+      <fieldset class="admin-section">
+        <legend class="admin-section-title">Питательная ценность</legend>
+        <div class="row">
+          <div class="field">
+            <label>Калории</label>
+            <input v-model.number="form.calories" type="number" />
+          </div>
+          <div class="field">
+            <label>Белки (г)</label>
+            <input v-model.number="form.protein" type="number" step="0.1" />
+          </div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>Жиры (г)</label>
+            <input v-model.number="form.fat" type="number" step="0.1" />
+          </div>
+          <div class="field">
+            <label>Углеводы (г)</label>
+            <input v-model.number="form.carbs" type="number" step="0.1" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Порядок</label>
+          <input v-model.number="form.sort_order" type="number" />
+        </div>
+      </fieldset>
 
       <div v-if="error" class="error-msg">{{ error }}</div>
-      <button type="submit" class="btn btn-primary" :disabled="saving">
-        {{ saving ? 'Сохранение...' : 'Сохранить' }}
-      </button>
+      <div class="admin-save-bar">
+        <button type="submit" class="admin-save-btn" :disabled="saving">
+          {{ saving ? 'Сохранение...' : 'Сохранить' }}
+        </button>
+      </div>
     </form>
   </div>
 </template>
