@@ -127,7 +127,7 @@
         </div>
         <div class="info-row" v-if="!editing && profile.equipment && profile.equipment.length">
           <span class="label">Оборудование</span>
-          <span class="value">{{ profile.equipment.join(', ') }}</span>
+          <span class="value">{{ equipmentText }}</span>
         </div>
       </div>
 
@@ -136,7 +136,7 @@
         <h3>Здоровье</h3>
         <div class="info-row" v-if="profile.pain_locations && profile.pain_locations.length">
           <span class="label">Зоны боли</span>
-          <span class="value">{{ profile.pain_locations.join(', ') }}</span>
+          <span class="value">{{ painLocationsText }}</span>
         </div>
         <div class="info-row" v-if="profile.pain_level != null">
           <span class="label">Уровень боли</span>
@@ -144,7 +144,7 @@
         </div>
         <div class="info-row" v-if="profile.diagnoses && profile.diagnoses.length">
           <span class="label">Диагнозы</span>
-          <span class="value">{{ profile.diagnoses.join(', ') }}</span>
+          <span class="value">{{ diagnosesText }}</span>
         </div>
         <div class="info-row" v-if="profile.contraindications">
           <span class="label">Противопоказания</span>
@@ -281,6 +281,40 @@ const goalLabels: Record<string, string> = {
   scoliosis: 'Сколиоз',
   kyphosis: 'Кифоз',
   lordosis: 'Лордоз',
+  lfk: 'ЛФК',
+  training: 'Тренировки',
+}
+
+// Stored values are English keys (see web/src/views/onboarding/HealthSlide.vue);
+// these dictionaries translate them for display in the read-only profile.
+const painLocationLabels: Record<string, string> = {
+  back: 'Спина',
+  lower_back: 'Поясница',
+  neck: 'Шея',
+  shoulder: 'Плечо',
+  knee: 'Колено',
+  other: 'Другое',
+}
+
+const diagnosisLabels: Record<string, string> = {
+  hernia: 'Грыжа',
+  protrusion: 'Протрузия',
+  scoliosis: 'Сколиоз',
+  osteochondrosis: 'Остеохондроз',
+  kyphosis: 'Кифоз',
+  lordosis: 'Лордоз',
+  other: 'Другое',
+}
+
+const equipmentLabels: Record<string, string> = {
+  dumbbells: 'Гантели',
+  barbell: 'Штанга',
+  kettlebell: 'Гиря',
+  bench: 'Скамья',
+  pullup_bar: 'Турник',
+  resistance_band: 'Резинки',
+  mat: 'Коврик',
+  none: 'Без инвентаря',
 }
 
 const accessLabels: Record<string, string> = {
@@ -307,6 +341,30 @@ const timeLabels: Record<string, string> = {
 function goalLabel(key: string): string {
   return goalLabels[key] || key
 }
+
+function painLocationLabel(key: string): string {
+  return painLocationLabels[key] || key
+}
+
+function diagnosisLabel(key: string): string {
+  return diagnosisLabels[key] || key
+}
+
+function equipmentLabel(key: string): string {
+  return equipmentLabels[key] || key
+}
+
+const painLocationsText = computed(() =>
+  (profile.value?.pain_locations || []).map(painLocationLabel).join(', '),
+)
+
+const diagnosesText = computed(() =>
+  (profile.value?.diagnoses || []).map(diagnosisLabel).join(', '),
+)
+
+const equipmentText = computed(() =>
+  (profile.value?.equipment || []).map(equipmentLabel).join(', '),
+)
 
 function painColor(level: number): string {
   if (level <= 3) return '#34c759'
@@ -452,7 +510,7 @@ onUnmounted(() => setClosingGuard(false))
   align-items: center;
   justify-content: center;
   font-size: 24px;
-  font-weight: bold;
+  font-weight: 700;
   margin: 0 auto 12px;
   position: relative;
   z-index: 1;
@@ -529,10 +587,9 @@ onUnmounted(() => setClosingGuard(false))
 }
 
 .info-card h3 {
-  margin-bottom: 8px;
-  font-size: 14px;
-  color: var(--hint-color);
-  text-transform: uppercase;
+  margin-bottom: 12px;
+  font-size: 18px;
+  font-weight: 700;
 }
 
 .health-card {
@@ -542,12 +599,7 @@ onUnmounted(() => setClosingGuard(false))
 .info-row {
   display: flex;
   justify-content: space-between;
-  padding: 8px 0;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-.info-row:last-child {
-  border-bottom: none;
+  padding: 10px 0;
 }
 
 .label {

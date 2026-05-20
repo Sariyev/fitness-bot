@@ -20,13 +20,13 @@
               :class="{ active: user.role === 'client' }"
               @click="setRole('client')"
               :disabled="saving"
-            >Client</button>
+            >Клиент</button>
             <button
               class="toggle-btn"
               :class="{ active: user.role === 'admin' }"
               @click="setRole('admin')"
               :disabled="saving"
-            >Admin</button>
+            >Админ</button>
           </div>
         </div>
         <div class="info-row">
@@ -37,13 +37,13 @@
               :class="{ active: !user.is_paid }"
               @click="setPaid(false)"
               :disabled="saving"
-            >Free</button>
+            >Без оплаты</button>
             <button
               class="toggle-btn paid-btn"
               :class="{ active: user.is_paid }"
               @click="setPaid(true)"
               :disabled="saving"
-            >Paid</button>
+            >Оплачено</button>
           </div>
         </div>
         <div class="info-row">
