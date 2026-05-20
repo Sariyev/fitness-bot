@@ -27,6 +27,7 @@ type WebAppRouter struct {
 	recommendSvc *service.RecommendationService
 	scoreSvc     *service.ScoreService
 	mediaSvc     *service.MediaService // nil when R2 isn't configured
+	accessSvc    *service.AccessService
 	botToken     string
 	staticDir    string
 	verifier     payment.CallbackVerifier
@@ -46,6 +47,7 @@ func NewRouter(
 	recommendSvc *service.RecommendationService,
 	scoreSvc *service.ScoreService,
 	mediaSvc *service.MediaService,
+	accessSvc *service.AccessService,
 	staticDir string,
 	verifier payment.CallbackVerifier,
 	webAppURL string,
@@ -63,6 +65,7 @@ func NewRouter(
 		recommendSvc: recommendSvc,
 		scoreSvc:     scoreSvc,
 		mediaSvc:     mediaSvc,
+		accessSvc:    accessSvc,
 		botToken:     botToken,
 		staticDir:    staticDir,
 		verifier:     verifier,
@@ -110,9 +113,10 @@ func (r *WebAppRouter) setupRoutes() {
 	profileHandler := NewProfileHandler(r.userSvc)
 	registrationHandler := NewRegistrationHandler(r.userSvc, r.recommendSvc)
 	dashboardHandler := NewDashboardHandler(r.dashboardSvc)
-	workoutHandler := NewWorkoutHandler(r.workoutSvc)
-	rehabHandler := NewRehabHandler(r.rehabSvc)
-	nutritionHandler := NewNutritionHandler(r.nutritionSvc)
+	workoutHandler := NewWorkoutHandler(r.workoutSvc, r.accessSvc)
+	rehabHandler := NewRehabHandler(r.rehabSvc, r.accessSvc)
+	nutritionHandler := NewNutritionHandler(r.nutritionSvc, r.accessSvc)
+	accessHandler := NewAccessHandler(r.accessSvc)
 	progressV2Handler := NewProgressV2Handler(r.progressSvc)
 	reviewHandler := NewReviewHandler(r.scoreSvc)
 
@@ -133,6 +137,7 @@ func (r *WebAppRouter) setupRoutes() {
 	})))
 	r.mux.Handle("/app/api/subscription/status", auth(http.HandlerFunc(moduleHandler.PaymentStatus)))
 	r.mux.Handle("/app/api/payment/status", auth(http.HandlerFunc(paymentHandler.Status)))
+	r.mux.Handle("/app/api/access/status", auth(http.HandlerFunc(accessHandler.GetStatus)))
 	r.mux.Handle("/app/api/payment/pay", auth(http.HandlerFunc(paymentHandler.Pay)))
 
 	// Robokassa callbacks (unauthenticated — called by Robokassa servers and browser redirects)

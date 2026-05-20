@@ -13,10 +13,12 @@ type MealPlan struct {
 	Fat        float64    `json:"fat"`
 	Carbs      float64    `json:"carbs"`
 	AccessTier AccessTier `json:"access_tier"`
-	IsActive   bool       `json:"is_active"`
-	SortOrder  int        `json:"sort_order"`
-	CreatedAt  time.Time  `json:"created_at"`
-	UpdatedAt  time.Time  `json:"updated_at"`
+	// Locked: per-request, set by handler; not persisted.
+	Locked    bool      `json:"locked"`
+	IsActive  bool      `json:"is_active"`
+	SortOrder int       `json:"sort_order"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type Meal struct {

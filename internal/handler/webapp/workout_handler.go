@@ -11,10 +11,11 @@ import (
 
 type WorkoutHandler struct {
 	workoutSvc *service.WorkoutService
+	accessSvc  *service.AccessService
 }
 
-func NewWorkoutHandler(workoutSvc *service.WorkoutService) *WorkoutHandler {
-	return &WorkoutHandler{workoutSvc: workoutSvc}
+func NewWorkoutHandler(workoutSvc *service.WorkoutService, accessSvc *service.AccessService) *WorkoutHandler {
+	return &WorkoutHandler{workoutSvc: workoutSvc, accessSvc: accessSvc}
 }
 
 // HandleProgramRoutes dispatches /app/api/programs/... requests.
@@ -98,9 +99,17 @@ func (h *WorkoutHandler) HandleWorkoutRoutes(w http.ResponseWriter, r *http.Requ
 }
 
 // ListPrograms handles GET /app/api/programs?format=&goal=&level=
+// Annotates each item with `locked` so the frontend can render lock badges
+// without checking access tier-by-tier.
 func (h *WorkoutHandler) ListPrograms(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		jsonError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+
+	user := UserFromContext(r.Context())
+	if user == nil {
+		jsonError(w, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
@@ -114,11 +123,24 @@ func (h *WorkoutHandler) ListPrograms(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	for i := range programs {
+		can, _ := h.accessSvc.CanAccess(r.Context(), user, programs[i].AccessTier, models.CategoryWorkouts)
+		programs[i].Locked = !can
+	}
+
 	jsonResponse(w, http.StatusOK, programs)
 }
 
 // GetProgram handles GET /app/api/programs/{id}
+// Returns 402 Payment Required with category/tier/price payload when the
+// program is locked, so the client can show the right "Unlock" CTA.
 func (h *WorkoutHandler) GetProgram(w http.ResponseWriter, r *http.Request, idStr string) {
+	user := UserFromContext(r.Context())
+	if user == nil {
+		jsonError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		jsonError(w, http.StatusBadRequest, "invalid program id")
@@ -130,6 +152,23 @@ func (h *WorkoutHandler) GetProgram(w http.ResponseWriter, r *http.Request, idSt
 		jsonError(w, http.StatusNotFound, "program not found")
 		return
 	}
+
+	can, err := h.accessSvc.CanAccess(r.Context(), user, program.AccessTier, models.CategoryWorkouts)
+	if err != nil {
+		jsonError(w, http.StatusInternalServerError, "access check failed")
+		return
+	}
+	if !can {
+		price, _ := h.accessSvc.GetPrice(r.Context(), models.CategoryWorkouts)
+		jsonResponse(w, http.StatusPaymentRequired, map[string]interface{}{
+			"error":     "locked",
+			"category":  models.CategoryWorkouts,
+			"tier":      program.AccessTier,
+			"price_kzt": price,
+		})
+		return
+	}
+	program.Locked = false
 
 	jsonResponse(w, http.StatusOK, program)
 }

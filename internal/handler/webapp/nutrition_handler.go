@@ -12,10 +12,11 @@ import (
 
 type NutritionHandler struct {
 	nutritionSvc *service.NutritionService
+	accessSvc    *service.AccessService
 }
 
-func NewNutritionHandler(nutritionSvc *service.NutritionService) *NutritionHandler {
-	return &NutritionHandler{nutritionSvc: nutritionSvc}
+func NewNutritionHandler(nutritionSvc *service.NutritionService, accessSvc *service.AccessService) *NutritionHandler {
+	return &NutritionHandler{nutritionSvc: nutritionSvc, accessSvc: accessSvc}
 }
 
 type AddFoodLogRequest struct {
@@ -131,7 +132,14 @@ func (h *NutritionHandler) HandleFoodLogSummary(w http.ResponseWriter, r *http.R
 }
 
 // ListPlans handles GET /app/api/nutrition/plans?goal=
+// Each plan is annotated with `locked` based on viewing user's access.
 func (h *NutritionHandler) ListPlans(w http.ResponseWriter, r *http.Request) {
+	user := UserFromContext(r.Context())
+	if user == nil {
+		jsonError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
 	goal := r.URL.Query().Get("goal")
 
 	plans, err := h.nutritionSvc.ListPlans(r.Context(), goal)
@@ -140,11 +148,23 @@ func (h *NutritionHandler) ListPlans(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	for i := range plans {
+		can, _ := h.accessSvc.CanAccess(r.Context(), user, plans[i].AccessTier, models.CategoryNutrition)
+		plans[i].Locked = !can
+	}
+
 	jsonResponse(w, http.StatusOK, plans)
 }
 
 // GetPlan handles GET /app/api/nutrition/plans/{id}
+// Returns 402 if the plan is locked.
 func (h *NutritionHandler) GetPlan(w http.ResponseWriter, r *http.Request, idStr string) {
+	user := UserFromContext(r.Context())
+	if user == nil {
+		jsonError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
 	id, err := strconv.Atoi(strings.TrimSuffix(idStr, "/"))
 	if err != nil {
 		jsonError(w, http.StatusBadRequest, "invalid plan id")
@@ -156,6 +176,23 @@ func (h *NutritionHandler) GetPlan(w http.ResponseWriter, r *http.Request, idStr
 		jsonError(w, http.StatusNotFound, "plan not found")
 		return
 	}
+
+	can, err := h.accessSvc.CanAccess(r.Context(), user, plan.AccessTier, models.CategoryNutrition)
+	if err != nil {
+		jsonError(w, http.StatusInternalServerError, "access check failed")
+		return
+	}
+	if !can {
+		price, _ := h.accessSvc.GetPrice(r.Context(), models.CategoryNutrition)
+		jsonResponse(w, http.StatusPaymentRequired, map[string]interface{}{
+			"error":     "locked",
+			"category":  models.CategoryNutrition,
+			"tier":      plan.AccessTier,
+			"price_kzt": price,
+		})
+		return
+	}
+	plan.Locked = false
 
 	meals, err := h.nutritionSvc.GetPlanMeals(r.Context(), id)
 	if err != nil {

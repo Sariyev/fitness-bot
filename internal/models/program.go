@@ -12,10 +12,13 @@ type Program struct {
 	Level         string     `json:"level"`
 	DurationWeeks int        `json:"duration_weeks"`
 	AccessTier    AccessTier `json:"access_tier"`
-	IsActive      bool       `json:"is_active"`
-	SortOrder     int        `json:"sort_order"`
-	CreatedAt     time.Time  `json:"created_at"`
-	UpdatedAt     time.Time  `json:"updated_at"`
+	// Locked is set per-request by the handler based on the viewing user's
+	// access; not persisted, not scanned from DB.
+	Locked    bool      `json:"locked"`
+	IsActive  bool      `json:"is_active"`
+	SortOrder int       `json:"sort_order"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type Workout struct {

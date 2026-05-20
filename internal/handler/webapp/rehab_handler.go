@@ -6,15 +6,17 @@ import (
 	"strconv"
 	"strings"
 
+	"fitness-bot/internal/models"
 	"fitness-bot/internal/service"
 )
 
 type RehabHandler struct {
-	rehabSvc *service.RehabService
+	rehabSvc  *service.RehabService
+	accessSvc *service.AccessService
 }
 
-func NewRehabHandler(rehabSvc *service.RehabService) *RehabHandler {
-	return &RehabHandler{rehabSvc: rehabSvc}
+func NewRehabHandler(rehabSvc *service.RehabService, accessSvc *service.AccessService) *RehabHandler {
+	return &RehabHandler{rehabSvc: rehabSvc, accessSvc: accessSvc}
 }
 
 type CompleteRehabRequest struct {
@@ -115,7 +117,14 @@ func (h *RehabHandler) HandleRehabProgressRoutes(w http.ResponseWriter, r *http.
 }
 
 // ListCourses handles GET /app/api/rehab/courses?category=
+// Each item is annotated with `locked` based on the viewing user's access.
 func (h *RehabHandler) ListCourses(w http.ResponseWriter, r *http.Request) {
+	user := UserFromContext(r.Context())
+	if user == nil {
+		jsonError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
 	category := r.URL.Query().Get("category")
 
 	courses, err := h.rehabSvc.ListCourses(r.Context(), category)
@@ -124,11 +133,23 @@ func (h *RehabHandler) ListCourses(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	for i := range courses {
+		can, _ := h.accessSvc.CanAccess(r.Context(), user, courses[i].AccessTier, models.CategoryLFK)
+		courses[i].Locked = !can
+	}
+
 	jsonResponse(w, http.StatusOK, courses)
 }
 
 // GetCourse handles GET /app/api/rehab/courses/{id}
+// Returns 402 if the course is locked.
 func (h *RehabHandler) GetCourse(w http.ResponseWriter, r *http.Request, idStr string) {
+	user := UserFromContext(r.Context())
+	if user == nil {
+		jsonError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
 	id, err := strconv.Atoi(strings.TrimSuffix(idStr, "/"))
 	if err != nil {
 		jsonError(w, http.StatusBadRequest, "invalid course id")
@@ -140,6 +161,23 @@ func (h *RehabHandler) GetCourse(w http.ResponseWriter, r *http.Request, idStr s
 		jsonError(w, http.StatusNotFound, "course not found")
 		return
 	}
+
+	can, err := h.accessSvc.CanAccess(r.Context(), user, course.AccessTier, models.CategoryLFK)
+	if err != nil {
+		jsonError(w, http.StatusInternalServerError, "access check failed")
+		return
+	}
+	if !can {
+		price, _ := h.accessSvc.GetPrice(r.Context(), models.CategoryLFK)
+		jsonResponse(w, http.StatusPaymentRequired, map[string]interface{}{
+			"error":     "locked",
+			"category":  models.CategoryLFK,
+			"tier":      course.AccessTier,
+			"price_kzt": price,
+		})
+		return
+	}
+	course.Locked = false
 
 	sessions, err := h.rehabSvc.GetCourseSessions(r.Context(), id)
 	if err != nil {
