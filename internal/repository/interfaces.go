@@ -184,3 +184,18 @@ type MediaRepository interface {
 	Delete(ctx context.Context, id int64) error
 	TotalConfirmedBytes(ctx context.Context) (int64, error)
 }
+
+// PricingRepository persists the admin-editable price per category.
+type PricingRepository interface {
+	GetPrice(ctx context.Context, category models.Category) (int, error)
+	ListPrices(ctx context.Context) (map[models.Category]int, error)
+	SetPrice(ctx context.Context, category models.Category, priceKZT int) error
+}
+
+// AccessRepository records which users have permanent access to which
+// category's paid tier (one row per granted user×category).
+type AccessRepository interface {
+	HasAccess(ctx context.Context, userID int64, category models.Category) (bool, error)
+	Grant(ctx context.Context, userID int64, category models.Category, paymentID *int64) error
+	ListGranted(ctx context.Context, userID int64) ([]models.Category, error)
+}

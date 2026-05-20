@@ -21,13 +21,13 @@ func (r *nutritionRepo) ListPlans(ctx context.Context, goal string) ([]models.Me
 
 	if goal != "" {
 		query = `SELECT id, slug, name, goal, day_number, COALESCE(calories,0), COALESCE(protein,0), COALESCE(fat,0), COALESCE(carbs,0),
-				 is_active, sort_order, created_at, updated_at
+				 access_tier, is_active, sort_order, created_at, updated_at
 				 FROM meal_plans WHERE is_active = TRUE AND goal = $1
 				 ORDER BY sort_order`
 		args = append(args, goal)
 	} else {
 		query = `SELECT id, slug, name, goal, day_number, COALESCE(calories,0), COALESCE(protein,0), COALESCE(fat,0), COALESCE(carbs,0),
-				 is_active, sort_order, created_at, updated_at
+				 access_tier, is_active, sort_order, created_at, updated_at
 				 FROM meal_plans WHERE is_active = TRUE
 				 ORDER BY sort_order`
 	}
@@ -43,7 +43,7 @@ func (r *nutritionRepo) ListPlans(ctx context.Context, goal string) ([]models.Me
 		var p models.MealPlan
 		if err := rows.Scan(&p.ID, &p.Slug, &p.Name, &p.Goal, &p.DayNumber,
 			&p.Calories, &p.Protein, &p.Fat, &p.Carbs,
-			&p.IsActive, &p.SortOrder, &p.CreatedAt, &p.UpdatedAt); err != nil {
+			&p.AccessTier, &p.IsActive, &p.SortOrder, &p.CreatedAt, &p.UpdatedAt); err != nil {
 			return nil, err
 		}
 		plans = append(plans, p)
@@ -66,7 +66,7 @@ func (r *nutritionRepo) ListAllPlans(ctx context.Context) ([]models.MealPlan, er
 		var p models.MealPlan
 		if err := rows.Scan(&p.ID, &p.Slug, &p.Name, &p.Goal, &p.DayNumber,
 			&p.Calories, &p.Protein, &p.Fat, &p.Carbs,
-			&p.IsActive, &p.SortOrder, &p.CreatedAt, &p.UpdatedAt); err != nil {
+			&p.AccessTier, &p.IsActive, &p.SortOrder, &p.CreatedAt, &p.UpdatedAt); err != nil {
 			return nil, err
 		}
 		plans = append(plans, p)
@@ -78,11 +78,11 @@ func (r *nutritionRepo) GetPlanByID(ctx context.Context, id int) (*models.MealPl
 	p := &models.MealPlan{}
 	err := r.pool.QueryRow(ctx,
 		`SELECT id, slug, name, goal, day_number, calories, protein, fat, carbs,
-			is_active, sort_order, created_at, updated_at
+			access_tier, is_active, sort_order, created_at, updated_at
 		 FROM meal_plans WHERE id = $1`, id,
 	).Scan(&p.ID, &p.Slug, &p.Name, &p.Goal, &p.DayNumber,
 		&p.Calories, &p.Protein, &p.Fat, &p.Carbs,
-		&p.IsActive, &p.SortOrder, &p.CreatedAt, &p.UpdatedAt)
+		&p.AccessTier, &p.IsActive, &p.SortOrder, &p.CreatedAt, &p.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}

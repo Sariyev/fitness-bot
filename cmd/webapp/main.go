@@ -83,6 +83,12 @@ func main() {
 	dashboardSvc := service.NewDashboardService(userSvc, workoutSvc, rehabSvc, nutritionSvc)
 	recommendSvc := service.NewRecommendationService(programRepo, rehabRepo, nutritionRepo)
 
+	// Per-category access (three-bucket content gating: free / trial / paid).
+	pricingRepo := repository.NewPricingRepo(db.Pool)
+	accessRepo := repository.NewAccessRepo(db.Pool)
+	accessSvc := service.NewAccessService(pricingRepo, accessRepo)
+	_ = accessSvc // wired in handlers in the next PR; phase-1 deploy only persists schema + service
+
 	// Media (R2) — optional. Empty AccessKeyID disables; routes won't register.
 	var mediaSvc *service.MediaService
 	if cfg.R2AccessKeyID != "" {

@@ -18,7 +18,7 @@ func NewProgramRepo(pool *pgxpool.Pool) ProgramRepository {
 
 func (r *programRepo) ListPrograms(ctx context.Context, format, goal, level string) ([]models.Program, error) {
 	query := `SELECT id, slug, name, COALESCE(description,''), goal, format, level, duration_weeks,
-			  is_active, sort_order, created_at, updated_at
+			  access_tier, is_active, sort_order, created_at, updated_at
 			  FROM programs WHERE is_active = TRUE`
 	args := []interface{}{}
 	idx := 1
@@ -50,7 +50,7 @@ func (r *programRepo) ListPrograms(ctx context.Context, format, goal, level stri
 	for rows.Next() {
 		var p models.Program
 		if err := rows.Scan(&p.ID, &p.Slug, &p.Name, &p.Description, &p.Goal, &p.Format,
-			&p.Level, &p.DurationWeeks, &p.IsActive, &p.SortOrder, &p.CreatedAt, &p.UpdatedAt); err != nil {
+			&p.Level, &p.DurationWeeks, &p.AccessTier, &p.IsActive, &p.SortOrder, &p.CreatedAt, &p.UpdatedAt); err != nil {
 			return nil, err
 		}
 		programs = append(programs, p)
@@ -61,7 +61,7 @@ func (r *programRepo) ListPrograms(ctx context.Context, format, goal, level stri
 func (r *programRepo) ListAllPrograms(ctx context.Context) ([]models.Program, error) {
 	rows, err := r.pool.Query(ctx,
 		`SELECT id, slug, name, COALESCE(description,''), goal, format, level, duration_weeks,
-			is_active, sort_order, created_at, updated_at
+			access_tier, is_active, sort_order, created_at, updated_at
 		 FROM programs ORDER BY sort_order`)
 	if err != nil {
 		return nil, err
@@ -72,7 +72,7 @@ func (r *programRepo) ListAllPrograms(ctx context.Context) ([]models.Program, er
 	for rows.Next() {
 		var p models.Program
 		if err := rows.Scan(&p.ID, &p.Slug, &p.Name, &p.Description, &p.Goal, &p.Format,
-			&p.Level, &p.DurationWeeks, &p.IsActive, &p.SortOrder, &p.CreatedAt, &p.UpdatedAt); err != nil {
+			&p.Level, &p.DurationWeeks, &p.AccessTier, &p.IsActive, &p.SortOrder, &p.CreatedAt, &p.UpdatedAt); err != nil {
 			return nil, err
 		}
 		programs = append(programs, p)
@@ -84,10 +84,10 @@ func (r *programRepo) GetProgramByID(ctx context.Context, id int) (*models.Progr
 	p := &models.Program{}
 	err := r.pool.QueryRow(ctx,
 		`SELECT id, slug, name, description, goal, format, level, duration_weeks,
-			is_active, sort_order, created_at, updated_at
+			access_tier, is_active, sort_order, created_at, updated_at
 		 FROM programs WHERE id = $1`, id,
 	).Scan(&p.ID, &p.Slug, &p.Name, &p.Description, &p.Goal, &p.Format,
-		&p.Level, &p.DurationWeeks, &p.IsActive, &p.SortOrder, &p.CreatedAt, &p.UpdatedAt)
+		&p.Level, &p.DurationWeeks, &p.AccessTier, &p.IsActive, &p.SortOrder, &p.CreatedAt, &p.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}

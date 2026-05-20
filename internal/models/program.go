@@ -3,18 +3,19 @@ package models
 import "time"
 
 type Program struct {
-	ID            int       `json:"id"`
-	Slug          string    `json:"slug"`
-	Name          string    `json:"name"`
-	Description   string    `json:"description"`
-	Goal          string    `json:"goal"`
-	Format        string    `json:"format"`
-	Level         string    `json:"level"`
-	DurationWeeks int       `json:"duration_weeks"`
-	IsActive      bool      `json:"is_active"`
-	SortOrder     int       `json:"sort_order"`
-	CreatedAt     time.Time `json:"created_at"`
-	UpdatedAt     time.Time `json:"updated_at"`
+	ID            int        `json:"id"`
+	Slug          string     `json:"slug"`
+	Name          string     `json:"name"`
+	Description   string     `json:"description"`
+	Goal          string     `json:"goal"`
+	Format        string     `json:"format"`
+	Level         string     `json:"level"`
+	DurationWeeks int        `json:"duration_weeks"`
+	AccessTier    AccessTier `json:"access_tier"`
+	IsActive      bool       `json:"is_active"`
+	SortOrder     int        `json:"sort_order"`
+	CreatedAt     time.Time  `json:"created_at"`
+	UpdatedAt     time.Time  `json:"updated_at"`
 }
 
 type Workout struct {

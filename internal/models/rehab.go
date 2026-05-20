@@ -3,16 +3,17 @@ package models
 import "time"
 
 type RehabCourse struct {
-	ID          int       `json:"id"`
-	Slug        string    `json:"slug"`
-	Category    string    `json:"category"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	Warnings    string    `json:"warnings"`
-	IsActive    bool      `json:"is_active"`
-	SortOrder   int       `json:"sort_order"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ID          int        `json:"id"`
+	Slug        string     `json:"slug"`
+	Category    string     `json:"category"`
+	Name        string     `json:"name"`
+	Description string     `json:"description"`
+	Warnings    string     `json:"warnings"`
+	AccessTier  AccessTier `json:"access_tier"`
+	IsActive    bool       `json:"is_active"`
+	SortOrder   int        `json:"sort_order"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
 }
 
 type RehabSession struct {

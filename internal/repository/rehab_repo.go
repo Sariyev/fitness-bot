@@ -20,12 +20,12 @@ func (r *rehabRepo) ListCourses(ctx context.Context, category string) ([]models.
 	var args []interface{}
 
 	if category != "" {
-		query = `SELECT id, slug, category, name, COALESCE(description,''), COALESCE(warnings,''), is_active, sort_order, created_at, updated_at
+		query = `SELECT id, slug, category, name, COALESCE(description,''), COALESCE(warnings,''), access_tier, is_active, sort_order, created_at, updated_at
 				 FROM rehab_courses WHERE is_active = TRUE AND category = $1
 				 ORDER BY sort_order`
 		args = append(args, category)
 	} else {
-		query = `SELECT id, slug, category, name, COALESCE(description,''), COALESCE(warnings,''), is_active, sort_order, created_at, updated_at
+		query = `SELECT id, slug, category, name, COALESCE(description,''), COALESCE(warnings,''), access_tier, is_active, sort_order, created_at, updated_at
 				 FROM rehab_courses WHERE is_active = TRUE
 				 ORDER BY sort_order`
 	}
@@ -40,7 +40,7 @@ func (r *rehabRepo) ListCourses(ctx context.Context, category string) ([]models.
 	for rows.Next() {
 		var c models.RehabCourse
 		if err := rows.Scan(&c.ID, &c.Slug, &c.Category, &c.Name, &c.Description,
-			&c.Warnings, &c.IsActive, &c.SortOrder, &c.CreatedAt, &c.UpdatedAt); err != nil {
+			&c.Warnings, &c.AccessTier, &c.IsActive, &c.SortOrder, &c.CreatedAt, &c.UpdatedAt); err != nil {
 			return nil, err
 		}
 		courses = append(courses, c)
@@ -54,7 +54,7 @@ func (r *rehabRepo) GetCourseByID(ctx context.Context, id int) (*models.RehabCou
 		`SELECT id, slug, category, name, description, warnings, is_active, sort_order, created_at, updated_at
 		 FROM rehab_courses WHERE id = $1`, id,
 	).Scan(&c.ID, &c.Slug, &c.Category, &c.Name, &c.Description,
-		&c.Warnings, &c.IsActive, &c.SortOrder, &c.CreatedAt, &c.UpdatedAt)
+		&c.Warnings, &c.AccessTier, &c.IsActive, &c.SortOrder, &c.CreatedAt, &c.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}

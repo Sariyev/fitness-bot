@@ -3,19 +3,20 @@ package models
 import "time"
 
 type MealPlan struct {
-	ID        int       `json:"id"`
-	Slug      string    `json:"slug"`
-	Name      string    `json:"name"`
-	Goal      string    `json:"goal"`
-	DayNumber int       `json:"day_number"`
-	Calories  int       `json:"calories"`
-	Protein   float64   `json:"protein"`
-	Fat       float64   `json:"fat"`
-	Carbs     float64   `json:"carbs"`
-	IsActive  bool      `json:"is_active"`
-	SortOrder int       `json:"sort_order"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID         int        `json:"id"`
+	Slug       string     `json:"slug"`
+	Name       string     `json:"name"`
+	Goal       string     `json:"goal"`
+	DayNumber  int        `json:"day_number"`
+	Calories   int        `json:"calories"`
+	Protein    float64    `json:"protein"`
+	Fat        float64    `json:"fat"`
+	Carbs      float64    `json:"carbs"`
+	AccessTier AccessTier `json:"access_tier"`
+	IsActive   bool       `json:"is_active"`
+	SortOrder  int        `json:"sort_order"`
+	CreatedAt  time.Time  `json:"created_at"`
+	UpdatedAt  time.Time  `json:"updated_at"`
 }
 
 type Meal struct {
