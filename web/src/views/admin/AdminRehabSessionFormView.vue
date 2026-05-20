@@ -34,9 +34,12 @@
         <textarea v-model="form.description" rows="3"></textarea>
       </div>
       <div class="field">
-        <label>Ссылка на видео (внешняя)</label>
-        <input v-model="form.video_url" placeholder="https://youtube.com/..." />
-        <span class="hint">Используйте поле выше для внешнего видео или загрузите файл (загрузка появится в следующем обновлении).</span>
+        <label>Видео (загрузка в R2)</label>
+        <VideoUploader v-model="form.video_media_id" reference-type="rehab_session_video" />
+      </div>
+      <div class="field">
+        <label>Или внешняя ссылка (YouTube и т.п.)</label>
+        <input v-model="form.video_url" placeholder="Использовать вместо загрузки" />
       </div>
 
       <div v-if="error" class="error-msg">{{ error }}</div>
@@ -54,6 +57,7 @@
 import { ref, onMounted, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { api } from '../../api'
+import VideoUploader from '../../components/VideoUploader.vue'
 
 const props = defineProps<{ id?: string }>()
 const route = useRoute()

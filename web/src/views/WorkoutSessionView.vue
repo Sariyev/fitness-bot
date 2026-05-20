@@ -9,10 +9,19 @@
       <h1 class="session-title">{{ workout.name }}</h1>
       <p v-if="workout.description" class="session-desc">{{ workout.description }}</p>
 
-      <!-- Video player area -->
+      <!-- Video player area: <video> for direct files (R2 / .mp4),
+           <iframe> for external embeds (YouTube etc.) -->
       <div class="video-area">
+        <video
+          v-if="workout.video_url && isDirectVideoUrl(workout.video_url)"
+          :src="workout.video_url"
+          class="video-player"
+          controls
+          preload="metadata"
+          playsinline
+        ></video>
         <iframe
-          v-if="workout.video_url"
+          v-else-if="workout.video_url"
           :src="workout.video_url"
           class="video-player"
           frameborder="0"
@@ -112,6 +121,7 @@ import { api } from '../api'
 import { useTelegram } from '../composables/useTelegram'
 import type { WorkoutWithExercises, WorkoutExercise } from '../types'
 import SkeletonCard from '../components/SkeletonCard.vue'
+import { isDirectVideoUrl } from '../utils/video'
 
 const { setClosingGuard } = useTelegram()
 

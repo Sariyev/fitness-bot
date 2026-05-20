@@ -67,8 +67,12 @@
         <textarea v-model="form.expected_result" rows="2"></textarea>
       </div>
       <div class="field">
-        <label>Видео URL</label>
-        <input v-model="form.video_url" />
+        <label>Видео (загрузка в R2)</label>
+        <VideoUploader v-model="form.video_media_id" reference-type="workout_video" />
+      </div>
+      <div class="field">
+        <label>Или внешняя ссылка (YouTube и т.п.)</label>
+        <input v-model="form.video_url" placeholder="Использовать вместо загрузки" />
       </div>
       <div v-if="form.program_id" class="row">
         <div class="field">
@@ -154,6 +158,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '../../api'
 import type { Program, WorkoutExercise, Exercise } from '../../types'
+import VideoUploader from '../../components/VideoUploader.vue'
 
 const props = defineProps<{ id?: string }>()
 const router = useRouter()
@@ -179,6 +184,7 @@ const form = reactive({
   equipment: [] as string[],
   expected_result: '',
   video_url: '',
+  video_media_id: null as number | null,
   sort_order: 0,
   week_number: undefined as number | undefined,
   day_number: undefined as number | undefined,

@@ -40,10 +40,18 @@
           ></div>
         </div>
 
-        <!-- Video placeholder -->
+        <!-- Video: <video> for R2-direct files; <a> for external links -->
         <div class="video-section">
+          <video
+            v-if="session.video_url && isDirectVideoUrl(session.video_url)"
+            :src="session.video_url"
+            class="video-player-inline"
+            controls
+            preload="metadata"
+            playsinline
+          ></video>
           <a
-            v-if="session.video_url"
+            v-else-if="session.video_url"
             :href="session.video_url"
             target="_blank"
             rel="noopener noreferrer"
@@ -136,6 +144,7 @@ import { api } from '../api'
 import { useTelegram } from '../composables/useTelegram'
 import type { RehabSession } from '../types'
 import SkeletonCard from '../components/SkeletonCard.vue'
+import { isDirectVideoUrl } from '../utils/video'
 
 const { setClosingGuard } = useTelegram()
 
@@ -313,6 +322,14 @@ onUnmounted(() => setClosingGuard(false))
   text-decoration: none;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
   cursor: pointer;
+}
+
+.video-player-inline {
+  width: 100%;
+  max-height: 320px;
+  border-radius: 16px;
+  background: #000;
+  display: block;
 }
 
 .video-placeholder:active {
