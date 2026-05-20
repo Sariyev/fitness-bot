@@ -185,6 +185,7 @@ export interface Workout {
   equipment: string[]
   expected_result: string
   video_url: string
+  video_media_id?: number | null
   sort_order: number
   week_number?: number
   day_number?: number
@@ -220,6 +221,8 @@ export interface RehabCourse {
   name: string
   description: string
   warnings: string
+  access_tier?: 'free' | 'trial' | 'paid'
+  locked?: boolean
   is_active: boolean
   sort_order: number
 }
@@ -230,6 +233,7 @@ export interface RehabSession {
   day_number: number
   stage: number
   video_url: string
+  video_media_id?: number | null
   duration_minutes: number
   description: string
   sort_order: number

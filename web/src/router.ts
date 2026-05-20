@@ -51,6 +51,10 @@ const router = createRouter({
     { path: '/admin/meal-plans/:id', name: 'admin-mealplan-edit', component: () => import('./views/admin/AdminMealPlanFormView.vue'), props: true, meta: { hideNav: true, requiresAdmin: true } },
     { path: '/admin/meals/new', name: 'admin-meal-new', component: () => import('./views/admin/AdminMealFormView.vue'), meta: { hideNav: true, requiresAdmin: true } },
     { path: '/admin/meals/:id', name: 'admin-meal-edit', component: () => import('./views/admin/AdminMealFormView.vue'), props: true, meta: { hideNav: true, requiresAdmin: true } },
+    { path: '/admin/rehab/courses/new', name: 'admin-rehab-course-new', component: () => import('./views/admin/AdminRehabCourseFormView.vue'), meta: { hideNav: true, requiresAdmin: true } },
+    { path: '/admin/rehab/courses/:id', name: 'admin-rehab-course-edit', component: () => import('./views/admin/AdminRehabCourseFormView.vue'), props: true, meta: { hideNav: true, requiresAdmin: true } },
+    { path: '/admin/rehab/sessions/new', name: 'admin-rehab-session-new', component: () => import('./views/admin/AdminRehabSessionFormView.vue'), meta: { hideNav: true, requiresAdmin: true } },
+    { path: '/admin/rehab/sessions/:id', name: 'admin-rehab-session-edit', component: () => import('./views/admin/AdminRehabSessionFormView.vue'), props: true, meta: { hideNav: true, requiresAdmin: true } },
     { path: '/admin/reviews', name: 'admin-reviews', component: () => import('./views/admin/AdminReviewsView.vue'), meta: { hideNav: true, requiresAdmin: true } },
   ],
 })

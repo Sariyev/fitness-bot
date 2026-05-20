@@ -110,6 +110,10 @@ const routeDepth: Record<string, number> = {
   'admin-mealplan-edit': 4,
   'admin-meal-new': 5,
   'admin-meal-edit': 5,
+  'admin-rehab-course-new': 3,
+  'admin-rehab-course-edit': 3,
+  'admin-rehab-session-new': 4,
+  'admin-rehab-session-edit': 4,
   'admin-reviews': 3,
 }
 

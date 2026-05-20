@@ -48,6 +48,20 @@
       </div>
 
       <div class="section-header">
+        <h2 class="section-title">ЛФК курсы ({{ rehabCourses.length }})</h2>
+        <button class="add-btn" @click="router.push('/admin/rehab/courses/new')">+</button>
+      </div>
+      <div v-for="rc in rehabCourses" :key="rc.id" class="content-card" :class="{ inactive: !rc.is_active }" @click="router.push(`/admin/rehab/courses/${rc.id}`)">
+        <div class="content-main">
+          <span class="content-name">{{ rc.name }}</span>
+          <span class="content-meta">{{ rc.category }}</span>
+        </div>
+        <span class="badge" :class="rc.is_active ? 'badge-active' : 'badge-inactive'">
+          {{ rc.is_active ? 'Active' : 'Off' }}
+        </span>
+      </div>
+
+      <div class="section-header">
         <h2 class="section-title">Упражнения</h2>
       </div>
       <div class="content-card" @click="router.push('/admin/exercises')">
@@ -65,24 +79,27 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '../../api'
-import type { Program, Workout, MealPlan } from '../../types'
+import type { Program, Workout, MealPlan, RehabCourse } from '../../types'
 
 const router = useRouter()
 const programs = ref<Program[]>([])
 const workouts = ref<Workout[]>([])
 const mealPlans = ref<MealPlan[]>([])
+const rehabCourses = ref<RehabCourse[]>([])
 const loading = ref(true)
 
 onMounted(async () => {
   try {
-    const [p, w, mp] = await Promise.all([
+    const [p, w, mp, rc] = await Promise.all([
       api.getAdminPrograms(),
       api.getAdminWorkouts(),
       api.getAdminMealPlans(),
+      api.getAdminRehabCourses(),
     ])
     programs.value = p || []
     workouts.value = w || []
     mealPlans.value = mp || []
+    rehabCourses.value = rc || []
   } catch {
     // ignore
   } finally {

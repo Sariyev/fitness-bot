@@ -408,6 +408,31 @@ export const api = {
     return request(`/app/api/admin/meals/${id}`, { method: 'PUT', body: JSON.stringify(data) })
   },
 
+  // Admin Rehab Courses CRUD
+  getAdminRehabCourses(): Promise<RehabCourse[]> {
+    return request('/app/api/admin/rehab/courses')
+  },
+  getAdminRehabCourse(id: number): Promise<{ course: RehabCourse; sessions: RehabSession[] }> {
+    return request(`/app/api/admin/rehab/courses/${id}`)
+  },
+  createAdminRehabCourse(data: Partial<RehabCourse>): Promise<RehabCourse> {
+    return request('/app/api/admin/rehab/courses', { method: 'POST', body: JSON.stringify(data) })
+  },
+  updateAdminRehabCourse(id: number, data: Partial<RehabCourse>): Promise<RehabCourse> {
+    return request(`/app/api/admin/rehab/courses/${id}`, { method: 'PUT', body: JSON.stringify(data) })
+  },
+
+  // Admin Rehab Sessions CRUD
+  getAdminRehabSession(id: number): Promise<RehabSession> {
+    return request(`/app/api/admin/rehab/sessions/${id}`)
+  },
+  createAdminRehabSession(data: Partial<RehabSession>): Promise<RehabSession> {
+    return request('/app/api/admin/rehab/sessions', { method: 'POST', body: JSON.stringify(data) })
+  },
+  updateAdminRehabSession(id: number, data: Partial<RehabSession>): Promise<RehabSession> {
+    return request(`/app/api/admin/rehab/sessions/${id}`, { method: 'PUT', body: JSON.stringify(data) })
+  },
+
   // Admin Reviews & Stats
   getAdminReviewsSummary(): Promise<ReviewSummary> {
     return request('/app/api/admin/reviews')
