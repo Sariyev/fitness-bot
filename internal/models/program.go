@@ -33,13 +33,19 @@ type Workout struct {
 	DurationMinutes int       `json:"duration_minutes"`
 	Equipment       []string  `json:"equipment"`
 	ExpectedResult  string    `json:"expected_result"`
-	VideoURL        string    `json:"video_url"`
-	SortOrder       int       `json:"sort_order"`
-	WeekNumber      *int      `json:"week_number"`
-	DayNumber       *int      `json:"day_number"`
-	IsActive        bool      `json:"is_active"`
-	CreatedAt       time.Time `json:"created_at"`
-	UpdatedAt       time.Time `json:"updated_at"`
+	// VideoURL is the public/external URL the client plays. For admin-
+	// uploaded videos it's populated from media at handler-resolution time;
+	// for external (YouTube etc.) it's the raw column value.
+	VideoURL string `json:"video_url"`
+	// VideoMediaID points at the media row for admin-uploaded videos. NULL
+	// when no upload (external URL or no video).
+	VideoMediaID *int64    `json:"video_media_id"`
+	SortOrder    int       `json:"sort_order"`
+	WeekNumber   *int      `json:"week_number"`
+	DayNumber    *int      `json:"day_number"`
+	IsActive     bool      `json:"is_active"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
 }
 
 type UserProgramEnrollment struct {

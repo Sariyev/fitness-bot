@@ -113,8 +113,8 @@ func (r *WebAppRouter) setupRoutes() {
 	profileHandler := NewProfileHandler(r.userSvc)
 	registrationHandler := NewRegistrationHandler(r.userSvc, r.recommendSvc)
 	dashboardHandler := NewDashboardHandler(r.dashboardSvc)
-	workoutHandler := NewWorkoutHandler(r.workoutSvc, r.accessSvc)
-	rehabHandler := NewRehabHandler(r.rehabSvc, r.accessSvc)
+	workoutHandler := NewWorkoutHandler(r.workoutSvc, r.accessSvc, r.mediaSvc)
+	rehabHandler := NewRehabHandler(r.rehabSvc, r.accessSvc, r.mediaSvc)
 	nutritionHandler := NewNutritionHandler(r.nutritionSvc, r.accessSvc)
 	accessHandler := NewAccessHandler(r.accessSvc)
 	progressV2Handler := NewProgressV2Handler(r.progressSvc)
@@ -189,7 +189,7 @@ func (r *WebAppRouter) setupRoutes() {
 	}
 
 	// Admin routes (authenticated + admin role required)
-	adminHandler := NewAdminHandler(r.userSvc, r.workoutSvc, r.nutritionSvc, r.scoreSvc)
+	adminHandler := NewAdminHandler(r.userSvc, r.workoutSvc, r.rehabSvc, r.nutritionSvc, r.scoreSvc)
 	adminAuth := func(h http.Handler) http.Handler {
 		return auth(AdminMiddleware(h))
 	}
@@ -205,6 +205,10 @@ func (r *WebAppRouter) setupRoutes() {
 	r.mux.Handle("/app/api/admin/meal-plans/", adminAuth(http.HandlerFunc(adminHandler.HandleMealPlanRoutes)))
 	r.mux.Handle("/app/api/admin/meals", adminAuth(http.HandlerFunc(adminHandler.HandleMealRoutes)))
 	r.mux.Handle("/app/api/admin/meals/", adminAuth(http.HandlerFunc(adminHandler.HandleMealRoutes)))
+	r.mux.Handle("/app/api/admin/rehab/courses", adminAuth(http.HandlerFunc(adminHandler.HandleRehabCourseRoutes)))
+	r.mux.Handle("/app/api/admin/rehab/courses/", adminAuth(http.HandlerFunc(adminHandler.HandleRehabCourseRoutes)))
+	r.mux.Handle("/app/api/admin/rehab/sessions", adminAuth(http.HandlerFunc(adminHandler.HandleRehabSessionRoutes)))
+	r.mux.Handle("/app/api/admin/rehab/sessions/", adminAuth(http.HandlerFunc(adminHandler.HandleRehabSessionRoutes)))
 	r.mux.Handle("/app/api/admin/workout-exercises", adminAuth(http.HandlerFunc(adminHandler.HandleWorkoutExerciseRoutes)))
 	r.mux.Handle("/app/api/admin/reviews", adminAuth(http.HandlerFunc(adminHandler.GetReviewsSummary)))
 	r.mux.Handle("/app/api/admin/stats", adminAuth(http.HandlerFunc(adminHandler.GetStats)))

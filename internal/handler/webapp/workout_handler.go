@@ -12,10 +12,11 @@ import (
 type WorkoutHandler struct {
 	workoutSvc *service.WorkoutService
 	accessSvc  *service.AccessService
+	mediaSvc   *service.MediaService // optional; nil when R2 not configured
 }
 
-func NewWorkoutHandler(workoutSvc *service.WorkoutService, accessSvc *service.AccessService) *WorkoutHandler {
-	return &WorkoutHandler{workoutSvc: workoutSvc, accessSvc: accessSvc}
+func NewWorkoutHandler(workoutSvc *service.WorkoutService, accessSvc *service.AccessService, mediaSvc *service.MediaService) *WorkoutHandler {
+	return &WorkoutHandler{workoutSvc: workoutSvc, accessSvc: accessSvc, mediaSvc: mediaSvc}
 }
 
 // HandleProgramRoutes dispatches /app/api/programs/... requests.
@@ -227,6 +228,14 @@ func (h *WorkoutHandler) GetWorkout(w http.ResponseWriter, r *http.Request, idSt
 	if err != nil {
 		jsonError(w, http.StatusNotFound, "workout not found")
 		return
+	}
+
+	// If admin uploaded a video, replace video_url with the R2 public URL so
+	// the frontend doesn't have to know about media_id resolution.
+	if workout.VideoMediaID != nil && h.mediaSvc != nil {
+		if u, urlErr := h.mediaSvc.GetURL(r.Context(), UserFromContext(r.Context()), *workout.VideoMediaID); urlErr == nil {
+			workout.VideoURL = u
+		}
 	}
 
 	exercises, err := h.workoutSvc.GetWorkoutExercisesWithDetails(r.Context(), id)

@@ -13,6 +13,7 @@ import (
 type AdminHandler struct {
 	userSvc      *service.UserService
 	workoutSvc   *service.WorkoutService
+	rehabSvc     *service.RehabService
 	nutritionSvc *service.NutritionService
 	scoreSvc     *service.ScoreService
 }
@@ -20,12 +21,14 @@ type AdminHandler struct {
 func NewAdminHandler(
 	userSvc *service.UserService,
 	workoutSvc *service.WorkoutService,
+	rehabSvc *service.RehabService,
 	nutritionSvc *service.NutritionService,
 	scoreSvc *service.ScoreService,
 ) *AdminHandler {
 	return &AdminHandler{
 		userSvc:      userSvc,
 		workoutSvc:   workoutSvc,
+		rehabSvc:     rehabSvc,
 		nutritionSvc: nutritionSvc,
 		scoreSvc:     scoreSvc,
 	}
@@ -327,6 +330,7 @@ type workoutRequest struct {
 	Equipment       []string `json:"equipment"`
 	ExpectedResult  string   `json:"expected_result"`
 	VideoURL        string   `json:"video_url"`
+	VideoMediaID    *int64   `json:"video_media_id"`
 	SortOrder       int      `json:"sort_order"`
 	WeekNumber      *int     `json:"week_number"`
 	DayNumber       *int     `json:"day_number"`
@@ -352,7 +356,8 @@ func (h *AdminHandler) createWorkout(w http.ResponseWriter, r *http.Request) {
 		Description: req.Description, Goal: req.Goal, Format: req.Format,
 		Level: req.Level, DurationMinutes: req.DurationMinutes,
 		Equipment: req.Equipment, ExpectedResult: req.ExpectedResult,
-		VideoURL: req.VideoURL, SortOrder: req.SortOrder,
+		VideoURL: req.VideoURL, VideoMediaID: req.VideoMediaID,
+		SortOrder: req.SortOrder,
 		WeekNumber: req.WeekNumber, DayNumber: req.DayNumber, IsActive: req.IsActive,
 	}
 	if err := h.workoutSvc.CreateWorkout(r.Context(), wo); err != nil {
@@ -389,6 +394,7 @@ func (h *AdminHandler) updateWorkout(w http.ResponseWriter, r *http.Request, id 
 	wo.Equipment = req.Equipment
 	wo.ExpectedResult = req.ExpectedResult
 	wo.VideoURL = req.VideoURL
+	wo.VideoMediaID = req.VideoMediaID
 	wo.SortOrder = req.SortOrder
 	wo.WeekNumber = req.WeekNumber
 	wo.DayNumber = req.DayNumber
@@ -831,4 +837,225 @@ func (h *AdminHandler) GetStats(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, http.StatusOK, map[string]interface{}{
 		"total_users": total,
 	})
+}
+
+// ==================== REHAB COURSES ====================
+
+func (h *AdminHandler) HandleRehabCourseRoutes(w http.ResponseWriter, r *http.Request) {
+	path := strings.TrimPrefix(r.URL.Path, "/app/api/admin/rehab/courses")
+	path = strings.TrimPrefix(path, "/")
+
+	if path == "" {
+		switch r.Method {
+		case http.MethodGet:
+			h.listRehabCourses(w, r)
+		case http.MethodPost:
+			h.createRehabCourse(w, r)
+		default:
+			jsonError(w, http.StatusMethodNotAllowed, "method not allowed")
+		}
+		return
+	}
+
+	id, err := strconv.Atoi(path)
+	if err != nil {
+		jsonError(w, http.StatusBadRequest, "invalid course id")
+		return
+	}
+
+	switch r.Method {
+	case http.MethodGet:
+		h.getRehabCourse(w, r, id)
+	case http.MethodPut:
+		h.updateRehabCourse(w, r, id)
+	default:
+		jsonError(w, http.StatusMethodNotAllowed, "method not allowed")
+	}
+}
+
+func (h *AdminHandler) listRehabCourses(w http.ResponseWriter, r *http.Request) {
+	courses, err := h.rehabSvc.ListAllCourses(r.Context())
+	if err != nil {
+		jsonError(w, http.StatusInternalServerError, "failed to list courses")
+		return
+	}
+	jsonResponse(w, http.StatusOK, courses)
+}
+
+func (h *AdminHandler) getRehabCourse(w http.ResponseWriter, r *http.Request, id int) {
+	c, err := h.rehabSvc.GetCourse(r.Context(), id)
+	if err != nil {
+		jsonError(w, http.StatusNotFound, "course not found")
+		return
+	}
+	sessions, _ := h.rehabSvc.GetCourseSessions(r.Context(), id)
+	jsonResponse(w, http.StatusOK, map[string]interface{}{
+		"course":   c,
+		"sessions": sessions,
+	})
+}
+
+type rehabCourseRequest struct {
+	Slug        string `json:"slug"`
+	Category    string `json:"category"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Warnings    string `json:"warnings"`
+	IsActive    bool   `json:"is_active"`
+	SortOrder   int    `json:"sort_order"`
+}
+
+func (h *AdminHandler) createRehabCourse(w http.ResponseWriter, r *http.Request) {
+	var req rehabCourseRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		jsonError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if req.Name == "" {
+		jsonError(w, http.StatusBadRequest, "name is required")
+		return
+	}
+
+	c := &models.RehabCourse{
+		Slug: req.Slug, Category: req.Category, Name: req.Name,
+		Description: req.Description, Warnings: req.Warnings,
+		IsActive: req.IsActive, SortOrder: req.SortOrder,
+	}
+	if err := h.rehabSvc.CreateCourse(r.Context(), c); err != nil {
+		jsonError(w, http.StatusInternalServerError, "failed to create course")
+		return
+	}
+	jsonResponse(w, http.StatusCreated, c)
+}
+
+func (h *AdminHandler) updateRehabCourse(w http.ResponseWriter, r *http.Request, id int) {
+	c, err := h.rehabSvc.GetCourse(r.Context(), id)
+	if err != nil {
+		jsonError(w, http.StatusNotFound, "course not found")
+		return
+	}
+
+	var req rehabCourseRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		jsonError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	c.Slug = req.Slug
+	c.Category = req.Category
+	c.Name = req.Name
+	c.Description = req.Description
+	c.Warnings = req.Warnings
+	c.IsActive = req.IsActive
+	c.SortOrder = req.SortOrder
+
+	if err := h.rehabSvc.UpdateCourse(r.Context(), c); err != nil {
+		jsonError(w, http.StatusInternalServerError, "failed to update course")
+		return
+	}
+	jsonResponse(w, http.StatusOK, c)
+}
+
+// ==================== REHAB SESSIONS ====================
+
+func (h *AdminHandler) HandleRehabSessionRoutes(w http.ResponseWriter, r *http.Request) {
+	path := strings.TrimPrefix(r.URL.Path, "/app/api/admin/rehab/sessions")
+	path = strings.TrimPrefix(path, "/")
+
+	if path == "" {
+		if r.Method != http.MethodPost {
+			jsonError(w, http.StatusMethodNotAllowed, "method not allowed")
+			return
+		}
+		h.createRehabSession(w, r)
+		return
+	}
+
+	id, err := strconv.Atoi(path)
+	if err != nil {
+		jsonError(w, http.StatusBadRequest, "invalid session id")
+		return
+	}
+
+	switch r.Method {
+	case http.MethodGet:
+		h.getRehabSession(w, r, id)
+	case http.MethodPut:
+		h.updateRehabSession(w, r, id)
+	default:
+		jsonError(w, http.StatusMethodNotAllowed, "method not allowed")
+	}
+}
+
+func (h *AdminHandler) getRehabSession(w http.ResponseWriter, r *http.Request, id int) {
+	s, err := h.rehabSvc.GetSession(r.Context(), id)
+	if err != nil {
+		jsonError(w, http.StatusNotFound, "session not found")
+		return
+	}
+	jsonResponse(w, http.StatusOK, s)
+}
+
+type rehabSessionRequest struct {
+	CourseID        int    `json:"course_id"`
+	DayNumber       int    `json:"day_number"`
+	Stage           int    `json:"stage"`
+	VideoURL        string `json:"video_url"`
+	VideoMediaID    *int64 `json:"video_media_id"`
+	DurationMinutes int    `json:"duration_minutes"`
+	Description     string `json:"description"`
+	SortOrder       int    `json:"sort_order"`
+}
+
+func (h *AdminHandler) createRehabSession(w http.ResponseWriter, r *http.Request) {
+	var req rehabSessionRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		jsonError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if req.CourseID == 0 {
+		jsonError(w, http.StatusBadRequest, "course_id is required")
+		return
+	}
+
+	s := &models.RehabSession{
+		CourseID: req.CourseID, DayNumber: req.DayNumber, Stage: req.Stage,
+		VideoURL: req.VideoURL, VideoMediaID: req.VideoMediaID,
+		DurationMinutes: req.DurationMinutes, Description: req.Description,
+		SortOrder: req.SortOrder,
+	}
+	if err := h.rehabSvc.CreateSession(r.Context(), s); err != nil {
+		jsonError(w, http.StatusInternalServerError, "failed to create session")
+		return
+	}
+	jsonResponse(w, http.StatusCreated, s)
+}
+
+func (h *AdminHandler) updateRehabSession(w http.ResponseWriter, r *http.Request, id int) {
+	s, err := h.rehabSvc.GetSession(r.Context(), id)
+	if err != nil {
+		jsonError(w, http.StatusNotFound, "session not found")
+		return
+	}
+
+	var req rehabSessionRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		jsonError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	s.CourseID = req.CourseID
+	s.DayNumber = req.DayNumber
+	s.Stage = req.Stage
+	s.VideoURL = req.VideoURL
+	s.VideoMediaID = req.VideoMediaID
+	s.DurationMinutes = req.DurationMinutes
+	s.Description = req.Description
+	s.SortOrder = req.SortOrder
+
+	if err := h.rehabSvc.UpdateSession(r.Context(), s); err != nil {
+		jsonError(w, http.StatusInternalServerError, "failed to update session")
+		return
+	}
+	jsonResponse(w, http.StatusOK, s)
 }

@@ -128,6 +128,8 @@ type ExerciseRepository interface {
 
 type RehabRepository interface {
 	ListCourses(ctx context.Context, category string) ([]models.RehabCourse, error)
+	// ListAllCourses returns every course regardless of is_active. Used by admin.
+	ListAllCourses(ctx context.Context) ([]models.RehabCourse, error)
 	GetCourseByID(ctx context.Context, id int) (*models.RehabCourse, error)
 	CreateCourse(ctx context.Context, c *models.RehabCourse) error
 	UpdateCourse(ctx context.Context, c *models.RehabCourse) error

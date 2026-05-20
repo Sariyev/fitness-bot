@@ -24,6 +24,7 @@ type RehabSession struct {
 	DayNumber       int       `json:"day_number"`
 	Stage           int       `json:"stage"`
 	VideoURL        string    `json:"video_url"`
+	VideoMediaID    *int64    `json:"video_media_id"`
 	DurationMinutes int       `json:"duration_minutes"`
 	Description     string    `json:"description"`
 	SortOrder       int       `json:"sort_order"`

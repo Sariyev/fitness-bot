@@ -13,10 +13,11 @@ import (
 type RehabHandler struct {
 	rehabSvc  *service.RehabService
 	accessSvc *service.AccessService
+	mediaSvc  *service.MediaService // optional; nil when R2 not configured
 }
 
-func NewRehabHandler(rehabSvc *service.RehabService, accessSvc *service.AccessService) *RehabHandler {
-	return &RehabHandler{rehabSvc: rehabSvc, accessSvc: accessSvc}
+func NewRehabHandler(rehabSvc *service.RehabService, accessSvc *service.AccessService, mediaSvc *service.MediaService) *RehabHandler {
+	return &RehabHandler{rehabSvc: rehabSvc, accessSvc: accessSvc, mediaSvc: mediaSvc}
 }
 
 type CompleteRehabRequest struct {
@@ -203,6 +204,14 @@ func (h *RehabHandler) GetSession(w http.ResponseWriter, r *http.Request, idStr 
 	if err != nil {
 		jsonError(w, http.StatusNotFound, "session not found")
 		return
+	}
+
+	// If admin uploaded a video, replace video_url with the R2 public URL so
+	// the frontend doesn't have to know about media_id resolution.
+	if session.VideoMediaID != nil && h.mediaSvc != nil {
+		if u, urlErr := h.mediaSvc.GetURL(r.Context(), UserFromContext(r.Context()), *session.VideoMediaID); urlErr == nil {
+			session.VideoURL = u
+		}
 	}
 
 	jsonResponse(w, http.StatusOK, session)

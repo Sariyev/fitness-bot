@@ -51,7 +51,7 @@ func (r *rehabRepo) ListCourses(ctx context.Context, category string) ([]models.
 func (r *rehabRepo) GetCourseByID(ctx context.Context, id int) (*models.RehabCourse, error) {
 	c := &models.RehabCourse{}
 	err := r.pool.QueryRow(ctx,
-		`SELECT id, slug, category, name, description, warnings, is_active, sort_order, created_at, updated_at
+		`SELECT id, slug, category, name, description, warnings, access_tier, is_active, sort_order, created_at, updated_at
 		 FROM rehab_courses WHERE id = $1`, id,
 	).Scan(&c.ID, &c.Slug, &c.Category, &c.Name, &c.Description,
 		&c.Warnings, &c.AccessTier, &c.IsActive, &c.SortOrder, &c.CreatedAt, &c.UpdatedAt)
@@ -59,6 +59,28 @@ func (r *rehabRepo) GetCourseByID(ctx context.Context, id int) (*models.RehabCou
 		return nil, err
 	}
 	return c, nil
+}
+
+func (r *rehabRepo) ListAllCourses(ctx context.Context) ([]models.RehabCourse, error) {
+	rows, err := r.pool.Query(ctx,
+		`SELECT id, slug, category, name, COALESCE(description,''), COALESCE(warnings,''),
+			access_tier, is_active, sort_order, created_at, updated_at
+		 FROM rehab_courses ORDER BY sort_order`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	courses := []models.RehabCourse{}
+	for rows.Next() {
+		var c models.RehabCourse
+		if err := rows.Scan(&c.ID, &c.Slug, &c.Category, &c.Name, &c.Description,
+			&c.Warnings, &c.AccessTier, &c.IsActive, &c.SortOrder, &c.CreatedAt, &c.UpdatedAt); err != nil {
+			return nil, err
+		}
+		courses = append(courses, c)
+	}
+	return courses, nil
 }
 
 func (r *rehabRepo) CreateCourse(ctx context.Context, c *models.RehabCourse) error {
@@ -81,7 +103,7 @@ func (r *rehabRepo) UpdateCourse(ctx context.Context, c *models.RehabCourse) err
 
 func (r *rehabRepo) ListSessions(ctx context.Context, courseID int) ([]models.RehabSession, error) {
 	rows, err := r.pool.Query(ctx,
-		`SELECT id, course_id, day_number, stage, COALESCE(video_url,''), COALESCE(duration_minutes,0),
+		`SELECT id, course_id, day_number, stage, COALESCE(video_url,''), video_media_id, COALESCE(duration_minutes,0),
 			COALESCE(description,''), sort_order, created_at, updated_at
 		 FROM rehab_sessions WHERE course_id = $1
 		 ORDER BY sort_order`, courseID)
@@ -93,7 +115,7 @@ func (r *rehabRepo) ListSessions(ctx context.Context, courseID int) ([]models.Re
 	sessions := []models.RehabSession{}
 	for rows.Next() {
 		var s models.RehabSession
-		if err := rows.Scan(&s.ID, &s.CourseID, &s.DayNumber, &s.Stage, &s.VideoURL,
+		if err := rows.Scan(&s.ID, &s.CourseID, &s.DayNumber, &s.Stage, &s.VideoURL, &s.VideoMediaID,
 			&s.DurationMinutes, &s.Description, &s.SortOrder, &s.CreatedAt, &s.UpdatedAt); err != nil {
 			return nil, err
 		}
@@ -105,7 +127,7 @@ func (r *rehabRepo) ListSessions(ctx context.Context, courseID int) ([]models.Re
 func (r *rehabRepo) GetSessionByID(ctx context.Context, id int) (*models.RehabSession, error) {
 	s := &models.RehabSession{}
 	err := r.pool.QueryRow(ctx,
-		`SELECT id, course_id, day_number, stage, COALESCE(video_url,''), COALESCE(duration_minutes,0),
+		`SELECT id, course_id, day_number, stage, COALESCE(video_url,''), video_media_id, COALESCE(duration_minutes,0),
 			COALESCE(description,''), sort_order, created_at, updated_at
 		 FROM rehab_sessions WHERE id = $1`, id,
 	).Scan(&s.ID, &s.CourseID, &s.DayNumber, &s.Stage, &s.VideoURL,
@@ -118,21 +140,21 @@ func (r *rehabRepo) GetSessionByID(ctx context.Context, id int) (*models.RehabSe
 
 func (r *rehabRepo) CreateSession(ctx context.Context, s *models.RehabSession) error {
 	return r.pool.QueryRow(ctx,
-		`INSERT INTO rehab_sessions (course_id, day_number, stage, video_url, duration_minutes,
-			description, sort_order)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7)
+		`INSERT INTO rehab_sessions (course_id, day_number, stage, video_url, video_media_id,
+			duration_minutes, description, sort_order)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		 RETURNING id, created_at, updated_at`,
-		s.CourseID, s.DayNumber, s.Stage, s.VideoURL, s.DurationMinutes,
-		s.Description, s.SortOrder,
+		s.CourseID, s.DayNumber, s.Stage, s.VideoURL, s.VideoMediaID,
+		s.DurationMinutes, s.Description, s.SortOrder,
 	).Scan(&s.ID, &s.CreatedAt, &s.UpdatedAt)
 }
 
 func (r *rehabRepo) UpdateSession(ctx context.Context, s *models.RehabSession) error {
 	_, err := r.pool.Exec(ctx,
 		`UPDATE rehab_sessions SET course_id=$2, day_number=$3, stage=$4, video_url=$5,
-			duration_minutes=$6, description=$7, sort_order=$8, updated_at=NOW()
+			video_media_id=$6, duration_minutes=$7, description=$8, sort_order=$9, updated_at=NOW()
 		 WHERE id=$1`,
-		s.ID, s.CourseID, s.DayNumber, s.Stage, s.VideoURL,
+		s.ID, s.CourseID, s.DayNumber, s.Stage, s.VideoURL, s.VideoMediaID,
 		s.DurationMinutes, s.Description, s.SortOrder)
 	return err
 }

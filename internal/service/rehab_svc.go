@@ -47,3 +47,24 @@ func (s *RehabService) CompleteSession(ctx context.Context, userID int64, course
 func (s *RehabService) GetUserProgress(ctx context.Context, userID int64, courseID int) ([]models.UserRehabProgress, error) {
 	return s.rehabRepo.ListUserProgress(ctx, userID, courseID)
 }
+
+// ListAllCourses returns every course including inactive — admin only.
+func (s *RehabService) ListAllCourses(ctx context.Context) ([]models.RehabCourse, error) {
+	return s.rehabRepo.ListAllCourses(ctx)
+}
+
+func (s *RehabService) CreateCourse(ctx context.Context, c *models.RehabCourse) error {
+	return s.rehabRepo.CreateCourse(ctx, c)
+}
+
+func (s *RehabService) UpdateCourse(ctx context.Context, c *models.RehabCourse) error {
+	return s.rehabRepo.UpdateCourse(ctx, c)
+}
+
+func (s *RehabService) CreateSession(ctx context.Context, sess *models.RehabSession) error {
+	return s.rehabRepo.CreateSession(ctx, sess)
+}
+
+func (s *RehabService) UpdateSession(ctx context.Context, sess *models.RehabSession) error {
+	return s.rehabRepo.UpdateSession(ctx, sess)
+}
