@@ -53,6 +53,8 @@ type PaymentRepository interface {
 	UpdatePayment(ctx context.Context, p *models.Payment) error
 	GetPaymentByID(ctx context.Context, id int64) (*models.Payment, error)
 	CreatePendingPayment(ctx context.Context, userID int64, amountKZT int, provider string) (int64, error)
+	// SetCategory tags an existing pending payment with the category it unlocks.
+	SetCategory(ctx context.Context, paymentID int64, category string) error
 }
 
 type ModuleRepository interface {

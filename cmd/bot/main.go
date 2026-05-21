@@ -50,7 +50,7 @@ func main() {
 	userSvc := service.NewUserService(userRepo)
 	convSvc := service.NewConversationService(convRepo)
 	questSvc := service.NewQuestionnaireService(questRepo)
-	paymentSvc := service.NewPaymentService(paymentRepo, userRepo, paymentProvider, 5000)
+	paymentSvc := service.NewPaymentService(paymentRepo, userRepo, nil, paymentProvider, 5000)
 	moduleSvc := service.NewModuleService(moduleRepo)
 	scoreSvc := service.NewScoreService(scoreRepo)
 

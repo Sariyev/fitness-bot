@@ -60,6 +60,19 @@ function getAuthHeaders(): Record<string, string> {
   return { 'X-Telegram-Init-Data': getInitData() }
 }
 
+// ApiError carries server-side error context (status + parsed body) so callers
+// like detail views can branch on 402 "locked" responses to render an unlock
+// CTA. Throwing a plain Error loses the payload we need.
+export class ApiError extends Error {
+  status: number
+  body: any
+  constructor(status: number, body: any) {
+    super(body?.error || `HTTP ${status}`)
+    this.status = status
+    this.body = body
+  }
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(path, {
     ...options,
@@ -77,8 +90,8 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   }
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Request failed' }))
-    throw new Error(err.error || `HTTP ${res.status}`)
+    const body = await res.json().catch(() => ({ error: 'Request failed' }))
+    throw new ApiError(res.status, body)
   }
 
   return res.json()
@@ -155,8 +168,11 @@ export const api = {
   getPaymentStatus(): Promise<PaymentStatus> {
     return request('/app/api/payment/status')
   },
-  processPayment(): Promise<PaymentResult> {
-    return request('/app/api/payment/pay', { method: 'POST' })
+  processPayment(category?: 'workouts' | 'lfk' | 'nutrition'): Promise<PaymentResult> {
+    return request('/app/api/payment/pay', {
+      method: 'POST',
+      body: JSON.stringify(category ? { category } : {}),
+    })
   },
 
   // ====== DASHBOARD ======

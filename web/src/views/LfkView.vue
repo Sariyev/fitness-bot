@@ -46,11 +46,15 @@
           :key="course.id"
           :to="`/lfk/course/${course.id}`"
           class="course-card"
+          :class="{ locked: course.locked }"
           :style="{ animationDelay: (index * 60) + 'ms' }"
         >
           <div class="course-card-top">
             <span class="course-name">{{ course.name }}</span>
-            <span class="course-badge">14 дней</span>
+            <span v-if="course.locked" class="lock-badge">🔒</span>
+            <span v-else-if="course.access_tier === 'free'" class="tier-badge tier-free">Бесплатно</span>
+            <span v-else-if="course.access_tier === 'trial'" class="tier-badge tier-trial">Триал</span>
+            <span v-else class="course-badge">14 дней</span>
           </div>
           <p class="course-desc">{{ truncate(course.description, 100) }}</p>
         </router-link>
@@ -289,6 +293,25 @@ onMounted(() => {
   font-size: 11px;
   font-weight: 600;
 }
+
+.tier-badge {
+  flex-shrink: 0;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.tier-free  { background: rgba(52, 199, 89, 0.18);  color: #248a3d; }
+.tier-trial { background: rgba(255, 149, 0, 0.18); color: #b35700; }
+
+.lock-badge {
+  flex-shrink: 0;
+  font-size: 16px;
+  opacity: 0.6;
+}
+
+.course-card.locked .course-name { opacity: 0.65; }
 
 .course-desc {
   font-size: 13px;

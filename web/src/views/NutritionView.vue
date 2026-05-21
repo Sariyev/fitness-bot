@@ -75,12 +75,16 @@
             v-for="(plan, index) in mealPlans"
             :key="plan.id"
             class="plan-card"
+            :class="{ locked: plan.locked }"
             :style="{ animationDelay: (index * 60) + 'ms' }"
           >
             <div class="plan-card-top" @click="togglePlan(plan.id)">
               <div class="plan-card-info">
                 <span class="plan-name">{{ plan.name }}</span>
                 <div class="plan-meta">
+                  <span v-if="plan.locked" class="lock-badge">🔒</span>
+                  <span v-else-if="plan.access_tier === 'free'" class="tier-badge tier-free">Бесплатно</span>
+                  <span v-else-if="plan.access_tier === 'trial'" class="tier-badge tier-trial">Триал</span>
                   <span v-if="plan.goal" class="plan-goal-badge">{{ goalLabel(plan.goal) }}</span>
                   <span class="plan-kcal">{{ plan.calories }} ккал</span>
                 </div>
@@ -92,6 +96,12 @@
             <Transition name="meals-slide">
               <div v-if="expandedPlan === plan.id" class="meals-list">
                 <div v-if="loadingMeals" class="meals-loading">Загрузка...</div>
+                <LockedContent
+                  v-else-if="lockedInfo"
+                  :category="lockedInfo.category"
+                  :tier="lockedInfo.tier"
+                  :priceKzt="lockedInfo.priceKzt"
+                />
                 <template v-else-if="planMeals.length > 0">
                   <div
                     v-for="meal in planMeals"
@@ -125,8 +135,9 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { api } from '../api'
-import type { MealPlan, Meal, DailySummary } from '../types'
+import { api, ApiError } from '../api'
+import type { MealPlan, Meal, DailySummary, ContentCategory } from '../types'
+import LockedContent from '../components/LockedContent.vue'
 
 const loading = ref(true)
 const mealPlans = ref<MealPlan[]>([])
@@ -137,6 +148,7 @@ const dailySummary = ref<DailySummary>({ calories: 0, protein: 0, fat: 0, carbs:
 const expandedPlan = ref<number | null>(null)
 const loadingMeals = ref(false)
 const planMeals = ref<Meal[]>([])
+const lockedInfo = ref<{ category: ContentCategory; tier: 'free' | 'trial' | 'paid'; priceKzt: number } | null>(null)
 
 const goalLabels: Record<string, string> = {
   weight_loss: 'Похудение',
@@ -174,16 +186,25 @@ async function togglePlan(planId: number) {
   if (expandedPlan.value === planId) {
     expandedPlan.value = null
     planMeals.value = []
+    lockedInfo.value = null
     return
   }
 
   expandedPlan.value = planId
   loadingMeals.value = true
+  lockedInfo.value = null
   try {
     const data = await api.getMealPlan(planId)
     planMeals.value = data.meals || []
-  } catch {
+  } catch (e: any) {
     planMeals.value = []
+    if (e instanceof ApiError && e.status === 402 && e.body?.error === 'locked') {
+      lockedInfo.value = {
+        category: e.body.category,
+        tier: e.body.tier,
+        priceKzt: e.body.price_kzt,
+      }
+    }
   } finally {
     loadingMeals.value = false
   }
@@ -367,6 +388,23 @@ onMounted(() => {
   font-size: 11px;
   font-weight: 600;
 }
+
+.tier-badge {
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.tier-free  { background: rgba(52, 199, 89, 0.18);  color: #248a3d; }
+.tier-trial { background: rgba(255, 149, 0, 0.18); color: #b35700; }
+
+.lock-badge {
+  font-size: 14px;
+  opacity: 0.6;
+}
+
+.plan-card.locked .plan-name { opacity: 0.65; }
 
 .plan-kcal {
   font-size: 13px;

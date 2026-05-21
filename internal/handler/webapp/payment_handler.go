@@ -1,10 +1,12 @@
 package webapp
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 
+	"fitness-bot/internal/models"
 	"fitness-bot/internal/payment"
 	"fitness-bot/internal/service"
 )
@@ -43,6 +45,10 @@ func (h *PaymentHandler) Status(w http.ResponseWriter, r *http.Request) {
 }
 
 // POST /app/api/payment/pay
+//
+// Body: {"category": "workouts" | "lfk" | "nutrition"}  (default: "workouts")
+//
+// Returns either a redirect_url (Robokassa) or success=true (Dummy provider).
 func (h *PaymentHandler) Pay(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		jsonError(w, http.StatusMethodNotAllowed, "method not allowed")
@@ -55,17 +61,24 @@ func (h *PaymentHandler) Pay(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if user.IsPaid {
-		jsonResponse(w, http.StatusOK, map[string]interface{}{
-			"success": true,
-			"message": "Доступ уже оплачен",
-		})
+	// Optional body: {"category": "..."}; default to workouts for backwards
+	// compatibility with the legacy bot flow that doesn't send a body.
+	var body struct {
+		Category string `json:"category"`
+	}
+	_ = json.NewDecoder(r.Body).Decode(&body) // tolerate empty body
+	category := models.Category(body.Category)
+	if category == "" {
+		category = models.CategoryWorkouts
+	}
+	if !category.IsValid() {
+		jsonError(w, http.StatusBadRequest, "invalid category")
 		return
 	}
 
-	result, err := h.paymentSvc.InitiatePayment(r.Context(), user)
+	result, err := h.paymentSvc.InitiatePayment(r.Context(), user, category)
 	if err != nil {
-		log.Printf("[PAYMENT] initiate failed for user %d: %v", user.ID, err)
+		log.Printf("[PAYMENT] initiate failed for user %d cat=%s: %v", user.ID, category, err)
 		jsonError(w, http.StatusInternalServerError, "payment failed")
 		return
 	}

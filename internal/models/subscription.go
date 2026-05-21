@@ -9,6 +9,7 @@ type Payment struct {
 	Status       string         `json:"status"`
 	Provider     string         `json:"provider"`
 	ProviderTxID *string        `json:"provider_tx_id"`
+	Category     *string        `json:"category"` // NULL for legacy pre-split payments
 	Metadata     map[string]any `json:"metadata"`
 	CreatedAt    time.Time      `json:"created_at"`
 	UpdatedAt    time.Time      `json:"updated_at"`

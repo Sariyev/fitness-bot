@@ -17,9 +17,9 @@ func NewPaymentRepo(pool *pgxpool.Pool) PaymentRepository {
 
 func (r *paymentRepo) CreatePayment(ctx context.Context, p *models.Payment) error {
 	return r.pool.QueryRow(ctx,
-		`INSERT INTO payments (user_id, amount_kzt, status, provider, provider_tx_id, metadata)
-		 VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, created_at, updated_at`,
-		p.UserID, p.AmountKZT, p.Status, p.Provider, p.ProviderTxID, p.Metadata,
+		`INSERT INTO payments (user_id, amount_kzt, status, provider, provider_tx_id, category, metadata)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, created_at, updated_at`,
+		p.UserID, p.AmountKZT, p.Status, p.Provider, p.ProviderTxID, p.Category, p.Metadata,
 	).Scan(&p.ID, &p.CreatedAt, &p.UpdatedAt)
 }
 
@@ -34,10 +34,10 @@ func (r *paymentRepo) UpdatePayment(ctx context.Context, p *models.Payment) erro
 func (r *paymentRepo) GetPaymentByID(ctx context.Context, id int64) (*models.Payment, error) {
 	p := &models.Payment{}
 	err := r.pool.QueryRow(ctx,
-		`SELECT id, user_id, amount_kzt, status, provider, provider_tx_id, metadata, created_at, updated_at
+		`SELECT id, user_id, amount_kzt, status, provider, provider_tx_id, category, metadata, created_at, updated_at
 		 FROM payments WHERE id = $1`, id,
 	).Scan(&p.ID, &p.UserID, &p.AmountKZT, &p.Status,
-		&p.Provider, &p.ProviderTxID, &p.Metadata, &p.CreatedAt, &p.UpdatedAt)
+		&p.Provider, &p.ProviderTxID, &p.Category, &p.Metadata, &p.CreatedAt, &p.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -52,4 +52,14 @@ func (r *paymentRepo) CreatePendingPayment(ctx context.Context, userID int64, am
 		userID, amountKZT, provider,
 	).Scan(&id)
 	return id, err
+}
+
+// SetCategory tags an existing pending payment with the category it unlocks.
+// Used right after the provider creates the pending row (Robokassa flow) since
+// the PendingPaymentCreator interface doesn't know about categories.
+func (r *paymentRepo) SetCategory(ctx context.Context, paymentID int64, category string) error {
+	_, err := r.pool.Exec(ctx,
+		`UPDATE payments SET category = $2, updated_at = NOW() WHERE id = $1`,
+		paymentID, category)
+	return err
 }

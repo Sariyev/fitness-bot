@@ -74,19 +74,21 @@ func main() {
 		log.Println("Payment provider: Dummy (instant)")
 	}
 
+	// Per-category access (three-bucket content gating: free / trial / paid).
+	// Constructed before paymentSvc so the payment service can read prices and
+	// grant access on confirm.
+	pricingRepo := repository.NewPricingRepo(db.Pool)
+	accessRepo := repository.NewAccessRepo(db.Pool)
+	accessSvc := service.NewAccessService(pricingRepo, accessRepo)
+
 	scoreSvc := service.NewScoreService(scoreRepo)
-	paymentSvc := service.NewPaymentService(paymentRepo, userRepo, paymentProvider, 5000)
+	paymentSvc := service.NewPaymentService(paymentRepo, userRepo, accessSvc, paymentProvider, 5000)
 	workoutSvc := service.NewWorkoutService(programRepo, workoutRepo, exerciseRepo, completionRepo)
 	rehabSvc := service.NewRehabService(rehabRepo)
 	nutritionSvc := service.NewNutritionService(nutritionRepo, foodLogRepo)
 	progressSvc := service.NewProgressService(progressRepo, completionRepo, achievementRepo)
 	dashboardSvc := service.NewDashboardService(userSvc, workoutSvc, rehabSvc, nutritionSvc)
 	recommendSvc := service.NewRecommendationService(programRepo, rehabRepo, nutritionRepo)
-
-	// Per-category access (three-bucket content gating: free / trial / paid).
-	pricingRepo := repository.NewPricingRepo(db.Pool)
-	accessRepo := repository.NewAccessRepo(db.Pool)
-	accessSvc := service.NewAccessService(pricingRepo, accessRepo)
 
 	// Media (R2) — optional. Empty AccessKeyID disables; routes won't register.
 	var mediaSvc *service.MediaService

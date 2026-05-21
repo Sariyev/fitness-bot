@@ -69,11 +69,15 @@
             :key="program.id"
             :to="`/workouts/program/${program.id}`"
             class="program-card"
+            :class="{ locked: program.locked }"
             :style="{ animationDelay: (index * 80) + 'ms' }"
           >
             <div class="program-card-top">
               <span class="program-name">{{ program.name }}</span>
-              <span class="level-badge">{{ levelLabel(program.level) }}</span>
+              <span v-if="program.locked" class="lock-badge">🔒</span>
+              <span v-else-if="program.access_tier === 'free'" class="tier-badge tier-free">Бесплатно</span>
+              <span v-else-if="program.access_tier === 'trial'" class="tier-badge tier-trial">Триал</span>
+              <span v-else class="level-badge">{{ levelLabel(program.level) }}</span>
             </div>
             <div class="program-meta">
               <span v-if="program.duration_weeks" class="meta-item">
@@ -390,6 +394,25 @@ onMounted(() => {
   font-size: 11px;
   font-weight: 600;
 }
+
+.tier-badge {
+  flex-shrink: 0;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.tier-free  { background: rgba(52, 199, 89, 0.18);  color: #248a3d; }
+.tier-trial { background: rgba(255, 149, 0, 0.18); color: #b35700; }
+
+.lock-badge {
+  flex-shrink: 0;
+  font-size: 16px;
+  opacity: 0.6;
+}
+
+.program-card.locked .program-name { opacity: 0.65; }
 
 .program-meta {
   display: flex;

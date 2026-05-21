@@ -5,6 +5,13 @@
       <SkeletonCard v-for="i in 4" :key="i" />
     </div>
 
+    <LockedContent
+      v-else-if="lockedInfo"
+      :category="lockedInfo.category"
+      :tier="lockedInfo.tier"
+      :priceKzt="lockedInfo.priceKzt"
+    />
+
     <template v-else-if="program">
       <div class="program-header">
         <h1 class="program-name">{{ program.name }}</h1>
@@ -69,9 +76,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { api } from '../api'
-import type { Program, Workout } from '../types'
+import { api, ApiError } from '../api'
+import type { Program, Workout, ContentCategory } from '../types'
 import SkeletonCard from '../components/SkeletonCard.vue'
+import LockedContent from '../components/LockedContent.vue'
 
 const props = defineProps<{ id: string }>()
 const route = useRoute()
@@ -83,6 +91,7 @@ const workouts = ref<Workout[]>([])
 const enrolling = ref(false)
 const enrollError = ref('')
 const enrollSuccess = ref(false)
+const lockedInfo = ref<{ category: ContentCategory; tier: 'free' | 'trial' | 'paid'; priceKzt: number } | null>(null)
 
 const goalLabels: Record<string, string> = {
   weight_loss: 'Похудение',
@@ -152,14 +161,20 @@ async function enroll() {
 
 onMounted(async () => {
   try {
-    const [programData, allWorkouts] = await Promise.all([
-      api.getProgram(Number(props.id)),
-      api.getWorkouts({}),
-    ])
+    const programData = await api.getProgram(Number(props.id))
     program.value = programData
+    const allWorkouts = await api.getWorkouts({})
     workouts.value = allWorkouts.filter(w => w.program_id === programData.id)
-  } catch (e) {
-    console.error('Failed to load program:', e)
+  } catch (e: any) {
+    if (e instanceof ApiError && e.status === 402 && e.body?.error === 'locked') {
+      lockedInfo.value = {
+        category: e.body.category,
+        tier: e.body.tier,
+        priceKzt: e.body.price_kzt,
+      }
+    } else {
+      console.error('Failed to load program:', e)
+    }
   } finally {
     loading.value = false
   }

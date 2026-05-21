@@ -5,6 +5,13 @@
       <SkeletonCard v-for="i in 5" :key="i" />
     </div>
 
+    <LockedContent
+      v-else-if="lockedInfo"
+      :category="lockedInfo.category"
+      :tier="lockedInfo.tier"
+      :priceKzt="lockedInfo.priceKzt"
+    />
+
     <template v-else-if="course">
       <div class="course-header">
         <h1 class="course-name">{{ course.name }}</h1>
@@ -102,9 +109,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { api } from '../api'
-import type { RehabCourseWithSessions, RehabProgress } from '../types'
+import { api, ApiError } from '../api'
+import type { RehabCourseWithSessions, RehabProgress, ContentCategory } from '../types'
 import SkeletonCard from '../components/SkeletonCard.vue'
+import LockedContent from '../components/LockedContent.vue'
 
 const props = defineProps<{ id: string }>()
 const route = useRoute()
@@ -112,6 +120,7 @@ const router = useRouter()
 
 const loading = ref(true)
 const course = ref<RehabCourseWithSessions | null>(null)
+const lockedInfo = ref<{ category: ContentCategory; tier: 'free' | 'trial' | 'paid'; priceKzt: number } | null>(null)
 const progress = ref<RehabProgress[]>([])
 
 function getDays(from: number, to: number): number[] {
@@ -164,14 +173,19 @@ function openDay(day: number) {
 onMounted(async () => {
   try {
     const courseId = Number(props.id)
-    const [courseData, progressData] = await Promise.all([
-      api.getRehabCourse(courseId),
-      api.getRehabProgress(courseId),
-    ])
+    const courseData = await api.getRehabCourse(courseId)
     course.value = courseData
-    progress.value = progressData
-  } catch (e) {
-    console.error('Failed to load course:', e)
+    progress.value = await api.getRehabProgress(courseId)
+  } catch (e: any) {
+    if (e instanceof ApiError && e.status === 402 && e.body?.error === 'locked') {
+      lockedInfo.value = {
+        category: e.body.category,
+        tier: e.body.tier,
+        priceKzt: e.body.price_kzt,
+      }
+    } else {
+      console.error('Failed to load course:', e)
+    }
   } finally {
     loading.value = false
   }
