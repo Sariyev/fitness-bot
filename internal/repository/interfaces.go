@@ -15,6 +15,17 @@ type UserRepository interface {
 	CreateProfile(ctx context.Context, profile *models.UserProfile) error
 	GetProfileByUserID(ctx context.Context, userID int64) (*models.UserProfile, error)
 	UpdateProfile(ctx context.Context, profile *models.UserProfile) error
+	// Reminder cron: list registered users matching a preferred_time bucket
+	// who haven't been reminded today, and mark a reminder as sent.
+	ListReminderTargets(ctx context.Context, preferredTime string) ([]ReminderTarget, error)
+	MarkReminderSent(ctx context.Context, userID int64) error
+}
+
+// ReminderTarget is the minimal payload the bot needs to send a daily nudge.
+type ReminderTarget struct {
+	UserID     int64
+	TelegramID int64
+	FirstName  string
 }
 
 type ConversationRepository interface {

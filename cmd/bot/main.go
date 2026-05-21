@@ -79,6 +79,12 @@ func main() {
 		cancel()
 	}()
 
+	// Daily workout reminder cron (TZ = Asia/Almaty, UTC+5 by default).
+	// Sends a "time to train" message with a Mini App button to each
+	// registered user at their preferred_time bucket, once per day.
+	reminderSvc := service.NewReminderService(userRepo, cfg.TelegramToken, cfg.WebAppURL, 5)
+	go reminderSvc.Run(ctx)
+
 	// Start polling
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60

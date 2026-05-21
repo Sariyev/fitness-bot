@@ -144,3 +144,38 @@ func (r *userRepo) UpdateProfile(ctx context.Context, p *models.UserProfile) err
 		p.Diagnoses, p.Contraindications, p.DaysPerWeek, p.SessionDuration, p.PreferredTime, p.Equipment)
 	return err
 }
+
+func (r *userRepo) ListReminderTargets(ctx context.Context, preferredTime string) ([]ReminderTarget, error) {
+	// Only registered users who haven't been reminded today.
+	// Joins user_profiles so we can match preferred_time. "any" means default
+	// to the morning bucket (callers pass preferredTime="any" if they want
+	// users with NULL or 'any' selected).
+	rows, err := r.pool.Query(ctx, `
+		SELECT u.id, u.telegram_id, COALESCE(u.first_name, '')
+		FROM users u
+		JOIN user_profiles p ON p.user_id = u.id
+		WHERE u.is_registered = TRUE
+		  AND COALESCE(p.preferred_time, 'any') = $1
+		  AND (u.last_reminder_at IS NULL OR u.last_reminder_at < DATE_TRUNC('day', NOW()))
+	`, preferredTime)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []ReminderTarget
+	for rows.Next() {
+		var t ReminderTarget
+		if err := rows.Scan(&t.UserID, &t.TelegramID, &t.FirstName); err != nil {
+			return nil, err
+		}
+		out = append(out, t)
+	}
+	return out, rows.Err()
+}
+
+func (r *userRepo) MarkReminderSent(ctx context.Context, userID int64) error {
+	_, err := r.pool.Exec(ctx,
+		`UPDATE users SET last_reminder_at = NOW() WHERE id = $1`, userID)
+	return err
+}
