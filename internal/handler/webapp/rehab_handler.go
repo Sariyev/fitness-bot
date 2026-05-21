@@ -206,10 +206,11 @@ func (h *RehabHandler) GetSession(w http.ResponseWriter, r *http.Request, idStr 
 		return
 	}
 
-	// If admin uploaded a video, replace video_url with the R2 public URL so
-	// the frontend doesn't have to know about media_id resolution.
+	// If admin uploaded a video, replace video_url with a presigned R2 URL.
+	// Uses PresignReadURL (no owner check) because access is gated at the
+	// course level via accessSvc.CanAccess above.
 	if session.VideoMediaID != nil && h.mediaSvc != nil {
-		if u, urlErr := h.mediaSvc.GetURL(r.Context(), UserFromContext(r.Context()), *session.VideoMediaID); urlErr == nil {
+		if u, urlErr := h.mediaSvc.PresignReadURL(r.Context(), *session.VideoMediaID); urlErr == nil {
 			session.VideoURL = u
 		}
 	}

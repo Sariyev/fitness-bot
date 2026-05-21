@@ -107,7 +107,9 @@ async function handleFileChange(e: Event) {
   try {
     const result = await upload(file, {
       reference_type: props.referenceType ?? 'content_video',
-      is_public: true,
+      // Private bucket (same as avatars) — server-side GetWorkout / GetSession
+      // resolves video_media_id to a presigned URL at view time.
+      is_public: false,
     })
     emit('update:modelValue', result.media_id)
   } catch (e: any) {

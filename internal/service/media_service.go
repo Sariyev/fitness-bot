@@ -204,6 +204,24 @@ func (s *MediaService) GetURL(ctx context.Context, user *models.User, mediaID in
 	return s.provider.PresignGet(ctx, storage.BucketPrivate, m.StorageKey, presignGetTTL)
 }
 
+// PresignReadURL returns a fetchable URL for any media without checking
+// ownership. Callers must verify the user can access the parent content
+// (workout / rehab session / etc.) first — used from content handlers that
+// gate at the program / course / plan level via accessSvc.CanAccess.
+//
+// This decouples "who uploaded the video" (admin) from "who can play it"
+// (any user with access to the parent content).
+func (s *MediaService) PresignReadURL(ctx context.Context, mediaID int64) (string, error) {
+	m, err := s.repo.GetByID(ctx, mediaID)
+	if err != nil {
+		return "", err
+	}
+	if m.IsPublic {
+		return s.provider.PublicURL(storage.BucketPublic, m.StorageKey), nil
+	}
+	return s.provider.PresignGet(ctx, storage.BucketPrivate, m.StorageKey, presignGetTTL)
+}
+
 // Delete removes the media row and the underlying object. Owner or admin only.
 func (s *MediaService) Delete(ctx context.Context, user *models.User, mediaID int64) error {
 	m, err := s.repo.GetByID(ctx, mediaID)
