@@ -433,6 +433,17 @@ export const api = {
     return request(`/app/api/admin/rehab/sessions/${id}`, { method: 'PUT', body: JSON.stringify(data) })
   },
 
+  // Admin Pricing
+  getAdminPricing(): Promise<Record<string, number>> {
+    return request('/app/api/admin/pricing')
+  },
+  setAdminPricing(category: string, priceKZT: number): Promise<{ category: string; price_kzt: number }> {
+    return request(`/app/api/admin/pricing/${category}`, {
+      method: 'PUT',
+      body: JSON.stringify({ price_kzt: priceKZT }),
+    })
+  },
+
   // Admin Reviews & Stats
   getAdminReviewsSummary(): Promise<ReviewSummary> {
     return request('/app/api/admin/reviews')

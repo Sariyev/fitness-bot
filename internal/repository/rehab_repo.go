@@ -84,20 +84,28 @@ func (r *rehabRepo) ListAllCourses(ctx context.Context) ([]models.RehabCourse, e
 }
 
 func (r *rehabRepo) CreateCourse(ctx context.Context, c *models.RehabCourse) error {
+	tier := c.AccessTier
+	if tier == "" {
+		tier = models.AccessPaid
+	}
 	return r.pool.QueryRow(ctx,
-		`INSERT INTO rehab_courses (slug, category, name, description, warnings, is_active, sort_order)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7)
+		`INSERT INTO rehab_courses (slug, category, name, description, warnings, access_tier, is_active, sort_order)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		 RETURNING id, created_at, updated_at`,
-		c.Slug, c.Category, c.Name, c.Description, c.Warnings, c.IsActive, c.SortOrder,
+		c.Slug, c.Category, c.Name, c.Description, c.Warnings, tier, c.IsActive, c.SortOrder,
 	).Scan(&c.ID, &c.CreatedAt, &c.UpdatedAt)
 }
 
 func (r *rehabRepo) UpdateCourse(ctx context.Context, c *models.RehabCourse) error {
+	tier := c.AccessTier
+	if tier == "" {
+		tier = models.AccessPaid
+	}
 	_, err := r.pool.Exec(ctx,
 		`UPDATE rehab_courses SET slug=$2, category=$3, name=$4, description=$5, warnings=$6,
-			is_active=$7, sort_order=$8, updated_at=NOW()
+			access_tier=$7, is_active=$8, sort_order=$9, updated_at=NOW()
 		 WHERE id=$1`,
-		c.ID, c.Slug, c.Category, c.Name, c.Description, c.Warnings, c.IsActive, c.SortOrder)
+		c.ID, c.Slug, c.Category, c.Name, c.Description, c.Warnings, tier, c.IsActive, c.SortOrder)
 	return err
 }
 

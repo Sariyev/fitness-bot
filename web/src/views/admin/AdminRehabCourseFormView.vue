@@ -44,6 +44,19 @@
       </fieldset>
 
       <fieldset class="admin-section">
+        <legend class="admin-section-title">Доступ</legend>
+        <div class="field">
+          <label>Бакет</label>
+          <div class="toggle-group">
+            <button type="button" :class="{ active: form.access_tier === 'free' }" @click="form.access_tier = 'free'">Бесплатно</button>
+            <button type="button" :class="{ active: form.access_tier === 'trial' }" @click="form.access_tier = 'trial'">Триал</button>
+            <button type="button" :class="{ active: form.access_tier === 'paid' }" @click="form.access_tier = 'paid'">Платно</button>
+          </div>
+          <span class="hint">Бесплатно — всем; Триал — первые 7 дней после регистрации; Платно — только купившим категорию.</span>
+        </div>
+      </fieldset>
+
+      <fieldset class="admin-section">
         <legend class="admin-section-title">Статус</legend>
         <div class="field">
           <label>Активен</label>
@@ -106,6 +119,7 @@ const form = reactive({
   category: '',
   description: '',
   warnings: '',
+  access_tier: 'paid' as 'free' | 'trial' | 'paid',
   sort_order: 0,
   is_active: true,
 })
@@ -202,4 +216,5 @@ function addSession() {
 .content-name { font-weight: 500; font-size: 15px; }
 .content-meta { color: var(--hint-color); font-size: 12px; margin-top: 2px; }
 .arrow { font-size: 18px; color: var(--hint-color); }
+.hint { font-size: 12px; color: var(--hint-color); margin-top: 4px; line-height: 1.4; }
 </style>

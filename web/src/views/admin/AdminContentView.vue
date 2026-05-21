@@ -5,6 +5,14 @@
     <div v-if="loading" class="loading">Загрузка...</div>
 
     <div v-else>
+      <div class="content-card" @click="router.push('/admin/pricing')">
+        <div class="content-main">
+          <span class="content-name">💰 Цены категорий</span>
+          <span class="content-meta">Тренировки · ЛФК · Питание</span>
+        </div>
+        <span class="arrow">→</span>
+      </div>
+
       <div class="section-header">
         <h2 class="section-title">Программы ({{ programs.length }})</h2>
         <button class="add-btn" @click="router.push('/admin/programs/new')">+</button>

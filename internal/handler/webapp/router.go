@@ -189,7 +189,7 @@ func (r *WebAppRouter) setupRoutes() {
 	}
 
 	// Admin routes (authenticated + admin role required)
-	adminHandler := NewAdminHandler(r.userSvc, r.workoutSvc, r.rehabSvc, r.nutritionSvc, r.scoreSvc)
+	adminHandler := NewAdminHandler(r.userSvc, r.workoutSvc, r.rehabSvc, r.nutritionSvc, r.scoreSvc, r.accessSvc)
 	adminAuth := func(h http.Handler) http.Handler {
 		return auth(AdminMiddleware(h))
 	}
@@ -209,6 +209,8 @@ func (r *WebAppRouter) setupRoutes() {
 	r.mux.Handle("/app/api/admin/rehab/courses/", adminAuth(http.HandlerFunc(adminHandler.HandleRehabCourseRoutes)))
 	r.mux.Handle("/app/api/admin/rehab/sessions", adminAuth(http.HandlerFunc(adminHandler.HandleRehabSessionRoutes)))
 	r.mux.Handle("/app/api/admin/rehab/sessions/", adminAuth(http.HandlerFunc(adminHandler.HandleRehabSessionRoutes)))
+	r.mux.Handle("/app/api/admin/pricing", adminAuth(http.HandlerFunc(adminHandler.HandlePricingRoutes)))
+	r.mux.Handle("/app/api/admin/pricing/", adminAuth(http.HandlerFunc(adminHandler.HandlePricingRoutes)))
 	r.mux.Handle("/app/api/admin/workout-exercises", adminAuth(http.HandlerFunc(adminHandler.HandleWorkoutExerciseRoutes)))
 	r.mux.Handle("/app/api/admin/reviews", adminAuth(http.HandlerFunc(adminHandler.GetReviewsSummary)))
 	r.mux.Handle("/app/api/admin/stats", adminAuth(http.HandlerFunc(adminHandler.GetStats)))

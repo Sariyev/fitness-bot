@@ -159,6 +159,9 @@ export interface DashboardItem {
 
 // ====== WORKOUTS & PROGRAMS ======
 
+export type AccessTier = 'free' | 'trial' | 'paid'
+export type ContentCategory = 'workouts' | 'lfk' | 'nutrition'
+
 export interface Program {
   id: number
   slug: string
@@ -168,6 +171,8 @@ export interface Program {
   format: string
   level: string
   duration_weeks: number
+  access_tier?: AccessTier
+  locked?: boolean
   is_active: boolean
   sort_order: number
 }
@@ -273,6 +278,8 @@ export interface MealPlan {
   protein: number
   fat: number
   carbs: number
+  access_tier?: AccessTier
+  locked?: boolean
   is_active: boolean
   sort_order: number
 }

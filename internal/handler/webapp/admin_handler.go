@@ -16,6 +16,7 @@ type AdminHandler struct {
 	rehabSvc     *service.RehabService
 	nutritionSvc *service.NutritionService
 	scoreSvc     *service.ScoreService
+	accessSvc    *service.AccessService
 }
 
 func NewAdminHandler(
@@ -24,6 +25,7 @@ func NewAdminHandler(
 	rehabSvc *service.RehabService,
 	nutritionSvc *service.NutritionService,
 	scoreSvc *service.ScoreService,
+	accessSvc *service.AccessService,
 ) *AdminHandler {
 	return &AdminHandler{
 		userSvc:      userSvc,
@@ -31,6 +33,7 @@ func NewAdminHandler(
 		rehabSvc:     rehabSvc,
 		nutritionSvc: nutritionSvc,
 		scoreSvc:     scoreSvc,
+		accessSvc:    accessSvc,
 	}
 }
 
@@ -196,15 +199,16 @@ func (h *AdminHandler) getProgram(w http.ResponseWriter, r *http.Request, id int
 }
 
 type programRequest struct {
-	Slug          string `json:"slug"`
-	Name          string `json:"name"`
-	Description   string `json:"description"`
-	Goal          string `json:"goal"`
-	Format        string `json:"format"`
-	Level         string `json:"level"`
-	DurationWeeks int    `json:"duration_weeks"`
-	IsActive      bool   `json:"is_active"`
-	SortOrder     int    `json:"sort_order"`
+	Slug          string            `json:"slug"`
+	Name          string            `json:"name"`
+	Description   string            `json:"description"`
+	Goal          string            `json:"goal"`
+	Format        string            `json:"format"`
+	Level         string            `json:"level"`
+	DurationWeeks int               `json:"duration_weeks"`
+	AccessTier    models.AccessTier `json:"access_tier"`
+	IsActive      bool              `json:"is_active"`
+	SortOrder     int               `json:"sort_order"`
 }
 
 func (h *AdminHandler) createProgram(w http.ResponseWriter, r *http.Request) {
@@ -221,7 +225,8 @@ func (h *AdminHandler) createProgram(w http.ResponseWriter, r *http.Request) {
 	p := &models.Program{
 		Slug: req.Slug, Name: req.Name, Description: req.Description,
 		Goal: req.Goal, Format: req.Format, Level: req.Level,
-		DurationWeeks: req.DurationWeeks, IsActive: req.IsActive, SortOrder: req.SortOrder,
+		DurationWeeks: req.DurationWeeks, AccessTier: req.AccessTier,
+		IsActive: req.IsActive, SortOrder: req.SortOrder,
 	}
 	if err := h.workoutSvc.CreateProgram(r.Context(), p); err != nil {
 		jsonError(w, http.StatusInternalServerError, "failed to create program")
@@ -250,6 +255,7 @@ func (h *AdminHandler) updateProgram(w http.ResponseWriter, r *http.Request, id 
 	p.Format = req.Format
 	p.Level = req.Level
 	p.DurationWeeks = req.DurationWeeks
+	p.AccessTier = req.AccessTier
 	p.IsActive = req.IsActive
 	p.SortOrder = req.SortOrder
 
@@ -610,16 +616,17 @@ func (h *AdminHandler) getMealPlan(w http.ResponseWriter, r *http.Request, id in
 }
 
 type mealPlanRequest struct {
-	Slug      string  `json:"slug"`
-	Name      string  `json:"name"`
-	Goal      string  `json:"goal"`
-	DayNumber int     `json:"day_number"`
-	Calories  int     `json:"calories"`
-	Protein   float64 `json:"protein"`
-	Fat       float64 `json:"fat"`
-	Carbs     float64 `json:"carbs"`
-	IsActive  bool    `json:"is_active"`
-	SortOrder int     `json:"sort_order"`
+	Slug       string            `json:"slug"`
+	Name       string            `json:"name"`
+	Goal       string            `json:"goal"`
+	DayNumber  int               `json:"day_number"`
+	Calories   int               `json:"calories"`
+	Protein    float64           `json:"protein"`
+	Fat        float64           `json:"fat"`
+	Carbs      float64           `json:"carbs"`
+	AccessTier models.AccessTier `json:"access_tier"`
+	IsActive   bool              `json:"is_active"`
+	SortOrder  int               `json:"sort_order"`
 }
 
 func (h *AdminHandler) createMealPlan(w http.ResponseWriter, r *http.Request) {
@@ -637,7 +644,8 @@ func (h *AdminHandler) createMealPlan(w http.ResponseWriter, r *http.Request) {
 		Slug: req.Slug, Name: req.Name, Goal: req.Goal,
 		DayNumber: req.DayNumber, Calories: req.Calories,
 		Protein: req.Protein, Fat: req.Fat, Carbs: req.Carbs,
-		IsActive: req.IsActive, SortOrder: req.SortOrder,
+		AccessTier: req.AccessTier,
+		IsActive:   req.IsActive, SortOrder: req.SortOrder,
 	}
 	if err := h.nutritionSvc.CreatePlan(r.Context(), p); err != nil {
 		jsonError(w, http.StatusInternalServerError, "failed to create meal plan")
@@ -667,6 +675,7 @@ func (h *AdminHandler) updateMealPlan(w http.ResponseWriter, r *http.Request, id
 	p.Protein = req.Protein
 	p.Fat = req.Fat
 	p.Carbs = req.Carbs
+	p.AccessTier = req.AccessTier
 	p.IsActive = req.IsActive
 	p.SortOrder = req.SortOrder
 
@@ -896,13 +905,14 @@ func (h *AdminHandler) getRehabCourse(w http.ResponseWriter, r *http.Request, id
 }
 
 type rehabCourseRequest struct {
-	Slug        string `json:"slug"`
-	Category    string `json:"category"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Warnings    string `json:"warnings"`
-	IsActive    bool   `json:"is_active"`
-	SortOrder   int    `json:"sort_order"`
+	Slug        string            `json:"slug"`
+	Category    string            `json:"category"`
+	Name        string            `json:"name"`
+	Description string            `json:"description"`
+	Warnings    string            `json:"warnings"`
+	AccessTier  models.AccessTier `json:"access_tier"`
+	IsActive    bool              `json:"is_active"`
+	SortOrder   int               `json:"sort_order"`
 }
 
 func (h *AdminHandler) createRehabCourse(w http.ResponseWriter, r *http.Request) {
@@ -919,7 +929,8 @@ func (h *AdminHandler) createRehabCourse(w http.ResponseWriter, r *http.Request)
 	c := &models.RehabCourse{
 		Slug: req.Slug, Category: req.Category, Name: req.Name,
 		Description: req.Description, Warnings: req.Warnings,
-		IsActive: req.IsActive, SortOrder: req.SortOrder,
+		AccessTier: req.AccessTier,
+		IsActive:   req.IsActive, SortOrder: req.SortOrder,
 	}
 	if err := h.rehabSvc.CreateCourse(r.Context(), c); err != nil {
 		jsonError(w, http.StatusInternalServerError, "failed to create course")
@@ -946,6 +957,7 @@ func (h *AdminHandler) updateRehabCourse(w http.ResponseWriter, r *http.Request,
 	c.Name = req.Name
 	c.Description = req.Description
 	c.Warnings = req.Warnings
+	c.AccessTier = req.AccessTier
 	c.IsActive = req.IsActive
 	c.SortOrder = req.SortOrder
 
@@ -1058,4 +1070,69 @@ func (h *AdminHandler) updateRehabSession(w http.ResponseWriter, r *http.Request
 		return
 	}
 	jsonResponse(w, http.StatusOK, s)
+}
+
+
+// ==================== PRICING ====================
+
+// HandlePricingRoutes dispatches /app/api/admin/pricing.
+//
+//	GET  /app/api/admin/pricing          -> list all 3 category prices
+//	PUT  /app/api/admin/pricing/{cat}    -> set price for one category
+func (h *AdminHandler) HandlePricingRoutes(w http.ResponseWriter, r *http.Request) {
+	path := strings.TrimPrefix(r.URL.Path, "/app/api/admin/pricing")
+	path = strings.TrimPrefix(path, "/")
+
+	if path == "" {
+		if r.Method != http.MethodGet {
+			jsonError(w, http.StatusMethodNotAllowed, "method not allowed")
+			return
+		}
+		h.listPricing(w, r)
+		return
+	}
+
+	if r.Method != http.MethodPut {
+		jsonError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+	h.updatePricing(w, r, path)
+}
+
+func (h *AdminHandler) listPricing(w http.ResponseWriter, r *http.Request) {
+	prices, err := h.accessSvc.ListPrices(r.Context())
+	if err != nil {
+		jsonError(w, http.StatusInternalServerError, "failed to list prices")
+		return
+	}
+	jsonResponse(w, http.StatusOK, prices)
+}
+
+type pricingUpdateRequest struct {
+	PriceKZT int `json:"price_kzt"`
+}
+
+func (h *AdminHandler) updatePricing(w http.ResponseWriter, r *http.Request, categoryStr string) {
+	category := models.Category(categoryStr)
+	if !category.IsValid() {
+		jsonError(w, http.StatusBadRequest, "invalid category")
+		return
+	}
+	var req pricingUpdateRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		jsonError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if req.PriceKZT <= 0 {
+		jsonError(w, http.StatusBadRequest, "price must be positive")
+		return
+	}
+	if err := h.accessSvc.SetPrice(r.Context(), category, req.PriceKZT); err != nil {
+		jsonError(w, http.StatusInternalServerError, "failed to update price")
+		return
+	}
+	jsonResponse(w, http.StatusOK, map[string]interface{}{
+		"category":  category,
+		"price_kzt": req.PriceKZT,
+	})
 }

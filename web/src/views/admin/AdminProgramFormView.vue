@@ -60,6 +60,19 @@
       </fieldset>
 
       <fieldset class="admin-section">
+        <legend class="admin-section-title">Доступ</legend>
+        <div class="field">
+          <label>Бакет</label>
+          <div class="toggle-group">
+            <button type="button" :class="{ active: form.access_tier === 'free' }" @click="form.access_tier = 'free'">Бесплатно</button>
+            <button type="button" :class="{ active: form.access_tier === 'trial' }" @click="form.access_tier = 'trial'">Триал</button>
+            <button type="button" :class="{ active: form.access_tier === 'paid' }" @click="form.access_tier = 'paid'">Платно</button>
+          </div>
+          <span class="hint">Бесплатно — всем; Триал — первые 7 дней после регистрации; Платно — только купившим категорию.</span>
+        </div>
+      </fieldset>
+
+      <fieldset class="admin-section">
         <legend class="admin-section-title">Статус</legend>
         <div class="row">
           <div class="field">
@@ -106,6 +119,7 @@ const form = reactive({
   format: '',
   level: '',
   duration_weeks: 4,
+  access_tier: 'paid' as 'free' | 'trial' | 'paid',
   sort_order: 0,
   is_active: true,
 })
@@ -168,4 +182,5 @@ async function save() {
   font-size: 16px; font-weight: 600; cursor: pointer;
 }
 .btn-primary:disabled { opacity: 0.5; }
+.hint { font-size: 12px; color: var(--hint-color); margin-top: 4px; line-height: 1.4; }
 </style>

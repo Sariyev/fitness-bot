@@ -90,21 +90,29 @@ func (r *nutritionRepo) GetPlanByID(ctx context.Context, id int) (*models.MealPl
 }
 
 func (r *nutritionRepo) CreatePlan(ctx context.Context, p *models.MealPlan) error {
+	tier := p.AccessTier
+	if tier == "" {
+		tier = models.AccessPaid
+	}
 	return r.pool.QueryRow(ctx,
-		`INSERT INTO meal_plans (slug, name, goal, day_number, calories, protein, fat, carbs, is_active, sort_order)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		`INSERT INTO meal_plans (slug, name, goal, day_number, calories, protein, fat, carbs, access_tier, is_active, sort_order)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 		 RETURNING id, created_at, updated_at`,
-		p.Slug, p.Name, p.Goal, p.DayNumber, p.Calories, p.Protein, p.Fat, p.Carbs, p.IsActive, p.SortOrder,
+		p.Slug, p.Name, p.Goal, p.DayNumber, p.Calories, p.Protein, p.Fat, p.Carbs, tier, p.IsActive, p.SortOrder,
 	).Scan(&p.ID, &p.CreatedAt, &p.UpdatedAt)
 }
 
 func (r *nutritionRepo) UpdatePlan(ctx context.Context, p *models.MealPlan) error {
+	tier := p.AccessTier
+	if tier == "" {
+		tier = models.AccessPaid
+	}
 	_, err := r.pool.Exec(ctx,
 		`UPDATE meal_plans SET slug=$2, name=$3, goal=$4, day_number=$5, calories=$6,
-			protein=$7, fat=$8, carbs=$9, is_active=$10, sort_order=$11, updated_at=NOW()
+			protein=$7, fat=$8, carbs=$9, access_tier=$10, is_active=$11, sort_order=$12, updated_at=NOW()
 		 WHERE id=$1`,
 		p.ID, p.Slug, p.Name, p.Goal, p.DayNumber, p.Calories,
-		p.Protein, p.Fat, p.Carbs, p.IsActive, p.SortOrder)
+		p.Protein, p.Fat, p.Carbs, tier, p.IsActive, p.SortOrder)
 	return err
 }
 

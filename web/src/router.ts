@@ -55,6 +55,7 @@ const router = createRouter({
     { path: '/admin/rehab/courses/:id', name: 'admin-rehab-course-edit', component: () => import('./views/admin/AdminRehabCourseFormView.vue'), props: true, meta: { hideNav: true, requiresAdmin: true } },
     { path: '/admin/rehab/sessions/new', name: 'admin-rehab-session-new', component: () => import('./views/admin/AdminRehabSessionFormView.vue'), meta: { hideNav: true, requiresAdmin: true } },
     { path: '/admin/rehab/sessions/:id', name: 'admin-rehab-session-edit', component: () => import('./views/admin/AdminRehabSessionFormView.vue'), props: true, meta: { hideNav: true, requiresAdmin: true } },
+    { path: '/admin/pricing', name: 'admin-pricing', component: () => import('./views/admin/AdminPricingView.vue'), meta: { hideNav: true, requiresAdmin: true } },
     { path: '/admin/reviews', name: 'admin-reviews', component: () => import('./views/admin/AdminReviewsView.vue'), meta: { hideNav: true, requiresAdmin: true } },
   ],
 })

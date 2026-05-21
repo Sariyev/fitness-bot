@@ -114,6 +114,7 @@ const routeDepth: Record<string, number> = {
   'admin-rehab-course-edit': 3,
   'admin-rehab-session-new': 4,
   'admin-rehab-session-edit': 4,
+  'admin-pricing': 3,
   'admin-reviews': 3,
 }
 
