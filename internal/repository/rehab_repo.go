@@ -138,7 +138,7 @@ func (r *rehabRepo) GetSessionByID(ctx context.Context, id int) (*models.RehabSe
 		`SELECT id, course_id, day_number, stage, COALESCE(video_url,''), video_media_id, COALESCE(duration_minutes,0),
 			COALESCE(description,''), sort_order, created_at, updated_at
 		 FROM rehab_sessions WHERE id = $1`, id,
-	).Scan(&s.ID, &s.CourseID, &s.DayNumber, &s.Stage, &s.VideoURL,
+	).Scan(&s.ID, &s.CourseID, &s.DayNumber, &s.Stage, &s.VideoURL, &s.VideoMediaID,
 		&s.DurationMinutes, &s.Description, &s.SortOrder, &s.CreatedAt, &s.UpdatedAt)
 	if err != nil {
 		return nil, err
