@@ -2,6 +2,7 @@ package webapp
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -9,6 +10,12 @@ import (
 	"fitness-bot/internal/models"
 	"fitness-bot/internal/service"
 )
+
+// validAccessTier reports whether the value can be persisted to the
+// access_tier column. Empty is OK — the repo layer defaults empty to 'paid'.
+func validAccessTier(t models.AccessTier) bool {
+	return t == "" || t == models.AccessFree || t == models.AccessTrial || t == models.AccessPaid
+}
 
 type AdminHandler struct {
 	userSvc      *service.UserService
@@ -221,14 +228,19 @@ func (h *AdminHandler) createProgram(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, http.StatusBadRequest, "name is required")
 		return
 	}
+	if !validAccessTier(req.AccessTier) {
+		jsonError(w, http.StatusBadRequest, "invalid access_tier")
+		return
+	}
 
 	p := &models.Program{
-		Slug: req.Slug, Name: req.Name, Description: req.Description,
+		Slug: ensureSlug(req.Slug, req.Name), Name: req.Name, Description: req.Description,
 		Goal: req.Goal, Format: req.Format, Level: req.Level,
 		DurationWeeks: req.DurationWeeks, AccessTier: req.AccessTier,
 		IsActive: req.IsActive, SortOrder: req.SortOrder,
 	}
 	if err := h.workoutSvc.CreateProgram(r.Context(), p); err != nil {
+		log.Printf("[ADMIN] create program failed: %v", err)
 		jsonError(w, http.StatusInternalServerError, "failed to create program")
 		return
 	}
@@ -247,8 +259,12 @@ func (h *AdminHandler) updateProgram(w http.ResponseWriter, r *http.Request, id 
 		jsonError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
+	if !validAccessTier(req.AccessTier) {
+		jsonError(w, http.StatusBadRequest, "invalid access_tier")
+		return
+	}
 
-	p.Slug = req.Slug
+	p.Slug = ensureSlug(req.Slug, req.Name)
 	p.Name = req.Name
 	p.Description = req.Description
 	p.Goal = req.Goal
@@ -260,6 +276,7 @@ func (h *AdminHandler) updateProgram(w http.ResponseWriter, r *http.Request, id 
 	p.SortOrder = req.SortOrder
 
 	if err := h.workoutSvc.UpdateProgram(r.Context(), p); err != nil {
+		log.Printf("[ADMIN] update program %d failed: %v", id, err)
 		jsonError(w, http.StatusInternalServerError, "failed to update program")
 		return
 	}
@@ -358,7 +375,7 @@ func (h *AdminHandler) createWorkout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	wo := &models.Workout{
-		ProgramID: req.ProgramID, Slug: req.Slug, Name: req.Name,
+		ProgramID: req.ProgramID, Slug: ensureSlug(req.Slug, req.Name), Name: req.Name,
 		Description: req.Description, Goal: req.Goal, Format: req.Format,
 		Level: req.Level, DurationMinutes: req.DurationMinutes,
 		Equipment: req.Equipment, ExpectedResult: req.ExpectedResult,
@@ -367,6 +384,7 @@ func (h *AdminHandler) createWorkout(w http.ResponseWriter, r *http.Request) {
 		WeekNumber: req.WeekNumber, DayNumber: req.DayNumber, IsActive: req.IsActive,
 	}
 	if err := h.workoutSvc.CreateWorkout(r.Context(), wo); err != nil {
+		log.Printf("[ADMIN] create workout failed: %v", err)
 		jsonError(w, http.StatusInternalServerError, "failed to create workout")
 		return
 	}
@@ -390,7 +408,7 @@ func (h *AdminHandler) updateWorkout(w http.ResponseWriter, r *http.Request, id 
 	}
 
 	wo.ProgramID = req.ProgramID
-	wo.Slug = req.Slug
+	wo.Slug = ensureSlug(req.Slug, req.Name)
 	wo.Name = req.Name
 	wo.Description = req.Description
 	wo.Goal = req.Goal
@@ -407,6 +425,7 @@ func (h *AdminHandler) updateWorkout(w http.ResponseWriter, r *http.Request, id 
 	wo.IsActive = req.IsActive
 
 	if err := h.workoutSvc.UpdateWorkout(r.Context(), wo); err != nil {
+		log.Printf("[ADMIN] update workout %d failed: %v", id, err)
 		jsonError(w, http.StatusInternalServerError, "failed to update workout")
 		return
 	}
@@ -639,15 +658,20 @@ func (h *AdminHandler) createMealPlan(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, http.StatusBadRequest, "name is required")
 		return
 	}
+	if !validAccessTier(req.AccessTier) {
+		jsonError(w, http.StatusBadRequest, "invalid access_tier")
+		return
+	}
 
 	p := &models.MealPlan{
-		Slug: req.Slug, Name: req.Name, Goal: req.Goal,
+		Slug: ensureSlug(req.Slug, req.Name), Name: req.Name, Goal: req.Goal,
 		DayNumber: req.DayNumber, Calories: req.Calories,
 		Protein: req.Protein, Fat: req.Fat, Carbs: req.Carbs,
 		AccessTier: req.AccessTier,
 		IsActive:   req.IsActive, SortOrder: req.SortOrder,
 	}
 	if err := h.nutritionSvc.CreatePlan(r.Context(), p); err != nil {
+		log.Printf("[ADMIN] create meal-plan failed: %v", err)
 		jsonError(w, http.StatusInternalServerError, "failed to create meal plan")
 		return
 	}
@@ -666,8 +690,12 @@ func (h *AdminHandler) updateMealPlan(w http.ResponseWriter, r *http.Request, id
 		jsonError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
+	if !validAccessTier(req.AccessTier) {
+		jsonError(w, http.StatusBadRequest, "invalid access_tier")
+		return
+	}
 
-	p.Slug = req.Slug
+	p.Slug = ensureSlug(req.Slug, req.Name)
 	p.Name = req.Name
 	p.Goal = req.Goal
 	p.DayNumber = req.DayNumber
@@ -680,6 +708,7 @@ func (h *AdminHandler) updateMealPlan(w http.ResponseWriter, r *http.Request, id
 	p.SortOrder = req.SortOrder
 
 	if err := h.nutritionSvc.UpdatePlan(r.Context(), p); err != nil {
+		log.Printf("[ADMIN] update meal-plan %d failed: %v", id, err)
 		jsonError(w, http.StatusInternalServerError, "failed to update meal plan")
 		return
 	}
@@ -766,6 +795,10 @@ func (h *AdminHandler) createMeal(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, http.StatusBadRequest, "name is required")
 		return
 	}
+	if req.MealPlanID <= 0 {
+		jsonError(w, http.StatusBadRequest, "meal_plan_id is required")
+		return
+	}
 
 	m := &models.Meal{
 		MealPlanID: req.MealPlanID, MealType: req.MealType, Name: req.Name,
@@ -774,6 +807,7 @@ func (h *AdminHandler) createMeal(w http.ResponseWriter, r *http.Request) {
 		Alternatives: req.Alternatives, SortOrder: req.SortOrder,
 	}
 	if err := h.nutritionSvc.CreateMeal(r.Context(), m); err != nil {
+		log.Printf("[ADMIN] create meal failed: %v", err)
 		jsonError(w, http.StatusInternalServerError, "failed to create meal")
 		return
 	}
@@ -792,6 +826,10 @@ func (h *AdminHandler) updateMeal(w http.ResponseWriter, r *http.Request, id int
 		jsonError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
+	if req.MealPlanID <= 0 {
+		jsonError(w, http.StatusBadRequest, "meal_plan_id is required")
+		return
+	}
 
 	m.MealPlanID = req.MealPlanID
 	m.MealType = req.MealType
@@ -805,6 +843,7 @@ func (h *AdminHandler) updateMeal(w http.ResponseWriter, r *http.Request, id int
 	m.SortOrder = req.SortOrder
 
 	if err := h.nutritionSvc.UpdateMeal(r.Context(), m); err != nil {
+		log.Printf("[ADMIN] update meal %d failed: %v", id, err)
 		jsonError(w, http.StatusInternalServerError, "failed to update meal")
 		return
 	}
@@ -925,14 +964,19 @@ func (h *AdminHandler) createRehabCourse(w http.ResponseWriter, r *http.Request)
 		jsonError(w, http.StatusBadRequest, "name is required")
 		return
 	}
+	if !validAccessTier(req.AccessTier) {
+		jsonError(w, http.StatusBadRequest, "invalid access_tier")
+		return
+	}
 
 	c := &models.RehabCourse{
-		Slug: req.Slug, Category: req.Category, Name: req.Name,
+		Slug: ensureSlug(req.Slug, req.Name), Category: req.Category, Name: req.Name,
 		Description: req.Description, Warnings: req.Warnings,
 		AccessTier: req.AccessTier,
 		IsActive:   req.IsActive, SortOrder: req.SortOrder,
 	}
 	if err := h.rehabSvc.CreateCourse(r.Context(), c); err != nil {
+		log.Printf("[ADMIN] create rehab-course failed: %v", err)
 		jsonError(w, http.StatusInternalServerError, "failed to create course")
 		return
 	}
@@ -951,8 +995,12 @@ func (h *AdminHandler) updateRehabCourse(w http.ResponseWriter, r *http.Request,
 		jsonError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
+	if !validAccessTier(req.AccessTier) {
+		jsonError(w, http.StatusBadRequest, "invalid access_tier")
+		return
+	}
 
-	c.Slug = req.Slug
+	c.Slug = ensureSlug(req.Slug, req.Name)
 	c.Category = req.Category
 	c.Name = req.Name
 	c.Description = req.Description
@@ -962,6 +1010,7 @@ func (h *AdminHandler) updateRehabCourse(w http.ResponseWriter, r *http.Request,
 	c.SortOrder = req.SortOrder
 
 	if err := h.rehabSvc.UpdateCourse(r.Context(), c); err != nil {
+		log.Printf("[ADMIN] update rehab-course %d failed: %v", id, err)
 		jsonError(w, http.StatusInternalServerError, "failed to update course")
 		return
 	}
@@ -1037,6 +1086,7 @@ func (h *AdminHandler) createRehabSession(w http.ResponseWriter, r *http.Request
 		SortOrder: req.SortOrder,
 	}
 	if err := h.rehabSvc.CreateSession(r.Context(), s); err != nil {
+		log.Printf("[ADMIN] create rehab-session failed: %v", err)
 		jsonError(w, http.StatusInternalServerError, "failed to create session")
 		return
 	}
@@ -1066,6 +1116,7 @@ func (h *AdminHandler) updateRehabSession(w http.ResponseWriter, r *http.Request
 	s.SortOrder = req.SortOrder
 
 	if err := h.rehabSvc.UpdateSession(r.Context(), s); err != nil {
+		log.Printf("[ADMIN] update rehab-session %d failed: %v", id, err)
 		jsonError(w, http.StatusInternalServerError, "failed to update session")
 		return
 	}
