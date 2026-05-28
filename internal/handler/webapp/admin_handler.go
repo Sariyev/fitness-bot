@@ -1051,6 +1051,7 @@ func (h *AdminHandler) HandleRehabSessionRoutes(w http.ResponseWriter, r *http.R
 func (h *AdminHandler) getRehabSession(w http.ResponseWriter, r *http.Request, id int) {
 	s, err := h.rehabSvc.GetSession(r.Context(), id)
 	if err != nil {
+		log.Printf("[ADMIN] get rehab-session %d failed: %v", id, err)
 		jsonError(w, http.StatusNotFound, "session not found")
 		return
 	}
