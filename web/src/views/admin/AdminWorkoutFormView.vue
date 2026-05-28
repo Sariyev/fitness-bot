@@ -12,10 +12,6 @@
           <input v-model="form.name" required />
         </div>
         <div class="field">
-          <label>Slug</label>
-          <input v-model="form.slug" placeholder="auto-from-name" />
-        </div>
-        <div class="field">
           <label>Описание</label>
           <textarea v-model="form.description" rows="3"></textarea>
         </div>

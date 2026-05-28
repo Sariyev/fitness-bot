@@ -11,10 +11,6 @@
           <label>Название *</label>
           <input v-model="form.name" required />
         </div>
-        <div class="field">
-          <label>Slug</label>
-          <input v-model="form.slug" placeholder="auto-from-name" />
-        </div>
         <div class="row">
           <div class="field">
             <label>Цель</label>
