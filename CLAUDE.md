@@ -14,7 +14,7 @@ Telegram Mini App fitness coaching platform. Three Go binaries (`bot`, `admin`, 
 - **Frontend production build** (TS check + bundle to [web/dist/](web/dist/)): `cd web && npm run build` — runs `vue-tsc --noEmit && vite build`
 - **Build & run all services in containers**: `docker-compose up -d --build`
 - **Migrations**: run automatically on every service startup via `database.RunMigrations` (see [cmd/webapp/main.go](cmd/webapp/main.go)). To add one, drop a numbered `NNN_*.up.sql` / `NNN_*.down.sql` pair into [migrations/](migrations/).
-- **Tests**: none exist in this repo. Don't waste time looking for `_test.go` files.
+- **Tests**: small Go suite — `go test ./...`. Covers the admin save endpoints + slug helper ([internal/handler/webapp/](internal/handler/webapp/)) and the access service ([internal/service/](internal/service/)). In-memory repo fakes — no DB or network required. Plus `/tmp/admin_save_sweep.py` is a curl-based integration test against the deployed webapp.
 - **Lint**: only `vue-tsc` via the frontend build. No Go linter is configured.
 
 ## Architecture

@@ -35,7 +35,10 @@ func autoSlug(name string) string {
 		}
 	}
 	s := strings.Trim(sb.String(), "-")
-	suffix := fmt.Sprintf("%d", time.Now().UnixMilli())
+	// UnixNano granularity (not UnixMilli) so rapid-fire calls within the
+	// same millisecond — e.g. test loops or accidental double-clicks —
+	// can't collide on the slug UNIQUE constraint.
+	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 	if s == "" {
 		return suffix
 	}
