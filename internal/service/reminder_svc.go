@@ -145,7 +145,7 @@ func (s *ReminderService) send(t repository.ReminderTarget) error {
 	if t.FirstName != "" {
 		greeting = "Привет, " + t.FirstName
 	}
-	text := greeting + "! 💪\nВремя тренировки. Открой план на сегодня:"
+	text := greeting + "! 💪\nДавно не виделись — время вернуться к тренировкам:"
 
 	payload := map[string]interface{}{
 		"chat_id": t.TelegramID,

@@ -146,17 +146,17 @@ func (r *userRepo) UpdateProfile(ctx context.Context, p *models.UserProfile) err
 }
 
 func (r *userRepo) ListReminderTargets(ctx context.Context, preferredTime string) ([]ReminderTarget, error) {
-	// Only registered users who haven't been reminded today.
-	// Joins user_profiles so we can match preferred_time. "any" means default
-	// to the morning bucket (callers pass preferredTime="any" if they want
-	// users with NULL or 'any' selected).
+	// Only registered users whose last reminder is at least 3 days old (or
+	// never sent). Less spammy than daily — fitness-bot pings every 3 days
+	// at the user's preferred-time bucket (morning/afternoon/evening) or
+	// the morning slot if no preference is set.
 	rows, err := r.pool.Query(ctx, `
 		SELECT u.id, u.telegram_id, COALESCE(u.first_name, '')
 		FROM users u
 		JOIN user_profiles p ON p.user_id = u.id
 		WHERE u.is_registered = TRUE
 		  AND COALESCE(p.preferred_time, 'any') = $1
-		  AND (u.last_reminder_at IS NULL OR u.last_reminder_at < DATE_TRUNC('day', NOW()))
+		  AND (u.last_reminder_at IS NULL OR u.last_reminder_at < NOW() - INTERVAL '3 days')
 	`, preferredTime)
 	if err != nil {
 		return nil, err
