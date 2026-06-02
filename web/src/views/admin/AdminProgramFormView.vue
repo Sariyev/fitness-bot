@@ -101,14 +101,48 @@
         @toggle-active="onToggleActive"
       />
     </form>
+
+    <!-- Workouts attached to this program (edit mode only) -->
+    <div v-if="isEdit && !loading" class="workouts-section">
+      <div class="section-header">
+        <h2 class="section-title">Тренировки ({{ programWorkouts.length }})</h2>
+        <button class="add-btn" @click="router.push(`/admin/workouts/new?program_id=${props.id}`)">+</button>
+      </div>
+      <div v-if="programWorkouts.length === 0" class="empty">
+        Нет тренировок в программе. Нажмите «+» чтобы добавить первую.
+      </div>
+      <div
+        v-for="w in programWorkouts"
+        :key="w.id"
+        class="content-card"
+        :class="{ inactive: !w.is_active }"
+        @click="router.push(`/admin/workouts/${w.id}`)"
+      >
+        <div class="content-main">
+          <span class="content-name">{{ w.name }}</span>
+          <span class="content-meta">
+            <template v-if="w.week_number">Нед. {{ w.week_number }}</template>
+            <template v-if="w.week_number && w.day_number"> · </template>
+            <template v-if="w.day_number">День {{ w.day_number }}</template>
+            <template v-if="!w.week_number && !w.day_number">без расписания</template>
+            <template v-if="w.duration_minutes"> · {{ w.duration_minutes }} мин</template>
+          </span>
+        </div>
+        <span class="arrow">→</span>
+      </div>
+      <p class="hint">
+        Упражнения добавляются на странице самой тренировки — откройте её и прокрутите до раздела «Упражнения».
+      </p>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive } from 'vue'
+import { ref, onMounted, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '../../api'
 import AdminDangerZone from '../../components/AdminDangerZone.vue'
+import type { Workout } from '../../types'
 
 const props = defineProps<{ id?: string }>()
 const router = useRouter()
@@ -130,11 +164,28 @@ const form = reactive({
   is_active: true,
 })
 
+const allWorkouts = ref<Workout[]>([])
+const programWorkouts = computed(() => {
+  const id = Number(props.id)
+  return allWorkouts.value
+    .filter((w) => w.program_id === id)
+    .sort((a, b) => {
+      const aw = a.week_number ?? 999, bw = b.week_number ?? 999
+      if (aw !== bw) return aw - bw
+      const ad = a.day_number ?? 999, bd = b.day_number ?? 999
+      return ad - bd
+    })
+})
+
 onMounted(async () => {
   if (isEdit) {
     try {
-      const p = await api.getAdminProgram(Number(props.id))
+      const [p, ws] = await Promise.all([
+        api.getAdminProgram(Number(props.id)),
+        api.getAdminWorkouts(),
+      ])
       Object.assign(form, p)
+      allWorkouts.value = ws || []
     } catch {
       error.value = 'Не удалось загрузить программу'
     } finally {
@@ -212,4 +263,29 @@ async function onToggleActive(next: boolean) {
 }
 .btn-primary:disabled { opacity: 0.5; }
 .hint { font-size: 12px; color: var(--hint-color); margin-top: 4px; line-height: 1.4; }
+
+/* ===== Workouts attached to this program ===== */
+.workouts-section { margin-top: 24px; }
+.section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin: 16px 0 10px;
+}
+.section-title { font-size: 16px; font-weight: 600; color: var(--hint-color); }
+.add-btn {
+  width: 32px; height: 32px; border-radius: 50%; border: none;
+  background: var(--button-color); color: var(--button-text-color);
+  font-size: 20px; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.content-card {
+  background: var(--secondary-bg); border-radius: 12px; padding: 12px 16px;
+  margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;
+  cursor: pointer; touch-action: manipulation;
+}
+.content-card.inactive .content-name { color: var(--hint-color); }
+.content-main { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.content-name { font-weight: 500; font-size: 15px; }
+.content-meta { color: var(--hint-color); font-size: 12px; margin-top: 2px; }
+.arrow { font-size: 18px; color: var(--hint-color); flex-shrink: 0; margin-left: 12px; }
+.empty { text-align: center; color: var(--hint-color); padding: 18px; font-size: 13px; }
 </style>

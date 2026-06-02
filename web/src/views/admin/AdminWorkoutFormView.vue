@@ -189,7 +189,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { api } from '../../api'
 import type { Program, WorkoutExercise, Exercise } from '../../types'
 import VideoUploader from '../../components/VideoUploader.vue'
@@ -197,6 +197,7 @@ import AdminDangerZone from '../../components/AdminDangerZone.vue'
 
 const props = defineProps<{ id?: string }>()
 const router = useRouter()
+const route = useRoute()
 const isEdit = !!props.id
 const loading = ref(true)
 const saving = ref(false)
@@ -267,6 +268,13 @@ onMounted(async () => {
       const data = await api.getAdminWorkout(Number(props.id))
       Object.assign(form, data.workout)
       exercises.value = data.exercises || []
+    } else {
+      // Prefill program_id from query string when arriving via
+      // "Add workout" button on a program's edit page.
+      const pid = Number(route.query.program_id)
+      if (!Number.isNaN(pid) && pid > 0) {
+        form.program_id = pid
+      }
     }
   } catch {
     error.value = 'Ошибка загрузки'
