@@ -13,10 +13,30 @@ import (
 type NutritionHandler struct {
 	nutritionSvc *service.NutritionService
 	accessSvc    *service.AccessService
+	mediaSvc     *service.MediaService // optional; nil when R2 not configured
 }
 
-func NewNutritionHandler(nutritionSvc *service.NutritionService, accessSvc *service.AccessService) *NutritionHandler {
-	return &NutritionHandler{nutritionSvc: nutritionSvc, accessSvc: accessSvc}
+func NewNutritionHandler(nutritionSvc *service.NutritionService, accessSvc *service.AccessService, mediaSvc *service.MediaService) *NutritionHandler {
+	return &NutritionHandler{nutritionSvc: nutritionSvc, accessSvc: accessSvc, mediaSvc: mediaSvc}
+}
+
+// fillImageURL resolves image_media_id → presigned URL and sets ImageURL on the plan.
+func (h *NutritionHandler) fillPlanImageURL(r *http.Request, p *models.MealPlan) {
+	if p == nil || p.ImageMediaID == nil || h.mediaSvc == nil {
+		return
+	}
+	if u, err := h.mediaSvc.PresignReadURL(r.Context(), *p.ImageMediaID); err == nil {
+		p.ImageURL = u
+	}
+}
+
+func (h *NutritionHandler) fillMealImageURL(r *http.Request, m *models.Meal) {
+	if m == nil || m.ImageMediaID == nil || h.mediaSvc == nil {
+		return
+	}
+	if u, err := h.mediaSvc.PresignReadURL(r.Context(), *m.ImageMediaID); err == nil {
+		m.ImageURL = u
+	}
 }
 
 type AddFoodLogRequest struct {
@@ -151,6 +171,7 @@ func (h *NutritionHandler) ListPlans(w http.ResponseWriter, r *http.Request) {
 	for i := range plans {
 		can, _ := h.accessSvc.CanAccess(r.Context(), user, plans[i].AccessTier, models.CategoryNutrition)
 		plans[i].Locked = !can
+		h.fillPlanImageURL(r, &plans[i])
 	}
 
 	jsonResponse(w, http.StatusOK, plans)
@@ -193,11 +214,15 @@ func (h *NutritionHandler) GetPlan(w http.ResponseWriter, r *http.Request, idStr
 		return
 	}
 	plan.Locked = false
+	h.fillPlanImageURL(r, plan)
 
 	meals, err := h.nutritionSvc.GetPlanMeals(r.Context(), id)
 	if err != nil {
 		jsonError(w, http.StatusInternalServerError, "failed to load meals")
 		return
+	}
+	for i := range meals {
+		h.fillMealImageURL(r, &meals[i])
 	}
 
 	jsonResponse(w, http.StatusOK, map[string]interface{}{

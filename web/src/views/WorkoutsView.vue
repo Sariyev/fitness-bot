@@ -63,6 +63,7 @@
       <!-- Programs section -->
       <section v-if="programs.length > 0" class="section">
         <h2 class="section-title">Программы</h2>
+        <p class="section-hint">Многонедельные курсы с прогрессией</p>
         <div class="programs-list">
           <router-link
             v-for="(program, index) in programs"
@@ -93,7 +94,8 @@
 
       <!-- Workouts library section -->
       <section class="section">
-        <h2 class="section-title">Библиотека</h2>
+        <h2 class="section-title">Отдельные тренировки</h2>
+        <p class="section-hint">Самостоятельные занятия вне программ</p>
 
         <div v-if="workouts.length > 0" class="workouts-list">
           <router-link
@@ -342,7 +344,13 @@ onMounted(() => {
 .section-title {
   font-size: 18px;
   font-weight: 700;
-  margin-bottom: 12px;
+  margin-bottom: 4px;
+}
+
+.section-hint {
+  font-size: 13px;
+  color: var(--hint-color);
+  margin: 0 0 12px 0;
 }
 
 /* ===== Programs ===== */

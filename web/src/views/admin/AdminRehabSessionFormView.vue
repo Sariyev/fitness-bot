@@ -14,7 +14,7 @@
         <div class="row">
           <div class="field">
             <label>День</label>
-            <input v-model.number="form.day_number" type="number" min="1" />
+            <input v-model.number="form.day_number" type="number" min="1" max="365" />
           </div>
           <div class="field">
             <label>Этап</label>
@@ -24,11 +24,11 @@
         <div class="row">
           <div class="field">
             <label>Длительность (мин)</label>
-            <input v-model.number="form.duration_minutes" type="number" min="0" />
+            <input v-model.number="form.duration_minutes" type="number" min="0" max="240" />
           </div>
           <div class="field">
             <label>Порядок</label>
-            <input v-model.number="form.sort_order" type="number" />
+            <input v-model.number="form.sort_order" type="number" min="0" max="9999" />
           </div>
         </div>
         <div class="field">

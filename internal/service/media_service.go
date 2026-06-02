@@ -24,7 +24,7 @@ var allowedContentTypes = map[string]int64{
 	"image/jpeg": 10 * 1024 * 1024,  // 10 MB
 	"image/png":  10 * 1024 * 1024,  // 10 MB
 	"image/webp": 10 * 1024 * 1024,  // 10 MB
-	"video/mp4":  100 * 1024 * 1024, // 100 MB
+	"video/mp4":  500 * 1024 * 1024, // 500 MB
 }
 
 // MediaService coordinates presigned uploads against R2 and tracks the

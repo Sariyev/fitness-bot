@@ -5,6 +5,9 @@
     <div v-if="loading" class="loading">Загрузка...</div>
 
     <div v-else>
+      <div v-if="loadError" class="load-error">
+        ⚠️ Не удалось загрузить часть данных. Подробности в консоли.
+      </div>
       <div class="content-card" @click="router.push('/admin/pricing')">
         <div class="content-main">
           <span class="content-name">💰 Цены категорий</span>
@@ -95,24 +98,26 @@ const workouts = ref<Workout[]>([])
 const mealPlans = ref<MealPlan[]>([])
 const rehabCourses = ref<RehabCourse[]>([])
 const loading = ref(true)
+const loadError = ref(false)
 
 onMounted(async () => {
-  try {
-    const [p, w, mp, rc] = await Promise.all([
-      api.getAdminPrograms(),
-      api.getAdminWorkouts(),
-      api.getAdminMealPlans(),
-      api.getAdminRehabCourses(),
-    ])
-    programs.value = p || []
-    workouts.value = w || []
-    mealPlans.value = mp || []
-    rehabCourses.value = rc || []
-  } catch {
-    // ignore
-  } finally {
-    loading.value = false
-  }
+  const results = await Promise.allSettled([
+    api.getAdminPrograms(),
+    api.getAdminWorkouts(),
+    api.getAdminMealPlans(),
+    api.getAdminRehabCourses(),
+  ])
+  const labels = ['programs', 'workouts', 'meal-plans', 'rehab-courses']
+  const refs = [programs, workouts, mealPlans, rehabCourses] as const
+  results.forEach((r, i) => {
+    if (r.status === 'fulfilled') {
+      ;(refs[i].value as unknown[]) = (r.value as unknown[]) || []
+    } else {
+      loadError.value = true
+      console.error(`AdminContent: failed to load ${labels[i]}`, r.reason)
+    }
+  })
+  loading.value = false
 })
 </script>
 
@@ -134,6 +139,15 @@ onMounted(async () => {
   text-align: center;
   color: var(--hint-color);
   padding: 40px;
+}
+
+.load-error {
+  background: rgba(255, 59, 48, 0.1);
+  color: #ff3b30;
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  font-size: 13px;
 }
 
 .section-header {

@@ -3,16 +3,18 @@ package models
 import "time"
 
 type MealPlan struct {
-	ID         int        `json:"id"`
-	Slug       string     `json:"slug"`
-	Name       string     `json:"name"`
-	Goal       string     `json:"goal"`
-	DayNumber  int        `json:"day_number"`
-	Calories   int        `json:"calories"`
-	Protein    float64    `json:"protein"`
-	Fat        float64    `json:"fat"`
-	Carbs      float64    `json:"carbs"`
-	AccessTier AccessTier `json:"access_tier"`
+	ID            int        `json:"id"`
+	Slug          string     `json:"slug"`
+	Name          string     `json:"name"`
+	Goal          string     `json:"goal"`
+	DayNumber     int        `json:"day_number"`
+	Calories      int        `json:"calories"`
+	Protein       float64    `json:"protein"`
+	Fat           float64    `json:"fat"`
+	Carbs         float64    `json:"carbs"`
+	ImageMediaID  *int64     `json:"image_media_id,omitempty"`
+	ImageURL      string     `json:"image_url,omitempty"` // populated by handler; not persisted.
+	AccessTier    AccessTier `json:"access_tier"`
 	// Locked: per-request, set by handler; not persisted.
 	Locked    bool      `json:"locked"`
 	IsActive  bool      `json:"is_active"`
@@ -32,6 +34,8 @@ type Meal struct {
 	Fat          float64   `json:"fat"`
 	Carbs        float64   `json:"carbs"`
 	Alternatives string    `json:"alternatives"`
+	ImageMediaID *int64    `json:"image_media_id,omitempty"`
+	ImageURL     string    `json:"image_url,omitempty"` // populated by handler; not persisted.
 	SortOrder    int       `json:"sort_order"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`

@@ -50,7 +50,7 @@
           </div>
           <div class="field">
             <label>Недель</label>
-            <input v-model.number="form.duration_weeks" type="number" min="1" />
+            <input v-model.number="form.duration_weeks" type="number" min="1" max="52" />
           </div>
         </div>
       </fieldset>
@@ -73,7 +73,7 @@
         <div class="row">
           <div class="field">
             <label>Порядок</label>
-            <input v-model.number="form.sort_order" type="number" />
+            <input v-model.number="form.sort_order" type="number" min="0" max="9999" />
           </div>
           <div class="field">
             <label>Активна</label>

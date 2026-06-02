@@ -278,6 +278,8 @@ export interface MealPlan {
   protein: number
   fat: number
   carbs: number
+  image_media_id?: number | null
+  image_url?: string
   access_tier?: AccessTier
   locked?: boolean
   is_active: boolean
@@ -295,6 +297,8 @@ export interface Meal {
   fat: number
   carbs: number
   alternatives: string
+  image_media_id?: number | null
+  image_url?: string
   sort_order: number
 }
 

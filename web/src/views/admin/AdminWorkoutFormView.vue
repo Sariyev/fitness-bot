@@ -26,26 +26,37 @@
 
       <fieldset class="admin-section">
         <legend class="admin-section-title">Параметры тренировки</legend>
-        <div class="row">
-          <div class="field">
-            <label>Цель</label>
-            <select v-model="form.goal">
-              <option value="">—</option>
-              <option value="weight_loss">Похудение</option>
-              <option value="muscle_gain">Набор массы</option>
-              <option value="general_fitness">Общая форма</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Формат</label>
-            <select v-model="form.format">
-              <option value="">—</option>
-              <option value="home">Дома</option>
-              <option value="gym">Зал</option>
-            </select>
-          </div>
+
+        <!-- When part of a program, goal/format/level are inherited; only duration stays editable. -->
+        <div v-if="selectedProgram" class="inherited-meta">
+          <span class="inherited-label">Наследуется из программы:</span>
+          <span class="inherited-values">
+            <span v-if="selectedProgram.goal">{{ goalLabel(selectedProgram.goal) }}</span>
+            <span v-if="selectedProgram.format"> · {{ formatLabel(selectedProgram.format) }}</span>
+            <span v-if="selectedProgram.level"> · {{ levelLabel(selectedProgram.level) }}</span>
+          </span>
         </div>
-        <div class="row">
+
+        <template v-else>
+          <div class="row">
+            <div class="field">
+              <label>Цель</label>
+              <select v-model="form.goal">
+                <option value="">—</option>
+                <option value="weight_loss">Похудение</option>
+                <option value="muscle_gain">Набор массы</option>
+                <option value="general_fitness">Общая форма</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Формат</label>
+              <select v-model="form.format">
+                <option value="">—</option>
+                <option value="home">Дома</option>
+                <option value="gym">Зал</option>
+              </select>
+            </div>
+          </div>
           <div class="field">
             <label>Уровень</label>
             <select v-model="form.level">
@@ -55,10 +66,11 @@
               <option value="advanced">Продвинутый</option>
             </select>
           </div>
-          <div class="field">
-            <label>Минут</label>
-            <input v-model.number="form.duration_minutes" type="number" min="1" />
-          </div>
+        </template>
+
+        <div class="field">
+          <label>Минут</label>
+          <input v-model.number="form.duration_minutes" type="number" min="1" max="240" />
         </div>
         <div class="field">
           <label>Оборудование (через запятую)</label>
@@ -71,11 +83,11 @@
         <div v-if="form.program_id" class="row">
           <div class="field">
             <label>Неделя</label>
-            <input v-model.number="form.week_number" type="number" min="1" />
+            <input v-model.number="form.week_number" type="number" min="1" max="52" />
           </div>
           <div class="field">
             <label>День</label>
-            <input v-model.number="form.day_number" type="number" min="1" />
+            <input v-model.number="form.day_number" type="number" min="1" max="7" />
           </div>
         </div>
       </fieldset>
@@ -97,7 +109,7 @@
         <div class="row">
           <div class="field">
             <label>Порядок</label>
-            <input v-model.number="form.sort_order" type="number" />
+            <input v-model.number="form.sort_order" type="number" min="0" max="9999" />
           </div>
           <div class="field">
             <label>Активна</label>
@@ -140,21 +152,21 @@
           <div class="row">
             <div class="field">
               <label>Подходы</label>
-              <input v-model.number="newEx.sets" type="number" min="1" />
+              <input v-model.number="newEx.sets" type="number" min="1" max="20" />
             </div>
             <div class="field">
               <label>Повторы</label>
-              <input v-model="newEx.reps" />
+              <input v-model="newEx.reps" placeholder="например, 10-12" />
             </div>
           </div>
           <div class="row">
             <div class="field">
               <label>Сек (длит.)</label>
-              <input v-model.number="newEx.duration_seconds" type="number" />
+              <input v-model.number="newEx.duration_seconds" type="number" min="0" max="3600" />
             </div>
             <div class="field">
               <label>Порядок</label>
-              <input v-model.number="newEx.sort_order" type="number" />
+              <input v-model.number="newEx.sort_order" type="number" min="0" max="9999" />
             </div>
           </div>
           <button type="button" class="btn btn-primary" :disabled="addingEx" @click="addExercise">
@@ -209,6 +221,27 @@ const equipmentStr = computed({
   set: (v: string) => { form.equipment = v.split(',').map(s => s.trim()).filter(Boolean) },
 })
 
+const selectedProgram = computed(() =>
+  form.program_id ? programs.value.find((p) => p.id === form.program_id) : null
+)
+
+const goalLabels: Record<string, string> = {
+  weight_loss: 'Похудение',
+  muscle_gain: 'Набор массы',
+  general_fitness: 'Общая форма',
+  strength: 'Сила',
+  maintenance: 'Поддержание',
+}
+const formatLabels: Record<string, string> = { home: 'Дома', gym: 'Зал' }
+const levelLabels: Record<string, string> = {
+  beginner: 'Начинающий',
+  intermediate: 'Средний',
+  advanced: 'Продвинутый',
+}
+function goalLabel(k: string) { return goalLabels[k] || k }
+function formatLabel(k: string) { return formatLabels[k] || k }
+function levelLabel(k: string) { return levelLabels[k] || k }
+
 const newEx = reactive({ exercise_id: 0, sets: 3, reps: '10-12', duration_seconds: 0, sort_order: exercises.value.length })
 
 onMounted(async () => {
@@ -236,10 +269,18 @@ async function save() {
   saving.value = true
   error.value = ''
   try {
+    // When the workout is bound to a program, goal/format/level are inherited —
+    // strip them from the payload so we don't store conflicting copies.
+    const payload = { ...form }
+    if (payload.program_id) {
+      payload.goal = ''
+      payload.format = ''
+      payload.level = ''
+    }
     if (isEdit) {
-      await api.updateAdminWorkout(Number(props.id), { ...form })
+      await api.updateAdminWorkout(Number(props.id), payload)
     } else {
-      await api.createAdminWorkout({ ...form })
+      await api.createAdminWorkout(payload)
     }
     router.replace('/admin/content')
   } catch (e: any) {
@@ -294,6 +335,18 @@ async function addExercise() {
 }
 .toggle-group button.active { background: var(--button-color); color: var(--button-text-color); border-color: var(--button-color); }
 .error-msg { color: #ff3b30; font-size: 14px; text-align: center; }
+.inherited-meta {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--bg-color);
+  border: 1px dashed var(--hint-color);
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.inherited-label { color: var(--hint-color); font-size: 12px; }
+.inherited-values { color: var(--text-color); font-weight: 500; }
 .btn-primary {
   padding: 14px; border-radius: 12px; border: none;
   background: var(--button-color); color: var(--button-text-color);

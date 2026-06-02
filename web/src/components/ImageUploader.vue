@@ -1,36 +1,32 @@
 <template>
-  <div class="video-uploader">
+  <div class="image-uploader">
     <input
       ref="fileInput"
       type="file"
-      accept="video/mp4"
+      accept="image/jpeg,image/png,image/webp"
       style="display: none"
       @change="handleFileChange"
     />
 
-    <!-- Preview when we already have a media_id -->
     <div v-if="modelValue && previewUrl && !uploading" class="preview-block">
-      <video :src="previewUrl" controls preload="metadata" class="preview-video"></video>
+      <img :src="previewUrl" class="preview-img" alt="" />
       <div class="preview-actions">
         <button type="button" class="btn-link" @click="pickFile">Заменить</button>
         <button type="button" class="btn-link danger" @click="remove">Удалить</button>
       </div>
     </div>
 
-    <!-- Progress while uploading -->
     <div v-else-if="uploading" class="upload-progress">
       <div class="progress-track">
         <div class="progress-bar" :style="{ width: percent + '%' }"></div>
       </div>
       <span class="progress-label">{{ percent }}% · {{ uploadingFileName }}</span>
-      <button type="button" class="btn-link" @click="cancel">Отменить</button>
     </div>
 
-    <!-- Empty state -->
     <button v-else type="button" class="dropzone" @click="pickFile">
-      <span class="dropzone-icon">🎥</span>
-      <span class="dropzone-title">Загрузить видео</span>
-      <span class="dropzone-hint">MP4, до 500 МБ. Хранится в R2.</span>
+      <span class="dropzone-icon">🖼️</span>
+      <span class="dropzone-title">Загрузить изображение</span>
+      <span class="dropzone-hint">JPEG / PNG / WebP, до 10 МБ.</span>
     </button>
 
     <div v-if="errorMsg" class="error-msg">{{ errorMsg }}</div>
@@ -59,7 +55,8 @@ const errorMsg = ref('')
 const percent = ref(0)
 watch(progress, (p) => { percent.value = Math.round(p * 100) })
 
-const MAX_SIZE = 500 * 1024 * 1024 // 500 MB — matches media_service.go allowlist
+const ALLOWED = ['image/jpeg', 'image/png', 'image/webp']
+const MAX_SIZE = 10 * 1024 * 1024 // 10 MB — matches media_service.go allowlist
 
 async function loadPreview(mediaID: number) {
   try {
@@ -71,11 +68,8 @@ async function loadPreview(mediaID: number) {
 }
 
 watch(() => props.modelValue, (id) => {
-  if (id) {
-    loadPreview(id)
-  } else {
-    previewUrl.value = null
-  }
+  if (id) loadPreview(id)
+  else previewUrl.value = null
 })
 
 onMounted(() => {
@@ -90,15 +84,15 @@ function pickFile() {
 async function handleFileChange(e: Event) {
   const inputEl = e.target as HTMLInputElement
   const file = inputEl.files?.[0]
-  inputEl.value = '' // allow re-picking same file
+  inputEl.value = ''
   if (!file) return
 
-  if (file.type !== 'video/mp4') {
-    errorMsg.value = 'Только MP4-видео'
+  if (!ALLOWED.includes(file.type)) {
+    errorMsg.value = 'Только JPEG, PNG или WebP'
     return
   }
   if (file.size > MAX_SIZE) {
-    errorMsg.value = `Файл слишком большой (${Math.round(file.size / 1024 / 1024)} МБ). Максимум 500 МБ.`
+    errorMsg.value = `Файл слишком большой (${Math.round(file.size / 1024 / 1024)} МБ). Максимум 10 МБ.`
     return
   }
 
@@ -106,9 +100,7 @@ async function handleFileChange(e: Event) {
   errorMsg.value = ''
   try {
     const result = await upload(file, {
-      reference_type: props.referenceType ?? 'content_video',
-      // Private bucket (same as avatars) — server-side GetWorkout / GetSession
-      // resolves video_media_id to a presigned URL at view time.
+      reference_type: props.referenceType ?? 'meal_image',
       is_public: false,
     })
     emit('update:modelValue', result.media_id)
@@ -124,18 +116,10 @@ function remove() {
   previewUrl.value = null
   errorMsg.value = ''
 }
-
-function cancel() {
-  // We can't actually abort the in-flight XHR (useMediaUpload doesn't expose
-  // an AbortController). For now this only clears the local progress state on
-  // the next upload-complete. Best effort — the upload will finish in the
-  // background. A future refactor can wire AbortController through.
-  errorMsg.value = 'Отмена не поддерживается. Дождитесь окончания загрузки.'
-}
 </script>
 
 <style scoped>
-.video-uploader {
+.image-uploader {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -186,11 +170,12 @@ function cancel() {
   gap: 8px;
 }
 
-.preview-video {
+.preview-img {
   width: 100%;
-  max-height: 280px;
+  max-height: 240px;
+  object-fit: cover;
   border-radius: 12px;
-  background: #000;
+  background: var(--bg-color);
 }
 
 .preview-actions {

@@ -79,6 +79,13 @@
             :style="{ animationDelay: (index * 60) + 'ms' }"
           >
             <div class="plan-card-top" @click="togglePlan(plan.id)">
+              <img
+                v-if="plan.image_url"
+                :src="plan.image_url"
+                class="plan-thumb"
+                loading="lazy"
+                alt=""
+              />
               <div class="plan-card-info">
                 <span class="plan-name">{{ plan.name }}</span>
                 <div class="plan-meta">
@@ -108,7 +115,14 @@
                     :key="meal.id"
                     class="meal-item"
                   >
-                    <span class="meal-type-badge">{{ mealTypeLabel(meal.meal_type) }}</span>
+                    <img
+                      v-if="meal.image_url"
+                      :src="meal.image_url"
+                      class="meal-thumb"
+                      loading="lazy"
+                      alt=""
+                    />
+                    <span v-else class="meal-type-badge">{{ mealTypeLabel(meal.meal_type) }}</span>
                     <div class="meal-info">
                       <span class="meal-name">{{ meal.name }}</span>
                       <span class="meal-kcal">{{ meal.calories }} ккал</span>
@@ -351,10 +365,28 @@ onMounted(() => {
 .plan-card-top {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 12px;
   padding: 16px;
   cursor: pointer;
   transition: background 0.15s ease;
+}
+
+.plan-thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--bg-color);
+}
+
+.meal-thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--bg-color);
 }
 
 .plan-card-top:active {

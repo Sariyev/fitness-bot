@@ -26,7 +26,7 @@
           </div>
           <div class="field">
             <label>Порядок</label>
-            <input v-model.number="form.sort_order" type="number" />
+            <input v-model.number="form.sort_order" type="number" min="0" max="9999" />
           </div>
         </div>
         <div class="field">

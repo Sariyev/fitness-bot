@@ -8,6 +8,10 @@
       <fieldset class="admin-section">
         <legend class="admin-section-title">Основные данные</legend>
         <div class="field">
+          <label>Изображение</label>
+          <ImageUploader v-model="form.image_media_id" reference-type="meal_plan_image" />
+        </div>
+        <div class="field">
           <label>Название *</label>
           <input v-model="form.name" required />
         </div>
@@ -23,7 +27,7 @@
           </div>
           <div class="field">
             <label>День</label>
-            <input v-model.number="form.day_number" type="number" min="1" />
+            <input v-model.number="form.day_number" type="number" min="1" max="365" />
           </div>
         </div>
       </fieldset>
@@ -33,21 +37,21 @@
         <div class="row">
           <div class="field">
             <label>Калории</label>
-            <input v-model.number="form.calories" type="number" />
+            <input v-model.number="form.calories" type="number" min="0" max="10000" />
           </div>
           <div class="field">
             <label>Белки (г)</label>
-            <input v-model.number="form.protein" type="number" step="0.1" />
+            <input v-model.number="form.protein" type="number" step="0.1" min="0" max="1000" />
           </div>
         </div>
         <div class="row">
           <div class="field">
             <label>Жиры (г)</label>
-            <input v-model.number="form.fat" type="number" step="0.1" />
+            <input v-model.number="form.fat" type="number" step="0.1" min="0" max="1000" />
           </div>
           <div class="field">
             <label>Углеводы (г)</label>
-            <input v-model.number="form.carbs" type="number" step="0.1" />
+            <input v-model.number="form.carbs" type="number" step="0.1" min="0" max="1000" />
           </div>
         </div>
       </fieldset>
@@ -70,7 +74,7 @@
         <div class="row">
           <div class="field">
             <label>Порядок</label>
-            <input v-model.number="form.sort_order" type="number" />
+            <input v-model.number="form.sort_order" type="number" min="0" max="9999" />
           </div>
           <div class="field">
             <label>Активен</label>
@@ -113,6 +117,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '../../api'
 import type { Meal } from '../../types'
+import ImageUploader from '../../components/ImageUploader.vue'
 
 const props = defineProps<{ id?: string }>()
 const router = useRouter()
@@ -131,6 +136,7 @@ const form = reactive({
   protein: 0,
   fat: 0,
   carbs: 0,
+  image_media_id: null as number | null,
   access_tier: 'paid' as 'free' | 'trial' | 'paid',
   sort_order: 0,
   is_active: true,

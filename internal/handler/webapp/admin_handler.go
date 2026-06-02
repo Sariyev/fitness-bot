@@ -2,6 +2,7 @@ package webapp
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -15,6 +16,25 @@ import (
 // access_tier column. Empty is OK — the repo layer defaults empty to 'paid'.
 func validAccessTier(t models.AccessTier) bool {
 	return t == "" || t == models.AccessFree || t == models.AccessTrial || t == models.AccessPaid
+}
+
+// guardRangeInt returns "" if val is in [lo,hi], otherwise a human message.
+// Frontend already constrains via <input min/max>; this is belt-and-braces
+// for direct API hits and to keep garbage like duration_weeks=99999 out of
+// the DB.
+func guardRangeInt(label string, val, lo, hi int) string {
+	if val < lo || val > hi {
+		return fmt.Sprintf("%s out of range (allowed %d..%d)", label, lo, hi)
+	}
+	return ""
+}
+
+// guardRangeFloat — same as guardRangeInt for protein/fat/carbs fields.
+func guardRangeFloat(label string, val, lo, hi float64) string {
+	if val < lo || val > hi {
+		return fmt.Sprintf("%s out of range (allowed %g..%g)", label, lo, hi)
+	}
+	return ""
 }
 
 type AdminHandler struct {
@@ -232,6 +252,14 @@ func (h *AdminHandler) createProgram(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, http.StatusBadRequest, "invalid access_tier")
 		return
 	}
+	if msg := guardRangeInt("duration_weeks", req.DurationWeeks, 0, 52); msg != "" {
+		jsonError(w, http.StatusBadRequest, msg)
+		return
+	}
+	if msg := guardRangeInt("sort_order", req.SortOrder, 0, 9999); msg != "" {
+		jsonError(w, http.StatusBadRequest, msg)
+		return
+	}
 
 	p := &models.Program{
 		Slug: ensureSlug(req.Slug, req.Name), Name: req.Name, Description: req.Description,
@@ -261,6 +289,14 @@ func (h *AdminHandler) updateProgram(w http.ResponseWriter, r *http.Request, id 
 	}
 	if !validAccessTier(req.AccessTier) {
 		jsonError(w, http.StatusBadRequest, "invalid access_tier")
+		return
+	}
+	if msg := guardRangeInt("duration_weeks", req.DurationWeeks, 0, 52); msg != "" {
+		jsonError(w, http.StatusBadRequest, msg)
+		return
+	}
+	if msg := guardRangeInt("sort_order", req.SortOrder, 0, 9999); msg != "" {
+		jsonError(w, http.StatusBadRequest, msg)
 		return
 	}
 
@@ -360,6 +396,28 @@ type workoutRequest struct {
 	IsActive        bool     `json:"is_active"`
 }
 
+// validateRanges returns the first range-violation message for the request,
+// or "" if everything is in bounds.
+func (req *workoutRequest) validateRanges() string {
+	if msg := guardRangeInt("duration_minutes", req.DurationMinutes, 0, 240); msg != "" {
+		return msg
+	}
+	if msg := guardRangeInt("sort_order", req.SortOrder, 0, 9999); msg != "" {
+		return msg
+	}
+	if req.WeekNumber != nil {
+		if msg := guardRangeInt("week_number", *req.WeekNumber, 1, 52); msg != "" {
+			return msg
+		}
+	}
+	if req.DayNumber != nil {
+		if msg := guardRangeInt("day_number", *req.DayNumber, 1, 7); msg != "" {
+			return msg
+		}
+	}
+	return ""
+}
+
 func (h *AdminHandler) createWorkout(w http.ResponseWriter, r *http.Request) {
 	var req workoutRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -368,6 +426,10 @@ func (h *AdminHandler) createWorkout(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.Name == "" {
 		jsonError(w, http.StatusBadRequest, "name is required")
+		return
+	}
+	if msg := req.validateRanges(); msg != "" {
+		jsonError(w, http.StatusBadRequest, msg)
 		return
 	}
 	if req.Equipment == nil {
@@ -401,6 +463,10 @@ func (h *AdminHandler) updateWorkout(w http.ResponseWriter, r *http.Request, id 
 	var req workoutRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if msg := req.validateRanges(); msg != "" {
+		jsonError(w, http.StatusBadRequest, msg)
 		return
 	}
 	if req.Equipment == nil {
@@ -503,6 +569,10 @@ func (h *AdminHandler) createExercise(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, http.StatusBadRequest, "name is required")
 		return
 	}
+	if msg := guardRangeInt("rest_seconds", req.RestSeconds, 0, 600); msg != "" {
+		jsonError(w, http.StatusBadRequest, msg)
+		return
+	}
 
 	e := &models.Exercise{
 		Name: req.Name, Technique: req.Technique,
@@ -526,6 +596,10 @@ func (h *AdminHandler) updateExercise(w http.ResponseWriter, r *http.Request, id
 	var req exerciseRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if msg := guardRangeInt("rest_seconds", req.RestSeconds, 0, 600); msg != "" {
+		jsonError(w, http.StatusBadRequest, msg)
 		return
 	}
 
@@ -561,6 +635,18 @@ func (h *AdminHandler) HandleWorkoutExerciseRoutes(w http.ResponseWriter, r *htt
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if msg := guardRangeInt("sets", req.Sets, 1, 20); msg != "" {
+		jsonError(w, http.StatusBadRequest, msg)
+		return
+	}
+	if msg := guardRangeInt("duration_seconds", req.DurationSeconds, 0, 3600); msg != "" {
+		jsonError(w, http.StatusBadRequest, msg)
+		return
+	}
+	if msg := guardRangeInt("sort_order", req.SortOrder, 0, 9999); msg != "" {
+		jsonError(w, http.StatusBadRequest, msg)
 		return
 	}
 
@@ -635,17 +721,40 @@ func (h *AdminHandler) getMealPlan(w http.ResponseWriter, r *http.Request, id in
 }
 
 type mealPlanRequest struct {
-	Slug       string            `json:"slug"`
-	Name       string            `json:"name"`
-	Goal       string            `json:"goal"`
-	DayNumber  int               `json:"day_number"`
-	Calories   int               `json:"calories"`
-	Protein    float64           `json:"protein"`
-	Fat        float64           `json:"fat"`
-	Carbs      float64           `json:"carbs"`
-	AccessTier models.AccessTier `json:"access_tier"`
-	IsActive   bool              `json:"is_active"`
-	SortOrder  int               `json:"sort_order"`
+	Slug         string            `json:"slug"`
+	Name         string            `json:"name"`
+	Goal         string            `json:"goal"`
+	DayNumber    int               `json:"day_number"`
+	Calories     int               `json:"calories"`
+	Protein      float64           `json:"protein"`
+	Fat          float64           `json:"fat"`
+	Carbs        float64           `json:"carbs"`
+	ImageMediaID *int64            `json:"image_media_id"`
+	AccessTier   models.AccessTier `json:"access_tier"`
+	IsActive     bool              `json:"is_active"`
+	SortOrder    int               `json:"sort_order"`
+}
+
+func (req *mealPlanRequest) validateRanges() string {
+	if msg := guardRangeInt("day_number", req.DayNumber, 0, 365); msg != "" {
+		return msg
+	}
+	if msg := guardRangeInt("calories", req.Calories, 0, 10000); msg != "" {
+		return msg
+	}
+	if msg := guardRangeFloat("protein", req.Protein, 0, 1000); msg != "" {
+		return msg
+	}
+	if msg := guardRangeFloat("fat", req.Fat, 0, 1000); msg != "" {
+		return msg
+	}
+	if msg := guardRangeFloat("carbs", req.Carbs, 0, 1000); msg != "" {
+		return msg
+	}
+	if msg := guardRangeInt("sort_order", req.SortOrder, 0, 9999); msg != "" {
+		return msg
+	}
+	return ""
 }
 
 func (h *AdminHandler) createMealPlan(w http.ResponseWriter, r *http.Request) {
@@ -662,13 +771,18 @@ func (h *AdminHandler) createMealPlan(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, http.StatusBadRequest, "invalid access_tier")
 		return
 	}
+	if msg := req.validateRanges(); msg != "" {
+		jsonError(w, http.StatusBadRequest, msg)
+		return
+	}
 
 	p := &models.MealPlan{
 		Slug: ensureSlug(req.Slug, req.Name), Name: req.Name, Goal: req.Goal,
 		DayNumber: req.DayNumber, Calories: req.Calories,
 		Protein: req.Protein, Fat: req.Fat, Carbs: req.Carbs,
-		AccessTier: req.AccessTier,
-		IsActive:   req.IsActive, SortOrder: req.SortOrder,
+		ImageMediaID: req.ImageMediaID,
+		AccessTier:   req.AccessTier,
+		IsActive:     req.IsActive, SortOrder: req.SortOrder,
 	}
 	if err := h.nutritionSvc.CreatePlan(r.Context(), p); err != nil {
 		log.Printf("[ADMIN] create meal-plan failed: %v", err)
@@ -694,6 +808,10 @@ func (h *AdminHandler) updateMealPlan(w http.ResponseWriter, r *http.Request, id
 		jsonError(w, http.StatusBadRequest, "invalid access_tier")
 		return
 	}
+	if msg := req.validateRanges(); msg != "" {
+		jsonError(w, http.StatusBadRequest, msg)
+		return
+	}
 
 	p.Slug = ensureSlug(req.Slug, req.Name)
 	p.Name = req.Name
@@ -703,6 +821,7 @@ func (h *AdminHandler) updateMealPlan(w http.ResponseWriter, r *http.Request, id
 	p.Protein = req.Protein
 	p.Fat = req.Fat
 	p.Carbs = req.Carbs
+	p.ImageMediaID = req.ImageMediaID
 	p.AccessTier = req.AccessTier
 	p.IsActive = req.IsActive
 	p.SortOrder = req.SortOrder
@@ -782,7 +901,27 @@ type mealRequest struct {
 	Fat          float64 `json:"fat"`
 	Carbs        float64 `json:"carbs"`
 	Alternatives string  `json:"alternatives"`
+	ImageMediaID *int64  `json:"image_media_id"`
 	SortOrder    int     `json:"sort_order"`
+}
+
+func (req *mealRequest) validateRanges() string {
+	if msg := guardRangeInt("calories", req.Calories, 0, 10000); msg != "" {
+		return msg
+	}
+	if msg := guardRangeFloat("protein", req.Protein, 0, 1000); msg != "" {
+		return msg
+	}
+	if msg := guardRangeFloat("fat", req.Fat, 0, 1000); msg != "" {
+		return msg
+	}
+	if msg := guardRangeFloat("carbs", req.Carbs, 0, 1000); msg != "" {
+		return msg
+	}
+	if msg := guardRangeInt("sort_order", req.SortOrder, 0, 9999); msg != "" {
+		return msg
+	}
+	return ""
 }
 
 func (h *AdminHandler) createMeal(w http.ResponseWriter, r *http.Request) {
@@ -799,12 +938,18 @@ func (h *AdminHandler) createMeal(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, http.StatusBadRequest, "meal_plan_id is required")
 		return
 	}
+	if msg := req.validateRanges(); msg != "" {
+		jsonError(w, http.StatusBadRequest, msg)
+		return
+	}
 
 	m := &models.Meal{
 		MealPlanID: req.MealPlanID, MealType: req.MealType, Name: req.Name,
 		Recipe: req.Recipe, Calories: req.Calories,
 		Protein: req.Protein, Fat: req.Fat, Carbs: req.Carbs,
-		Alternatives: req.Alternatives, SortOrder: req.SortOrder,
+		Alternatives: req.Alternatives,
+		ImageMediaID: req.ImageMediaID,
+		SortOrder:    req.SortOrder,
 	}
 	if err := h.nutritionSvc.CreateMeal(r.Context(), m); err != nil {
 		log.Printf("[ADMIN] create meal failed: %v", err)
@@ -830,6 +975,10 @@ func (h *AdminHandler) updateMeal(w http.ResponseWriter, r *http.Request, id int
 		jsonError(w, http.StatusBadRequest, "meal_plan_id is required")
 		return
 	}
+	if msg := req.validateRanges(); msg != "" {
+		jsonError(w, http.StatusBadRequest, msg)
+		return
+	}
 
 	m.MealPlanID = req.MealPlanID
 	m.MealType = req.MealType
@@ -840,6 +989,7 @@ func (h *AdminHandler) updateMeal(w http.ResponseWriter, r *http.Request, id int
 	m.Fat = req.Fat
 	m.Carbs = req.Carbs
 	m.Alternatives = req.Alternatives
+	m.ImageMediaID = req.ImageMediaID
 	m.SortOrder = req.SortOrder
 
 	if err := h.nutritionSvc.UpdateMeal(r.Context(), m); err != nil {
@@ -968,6 +1118,10 @@ func (h *AdminHandler) createRehabCourse(w http.ResponseWriter, r *http.Request)
 		jsonError(w, http.StatusBadRequest, "invalid access_tier")
 		return
 	}
+	if msg := guardRangeInt("sort_order", req.SortOrder, 0, 9999); msg != "" {
+		jsonError(w, http.StatusBadRequest, msg)
+		return
+	}
 
 	c := &models.RehabCourse{
 		Slug: ensureSlug(req.Slug, req.Name), Category: req.Category, Name: req.Name,
@@ -997,6 +1151,10 @@ func (h *AdminHandler) updateRehabCourse(w http.ResponseWriter, r *http.Request,
 	}
 	if !validAccessTier(req.AccessTier) {
 		jsonError(w, http.StatusBadRequest, "invalid access_tier")
+		return
+	}
+	if msg := guardRangeInt("sort_order", req.SortOrder, 0, 9999); msg != "" {
+		jsonError(w, http.StatusBadRequest, msg)
 		return
 	}
 
@@ -1069,6 +1227,22 @@ type rehabSessionRequest struct {
 	SortOrder       int    `json:"sort_order"`
 }
 
+func (req *rehabSessionRequest) validateRanges() string {
+	if msg := guardRangeInt("day_number", req.DayNumber, 0, 365); msg != "" {
+		return msg
+	}
+	if msg := guardRangeInt("stage", req.Stage, 0, 3); msg != "" {
+		return msg
+	}
+	if msg := guardRangeInt("duration_minutes", req.DurationMinutes, 0, 240); msg != "" {
+		return msg
+	}
+	if msg := guardRangeInt("sort_order", req.SortOrder, 0, 9999); msg != "" {
+		return msg
+	}
+	return ""
+}
+
 func (h *AdminHandler) createRehabSession(w http.ResponseWriter, r *http.Request) {
 	var req rehabSessionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -1077,6 +1251,10 @@ func (h *AdminHandler) createRehabSession(w http.ResponseWriter, r *http.Request
 	}
 	if req.CourseID == 0 {
 		jsonError(w, http.StatusBadRequest, "course_id is required")
+		return
+	}
+	if msg := req.validateRanges(); msg != "" {
+		jsonError(w, http.StatusBadRequest, msg)
 		return
 	}
 
@@ -1104,6 +1282,10 @@ func (h *AdminHandler) updateRehabSession(w http.ResponseWriter, r *http.Request
 	var req rehabSessionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if msg := req.validateRanges(); msg != "" {
+		jsonError(w, http.StatusBadRequest, msg)
 		return
 	}
 

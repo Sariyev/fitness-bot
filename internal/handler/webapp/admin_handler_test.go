@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -595,5 +596,229 @@ func TestValidAccessTier(t *testing.T) {
 		if got := validAccessTier(tier); got != want {
 			t.Errorf("validAccessTier(%q) = %v, want %v", tier, got, want)
 		}
+	}
+}
+
+// ============================================================================
+//  Range guard tests — both the helper math and the wired handler behavior
+// ============================================================================
+
+func TestGuardRangeInt(t *testing.T) {
+	cases := []struct {
+		name             string
+		val, lo, hi      int
+		wantErrSubstring string
+	}{
+		{"in-bounds", 5, 0, 10, ""},
+		{"on-lower-bound", 0, 0, 10, ""},
+		{"on-upper-bound", 10, 0, 10, ""},
+		{"below-min", -1, 0, 10, "out of range"},
+		{"above-max", 11, 0, 10, "out of range"},
+	}
+	for _, c := range cases {
+		got := guardRangeInt("field", c.val, c.lo, c.hi)
+		if c.wantErrSubstring == "" && got != "" {
+			t.Errorf("%s: expected no error, got %q", c.name, got)
+		}
+		if c.wantErrSubstring != "" && !strings.Contains(got, c.wantErrSubstring) {
+			t.Errorf("%s: expected error containing %q, got %q", c.name, c.wantErrSubstring, got)
+		}
+	}
+}
+
+func TestGuardRangeFloat(t *testing.T) {
+	if guardRangeFloat("x", 5.0, 0, 10) != "" {
+		t.Error("5.0 in [0,10] should be valid")
+	}
+	if guardRangeFloat("x", -0.01, 0, 10) == "" {
+		t.Error("-0.01 should fail [0,10] guard")
+	}
+	if guardRangeFloat("x", 10.0001, 0, 10) == "" {
+		t.Error("10.0001 should fail [0,10] guard")
+	}
+}
+
+func TestCreateProgram_DurationWeeksOutOfRange(t *testing.T) {
+	s := newAdminTestSetup(t)
+	body := map[string]any{"name": "X", "access_tier": "paid", "duration_weeks": 999}
+	rec := s.doAs(http.MethodPost, "/app/api/admin/programs", body, s.handler.createProgram)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for duration_weeks=999, got %d: %s", rec.Code, rec.Body.String())
+	}
+	if s.progs.lastCreate != nil {
+		t.Error("repo CreateProgram should not be called for out-of-range duration_weeks")
+	}
+}
+
+func TestCreateProgram_DurationWeeksWithinRange(t *testing.T) {
+	s := newAdminTestSetup(t)
+	body := map[string]any{"name": "X", "access_tier": "paid", "duration_weeks": 12}
+	rec := s.doAs(http.MethodPost, "/app/api/admin/programs", body, s.handler.createProgram)
+
+	if rec.Code != http.StatusCreated {
+		t.Errorf("expected 201 for duration_weeks=12, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestCreateProgram_SortOrderNegativeIs400(t *testing.T) {
+	s := newAdminTestSetup(t)
+	body := map[string]any{"name": "X", "access_tier": "paid", "sort_order": -1}
+	rec := s.doAs(http.MethodPost, "/app/api/admin/programs", body, s.handler.createProgram)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for sort_order=-1, got %d", rec.Code)
+	}
+}
+
+func TestCreateWorkout_DurationMinutesOutOfRange(t *testing.T) {
+	s := newAdminTestSetup(t)
+	body := map[string]any{"name": "Wk", "duration_minutes": 9999}
+	rec := s.doAs(http.MethodPost, "/app/api/admin/workouts", body, s.handler.createWorkout)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for duration_minutes=9999, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestCreateWorkout_DayNumberOutOfRange(t *testing.T) {
+	s := newAdminTestSetup(t)
+	// day_number must be 1..7 when set (workouts within a program week).
+	day := 8
+	body := map[string]any{"name": "Wk", "day_number": day}
+	rec := s.doAs(http.MethodPost, "/app/api/admin/workouts", body, s.handler.createWorkout)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for day_number=%d, got %d: %s", day, rec.Code, rec.Body.String())
+	}
+}
+
+func TestCreateWorkout_WeekNumberOutOfRange(t *testing.T) {
+	s := newAdminTestSetup(t)
+	week := 53
+	body := map[string]any{"name": "Wk", "week_number": week}
+	rec := s.doAs(http.MethodPost, "/app/api/admin/workouts", body, s.handler.createWorkout)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for week_number=%d, got %d: %s", week, rec.Code, rec.Body.String())
+	}
+}
+
+func TestCreateMealPlan_CaloriesOutOfRange(t *testing.T) {
+	s := newAdminTestSetup(t)
+	body := map[string]any{"name": "Plan", "access_tier": "paid", "calories": 99999}
+	rec := s.doAs(http.MethodPost, "/app/api/admin/meal-plans", body, s.handler.createMealPlan)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for calories=99999, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestCreateMealPlan_MacrosNegative(t *testing.T) {
+	s := newAdminTestSetup(t)
+	body := map[string]any{"name": "Plan", "access_tier": "paid", "protein": -10}
+	rec := s.doAs(http.MethodPost, "/app/api/admin/meal-plans", body, s.handler.createMealPlan)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for protein=-10, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestCreateMeal_CaloriesOutOfRange(t *testing.T) {
+	s := newAdminTestSetup(t)
+	// Seed a valid plan so meal_plan_id=N doesn't 400 first.
+	_ = s.nutr.CreatePlan(context.Background(), &models.MealPlan{Name: "P"})
+	planID := s.nutr.lastPlan.ID
+
+	body := map[string]any{"name": "M", "meal_plan_id": planID, "calories": 50000}
+	rec := s.doAs(http.MethodPost, "/app/api/admin/meals", body, s.handler.createMeal)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for calories=50000, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestCreateRehabSession_StageOutOfRange(t *testing.T) {
+	s := newAdminTestSetup(t)
+	body := map[string]any{"course_id": 1, "stage": 9}
+	rec := s.doAs(http.MethodPost, "/app/api/admin/rehab/sessions", body, s.handler.createRehabSession)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for stage=9, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestCreateRehabSession_DurationOutOfRange(t *testing.T) {
+	s := newAdminTestSetup(t)
+	body := map[string]any{"course_id": 1, "duration_minutes": 9999}
+	rec := s.doAs(http.MethodPost, "/app/api/admin/rehab/sessions", body, s.handler.createRehabSession)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for duration_minutes=9999, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+// ============================================================================
+//  image_media_id wiring — meal plan + meal round-trip
+// ============================================================================
+
+func TestCreateMealPlan_ImageMediaIDRoundTrip(t *testing.T) {
+	s := newAdminTestSetup(t)
+	var imageID int64 = 42
+	body := map[string]any{
+		"name":           "P",
+		"access_tier":    "paid",
+		"image_media_id": imageID,
+	}
+	rec := s.doAs(http.MethodPost, "/app/api/admin/meal-plans", body, s.handler.createMealPlan)
+
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("expected 201, got %d: %s", rec.Code, rec.Body.String())
+	}
+	if s.nutr.lastPlan == nil {
+		t.Fatal("CreatePlan never called")
+	}
+	if s.nutr.lastPlan.ImageMediaID == nil {
+		t.Fatal("ImageMediaID dropped on the way to repo")
+	}
+	if *s.nutr.lastPlan.ImageMediaID != imageID {
+		t.Errorf("ImageMediaID = %d, want %d", *s.nutr.lastPlan.ImageMediaID, imageID)
+	}
+}
+
+func TestCreateMealPlan_NoImageMediaID(t *testing.T) {
+	s := newAdminTestSetup(t)
+	body := map[string]any{"name": "P", "access_tier": "paid"}
+	rec := s.doAs(http.MethodPost, "/app/api/admin/meal-plans", body, s.handler.createMealPlan)
+
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("expected 201, got %d", rec.Code)
+	}
+	if s.nutr.lastPlan.ImageMediaID != nil {
+		t.Errorf("expected nil ImageMediaID, got %v", *s.nutr.lastPlan.ImageMediaID)
+	}
+}
+
+func TestCreateMeal_ImageMediaIDRoundTrip(t *testing.T) {
+	s := newAdminTestSetup(t)
+	_ = s.nutr.CreatePlan(context.Background(), &models.MealPlan{Name: "P"})
+	planID := s.nutr.lastPlan.ID
+
+	var imageID int64 = 77
+	body := map[string]any{
+		"name":           "M",
+		"meal_plan_id":   planID,
+		"image_media_id": imageID,
+	}
+	rec := s.doAs(http.MethodPost, "/app/api/admin/meals", body, s.handler.createMeal)
+
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("expected 201, got %d: %s", rec.Code, rec.Body.String())
+	}
+	if s.nutr.lastMeal == nil || s.nutr.lastMeal.ImageMediaID == nil {
+		t.Fatal("ImageMediaID dropped on the way to repo")
+	}
+	if *s.nutr.lastMeal.ImageMediaID != imageID {
+		t.Errorf("ImageMediaID = %d, want %d", *s.nutr.lastMeal.ImageMediaID, imageID)
 	}
 }

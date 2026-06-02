@@ -21,13 +21,13 @@ func (r *nutritionRepo) ListPlans(ctx context.Context, goal string) ([]models.Me
 
 	if goal != "" {
 		query = `SELECT id, slug, name, goal, day_number, COALESCE(calories,0), COALESCE(protein,0), COALESCE(fat,0), COALESCE(carbs,0),
-				 access_tier, is_active, sort_order, created_at, updated_at
+				 image_media_id, access_tier, is_active, sort_order, created_at, updated_at
 				 FROM meal_plans WHERE is_active = TRUE AND goal = $1
 				 ORDER BY sort_order`
 		args = append(args, goal)
 	} else {
 		query = `SELECT id, slug, name, goal, day_number, COALESCE(calories,0), COALESCE(protein,0), COALESCE(fat,0), COALESCE(carbs,0),
-				 access_tier, is_active, sort_order, created_at, updated_at
+				 image_media_id, access_tier, is_active, sort_order, created_at, updated_at
 				 FROM meal_plans WHERE is_active = TRUE
 				 ORDER BY sort_order`
 	}
@@ -43,7 +43,7 @@ func (r *nutritionRepo) ListPlans(ctx context.Context, goal string) ([]models.Me
 		var p models.MealPlan
 		if err := rows.Scan(&p.ID, &p.Slug, &p.Name, &p.Goal, &p.DayNumber,
 			&p.Calories, &p.Protein, &p.Fat, &p.Carbs,
-			&p.AccessTier, &p.IsActive, &p.SortOrder, &p.CreatedAt, &p.UpdatedAt); err != nil {
+			&p.ImageMediaID, &p.AccessTier, &p.IsActive, &p.SortOrder, &p.CreatedAt, &p.UpdatedAt); err != nil {
 			return nil, err
 		}
 		plans = append(plans, p)
@@ -54,7 +54,7 @@ func (r *nutritionRepo) ListPlans(ctx context.Context, goal string) ([]models.Me
 func (r *nutritionRepo) ListAllPlans(ctx context.Context) ([]models.MealPlan, error) {
 	rows, err := r.pool.Query(ctx,
 		`SELECT id, slug, name, goal, day_number, COALESCE(calories,0), COALESCE(protein,0), COALESCE(fat,0), COALESCE(carbs,0),
-			is_active, sort_order, created_at, updated_at
+			image_media_id, access_tier, is_active, sort_order, created_at, updated_at
 		 FROM meal_plans ORDER BY sort_order`)
 	if err != nil {
 		return nil, err
@@ -66,7 +66,7 @@ func (r *nutritionRepo) ListAllPlans(ctx context.Context) ([]models.MealPlan, er
 		var p models.MealPlan
 		if err := rows.Scan(&p.ID, &p.Slug, &p.Name, &p.Goal, &p.DayNumber,
 			&p.Calories, &p.Protein, &p.Fat, &p.Carbs,
-			&p.AccessTier, &p.IsActive, &p.SortOrder, &p.CreatedAt, &p.UpdatedAt); err != nil {
+			&p.ImageMediaID, &p.AccessTier, &p.IsActive, &p.SortOrder, &p.CreatedAt, &p.UpdatedAt); err != nil {
 			return nil, err
 		}
 		plans = append(plans, p)
@@ -78,11 +78,11 @@ func (r *nutritionRepo) GetPlanByID(ctx context.Context, id int) (*models.MealPl
 	p := &models.MealPlan{}
 	err := r.pool.QueryRow(ctx,
 		`SELECT id, slug, name, goal, day_number, calories, protein, fat, carbs,
-			access_tier, is_active, sort_order, created_at, updated_at
+			image_media_id, access_tier, is_active, sort_order, created_at, updated_at
 		 FROM meal_plans WHERE id = $1`, id,
 	).Scan(&p.ID, &p.Slug, &p.Name, &p.Goal, &p.DayNumber,
 		&p.Calories, &p.Protein, &p.Fat, &p.Carbs,
-		&p.AccessTier, &p.IsActive, &p.SortOrder, &p.CreatedAt, &p.UpdatedAt)
+		&p.ImageMediaID, &p.AccessTier, &p.IsActive, &p.SortOrder, &p.CreatedAt, &p.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -95,10 +95,10 @@ func (r *nutritionRepo) CreatePlan(ctx context.Context, p *models.MealPlan) erro
 		tier = models.AccessPaid
 	}
 	return r.pool.QueryRow(ctx,
-		`INSERT INTO meal_plans (slug, name, goal, day_number, calories, protein, fat, carbs, access_tier, is_active, sort_order)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+		`INSERT INTO meal_plans (slug, name, goal, day_number, calories, protein, fat, carbs, image_media_id, access_tier, is_active, sort_order)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 		 RETURNING id, created_at, updated_at`,
-		p.Slug, p.Name, p.Goal, p.DayNumber, p.Calories, p.Protein, p.Fat, p.Carbs, tier, p.IsActive, p.SortOrder,
+		p.Slug, p.Name, p.Goal, p.DayNumber, p.Calories, p.Protein, p.Fat, p.Carbs, p.ImageMediaID, tier, p.IsActive, p.SortOrder,
 	).Scan(&p.ID, &p.CreatedAt, &p.UpdatedAt)
 }
 
@@ -109,17 +109,17 @@ func (r *nutritionRepo) UpdatePlan(ctx context.Context, p *models.MealPlan) erro
 	}
 	_, err := r.pool.Exec(ctx,
 		`UPDATE meal_plans SET slug=$2, name=$3, goal=$4, day_number=$5, calories=$6,
-			protein=$7, fat=$8, carbs=$9, access_tier=$10, is_active=$11, sort_order=$12, updated_at=NOW()
+			protein=$7, fat=$8, carbs=$9, image_media_id=$10, access_tier=$11, is_active=$12, sort_order=$13, updated_at=NOW()
 		 WHERE id=$1`,
 		p.ID, p.Slug, p.Name, p.Goal, p.DayNumber, p.Calories,
-		p.Protein, p.Fat, p.Carbs, tier, p.IsActive, p.SortOrder)
+		p.Protein, p.Fat, p.Carbs, p.ImageMediaID, tier, p.IsActive, p.SortOrder)
 	return err
 }
 
 func (r *nutritionRepo) ListMeals(ctx context.Context, planID int) ([]models.Meal, error) {
 	rows, err := r.pool.Query(ctx,
 		`SELECT id, meal_plan_id, meal_type, name, COALESCE(recipe,''), COALESCE(calories,0), COALESCE(protein,0), COALESCE(fat,0), COALESCE(carbs,0),
-			COALESCE(alternatives,''), sort_order, created_at, updated_at
+			COALESCE(alternatives,''), image_media_id, sort_order, created_at, updated_at
 		 FROM meals WHERE meal_plan_id = $1 ORDER BY sort_order`, planID)
 	if err != nil {
 		return nil, err
@@ -131,7 +131,7 @@ func (r *nutritionRepo) ListMeals(ctx context.Context, planID int) ([]models.Mea
 		var m models.Meal
 		if err := rows.Scan(&m.ID, &m.MealPlanID, &m.MealType, &m.Name, &m.Recipe,
 			&m.Calories, &m.Protein, &m.Fat, &m.Carbs,
-			&m.Alternatives, &m.SortOrder, &m.CreatedAt, &m.UpdatedAt); err != nil {
+			&m.Alternatives, &m.ImageMediaID, &m.SortOrder, &m.CreatedAt, &m.UpdatedAt); err != nil {
 			return nil, err
 		}
 		meals = append(meals, m)
@@ -142,21 +142,21 @@ func (r *nutritionRepo) ListMeals(ctx context.Context, planID int) ([]models.Mea
 func (r *nutritionRepo) CreateMeal(ctx context.Context, m *models.Meal) error {
 	return r.pool.QueryRow(ctx,
 		`INSERT INTO meals (meal_plan_id, meal_type, name, recipe, calories, protein, fat, carbs,
-			alternatives, sort_order)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+			alternatives, image_media_id, sort_order)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 		 RETURNING id, created_at, updated_at`,
 		m.MealPlanID, m.MealType, m.Name, m.Recipe, m.Calories, m.Protein, m.Fat, m.Carbs,
-		m.Alternatives, m.SortOrder,
+		m.Alternatives, m.ImageMediaID, m.SortOrder,
 	).Scan(&m.ID, &m.CreatedAt, &m.UpdatedAt)
 }
 
 func (r *nutritionRepo) UpdateMeal(ctx context.Context, m *models.Meal) error {
 	_, err := r.pool.Exec(ctx,
 		`UPDATE meals SET meal_plan_id=$2, meal_type=$3, name=$4, recipe=$5, calories=$6,
-			protein=$7, fat=$8, carbs=$9, alternatives=$10, sort_order=$11, updated_at=NOW()
+			protein=$7, fat=$8, carbs=$9, alternatives=$10, image_media_id=$11, sort_order=$12, updated_at=NOW()
 		 WHERE id=$1`,
 		m.ID, m.MealPlanID, m.MealType, m.Name, m.Recipe, m.Calories,
-		m.Protein, m.Fat, m.Carbs, m.Alternatives, m.SortOrder)
+		m.Protein, m.Fat, m.Carbs, m.Alternatives, m.ImageMediaID, m.SortOrder)
 	return err
 }
 
@@ -165,11 +165,11 @@ func (r *nutritionRepo) GetMealByID(ctx context.Context, id int) (*models.Meal, 
 	err := r.pool.QueryRow(ctx,
 		`SELECT id, meal_plan_id, meal_type, name, COALESCE(recipe,''), COALESCE(calories,0),
 			COALESCE(protein,0), COALESCE(fat,0), COALESCE(carbs,0),
-			COALESCE(alternatives,''), sort_order, created_at, updated_at
+			COALESCE(alternatives,''), image_media_id, sort_order, created_at, updated_at
 		 FROM meals WHERE id = $1`, id,
 	).Scan(&m.ID, &m.MealPlanID, &m.MealType, &m.Name, &m.Recipe,
 		&m.Calories, &m.Protein, &m.Fat, &m.Carbs,
-		&m.Alternatives, &m.SortOrder, &m.CreatedAt, &m.UpdatedAt)
+		&m.Alternatives, &m.ImageMediaID, &m.SortOrder, &m.CreatedAt, &m.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}

@@ -8,6 +8,10 @@
       <fieldset class="admin-section">
         <legend class="admin-section-title">Основные данные</legend>
         <div class="field">
+          <label>Изображение</label>
+          <ImageUploader v-model="form.image_media_id" reference-type="meal_image" />
+        </div>
+        <div class="field">
           <label>План питания</label>
           <select v-model.number="form.meal_plan_id" required>
             <option :value="0">— Выбрать —</option>
@@ -42,26 +46,26 @@
         <div class="row">
           <div class="field">
             <label>Калории</label>
-            <input v-model.number="form.calories" type="number" />
+            <input v-model.number="form.calories" type="number" min="0" max="10000" />
           </div>
           <div class="field">
             <label>Белки (г)</label>
-            <input v-model.number="form.protein" type="number" step="0.1" />
+            <input v-model.number="form.protein" type="number" step="0.1" min="0" max="1000" />
           </div>
         </div>
         <div class="row">
           <div class="field">
             <label>Жиры (г)</label>
-            <input v-model.number="form.fat" type="number" step="0.1" />
+            <input v-model.number="form.fat" type="number" step="0.1" min="0" max="1000" />
           </div>
           <div class="field">
             <label>Углеводы (г)</label>
-            <input v-model.number="form.carbs" type="number" step="0.1" />
+            <input v-model.number="form.carbs" type="number" step="0.1" min="0" max="1000" />
           </div>
         </div>
         <div class="field">
           <label>Порядок</label>
-          <input v-model.number="form.sort_order" type="number" />
+          <input v-model.number="form.sort_order" type="number" min="0" max="9999" />
         </div>
       </fieldset>
 
@@ -80,6 +84,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { api } from '../../api'
 import type { MealPlan } from '../../types'
+import ImageUploader from '../../components/ImageUploader.vue'
 
 const props = defineProps<{ id?: string }>()
 const router = useRouter()
@@ -100,6 +105,7 @@ const form = reactive({
   fat: 0,
   carbs: 0,
   alternatives: '',
+  image_media_id: null as number | null,
   sort_order: 0,
 })
 

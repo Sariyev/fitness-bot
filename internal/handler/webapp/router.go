@@ -115,7 +115,7 @@ func (r *WebAppRouter) setupRoutes() {
 	dashboardHandler := NewDashboardHandler(r.dashboardSvc)
 	workoutHandler := NewWorkoutHandler(r.workoutSvc, r.accessSvc, r.mediaSvc)
 	rehabHandler := NewRehabHandler(r.rehabSvc, r.accessSvc, r.mediaSvc)
-	nutritionHandler := NewNutritionHandler(r.nutritionSvc, r.accessSvc)
+	nutritionHandler := NewNutritionHandler(r.nutritionSvc, r.accessSvc, r.mediaSvc)
 	accessHandler := NewAccessHandler(r.accessSvc)
 	progressV2Handler := NewProgressV2Handler(r.progressSvc)
 	reviewHandler := NewReviewHandler(r.scoreSvc)

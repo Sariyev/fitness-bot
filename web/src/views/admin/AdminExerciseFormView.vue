@@ -33,7 +33,7 @@
         </div>
         <div class="field">
           <label>Отдых (сек)</label>
-          <input v-model.number="form.rest_seconds" type="number" min="0" />
+          <input v-model.number="form.rest_seconds" type="number" min="0" max="600" />
         </div>
       </fieldset>
 
