@@ -90,6 +90,10 @@ func (s *WorkoutService) UpdateProgram(ctx context.Context, p *models.Program) e
 	return s.programRepo.UpdateProgram(ctx, p)
 }
 
+func (s *WorkoutService) DeleteProgram(ctx context.Context, id int) error {
+	return s.programRepo.DeleteProgram(ctx, id)
+}
+
 func (s *WorkoutService) ListAllWorkouts(ctx context.Context) ([]models.Workout, error) {
 	return s.workoutRepo.ListAllWorkouts(ctx)
 }
@@ -100,6 +104,10 @@ func (s *WorkoutService) CreateWorkout(ctx context.Context, w *models.Workout) e
 
 func (s *WorkoutService) UpdateWorkout(ctx context.Context, w *models.Workout) error {
 	return s.workoutRepo.UpdateWorkout(ctx, w)
+}
+
+func (s *WorkoutService) DeleteWorkout(ctx context.Context, id int) error {
+	return s.workoutRepo.DeleteWorkout(ctx, id)
 }
 
 func (s *WorkoutService) ListExercises(ctx context.Context) ([]models.Exercise, error) {
@@ -116,6 +124,10 @@ func (s *WorkoutService) CreateExercise(ctx context.Context, e *models.Exercise)
 
 func (s *WorkoutService) UpdateExercise(ctx context.Context, e *models.Exercise) error {
 	return s.exerciseRepo.Update(ctx, e)
+}
+
+func (s *WorkoutService) DeleteExercise(ctx context.Context, id int) error {
+	return s.exerciseRepo.Delete(ctx, id)
 }
 
 func (s *WorkoutService) AddExerciseToWorkout(ctx context.Context, we *models.WorkoutExercise) error {

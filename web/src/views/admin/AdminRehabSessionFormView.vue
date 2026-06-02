@@ -58,6 +58,13 @@
           Назад к курсу
         </button>
       </div>
+
+      <AdminDangerZone
+        v-if="isEdit"
+        ref="dangerZone"
+        label="занятие ЛФК"
+        @delete="onDelete"
+      />
     </form>
   </div>
 </template>
@@ -67,6 +74,7 @@ import { ref, onMounted, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { api } from '../../api'
 import VideoUploader from '../../components/VideoUploader.vue'
+import AdminDangerZone from '../../components/AdminDangerZone.vue'
 
 const props = defineProps<{ id?: string }>()
 const route = useRoute()
@@ -122,6 +130,23 @@ async function save() {
     error.value = e.message || 'Ошибка сохранения'
   } finally {
     saving.value = false
+  }
+}
+
+const dangerZone = ref<{ reset: () => void } | null>(null)
+
+async function onDelete() {
+  if (!isEdit) return
+  try {
+    await api.deleteAdminRehabSession(Number(props.id))
+    if (form.course_id) {
+      router.replace(`/admin/rehab/courses/${form.course_id}`)
+    } else {
+      router.replace('/admin/content')
+    }
+  } catch (e: any) {
+    error.value = e.message || 'Не удалось удалить'
+    dangerZone.value?.reset()
   }
 }
 </script>

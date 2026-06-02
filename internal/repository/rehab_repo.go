@@ -167,6 +167,28 @@ func (r *rehabRepo) UpdateSession(ctx context.Context, s *models.RehabSession) e
 	return err
 }
 
+// DeleteCourse removes the course AND its child sessions in one transaction.
+func (r *rehabRepo) DeleteCourse(ctx context.Context, id int) error {
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	if _, err := tx.Exec(ctx, `DELETE FROM rehab_sessions WHERE course_id=$1`, id); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(ctx, `DELETE FROM rehab_courses WHERE id=$1`, id); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
+}
+
+func (r *rehabRepo) DeleteSession(ctx context.Context, id int) error {
+	_, err := r.pool.Exec(ctx, `DELETE FROM rehab_sessions WHERE id=$1`, id)
+	return err
+}
+
 func (r *rehabRepo) CreateProgress(ctx context.Context, p *models.UserRehabProgress) error {
 	return r.pool.QueryRow(ctx,
 		`INSERT INTO user_rehab_progress (user_id, course_id, session_id, day_number, completed_at, pain_level, comment)

@@ -71,6 +71,10 @@ func (r *fakeProgramRepo) UpdateProgram(_ context.Context, p *models.Program) er
 	r.store[p.ID] = &cp
 	return nil
 }
+func (r *fakeProgramRepo) DeleteProgram(_ context.Context, id int) error {
+	delete(r.store, id)
+	return nil
+}
 func (r *fakeProgramRepo) EnrollUser(context.Context, int64, int) error { return nil }
 func (r *fakeProgramRepo) GetActiveEnrollment(context.Context, int64) (*models.UserProgramEnrollment, error) {
 	return nil, errNotFound
@@ -98,6 +102,7 @@ func (r *fakeWorkoutRepo) CreateWorkout(_ context.Context, w *models.Workout) er
 	return nil
 }
 func (r *fakeWorkoutRepo) UpdateWorkout(context.Context, *models.Workout) error { return nil }
+func (r *fakeWorkoutRepo) DeleteWorkout(context.Context, int) error               { return nil }
 func (r *fakeWorkoutRepo) ListExercises(context.Context, int) ([]models.WorkoutExercise, error) {
 	return nil, nil
 }
@@ -114,6 +119,7 @@ func (r *fakeExerciseRepo) Create(_ context.Context, e *models.Exercise) error {
 	return nil
 }
 func (r *fakeExerciseRepo) Update(context.Context, *models.Exercise) error { return nil }
+func (r *fakeExerciseRepo) Delete(context.Context, int) error              { return nil }
 
 type fakeDailyCompletionRepo struct{}
 
@@ -168,6 +174,20 @@ func (r *fakeRehabRepo) CreateCourse(_ context.Context, c *models.RehabCourse) e
 	cp := *c
 	r.courses[c.ID] = &cp
 	r.lastCourse = &cp
+	return nil
+}
+func (r *fakeRehabRepo) DeleteCourse(_ context.Context, id int) error {
+	delete(r.courses, id)
+	// Cascade to child sessions — mirrors the real repo's transaction.
+	for sid, sess := range r.sessions {
+		if sess.CourseID == id {
+			delete(r.sessions, sid)
+		}
+	}
+	return nil
+}
+func (r *fakeRehabRepo) DeleteSession(_ context.Context, id int) error {
+	delete(r.sessions, id)
 	return nil
 }
 func (r *fakeRehabRepo) UpdateCourse(_ context.Context, c *models.RehabCourse) error {
@@ -244,6 +264,16 @@ func (r *fakeNutritionRepo) CreatePlan(_ context.Context, p *models.MealPlan) er
 	return nil
 }
 func (r *fakeNutritionRepo) UpdatePlan(context.Context, *models.MealPlan) error { return nil }
+func (r *fakeNutritionRepo) DeletePlan(_ context.Context, id int) error {
+	delete(r.plans, id)
+	// Cascade to child meals so test fakes mirror the real repo's transaction.
+	for mid, m := range r.meals {
+		if m.MealPlanID == id {
+			delete(r.meals, mid)
+		}
+	}
+	return nil
+}
 func (r *fakeNutritionRepo) ListMeals(context.Context, int) ([]models.Meal, error) {
 	return nil, nil
 }
@@ -256,6 +286,10 @@ func (r *fakeNutritionRepo) CreateMeal(_ context.Context, m *models.Meal) error 
 	return nil
 }
 func (r *fakeNutritionRepo) UpdateMeal(context.Context, *models.Meal) error { return nil }
+func (r *fakeNutritionRepo) DeleteMeal(_ context.Context, id int) error {
+	delete(r.meals, id)
+	return nil
+}
 func (r *fakeNutritionRepo) GetMealByID(_ context.Context, id int) (*models.Meal, error) {
 	if m, ok := r.meals[id]; ok {
 		return m, nil
@@ -796,6 +830,96 @@ func TestCreateMealPlan_NoImageMediaID(t *testing.T) {
 	}
 	if s.nutr.lastPlan.ImageMediaID != nil {
 		t.Errorf("expected nil ImageMediaID, got %v", *s.nutr.lastPlan.ImageMediaID)
+	}
+}
+
+// ============================================================================
+//  Delete behavior — including cascade from parent → child for the
+//  meal-plan and rehab-course transactional deletes.
+// ============================================================================
+
+func TestDeleteProgram_RemovesFromStore(t *testing.T) {
+	s := newAdminTestSetup(t)
+	body := map[string]any{"name": "P", "access_tier": "paid"}
+	rec := s.doAs(http.MethodPost, "/app/api/admin/programs", body, s.handler.createProgram)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("create: %d", rec.Code)
+	}
+	id := s.progs.lastCreate.ID
+
+	rec2 := s.doAs(http.MethodDelete, "/app/api/admin/programs", nil, func(w http.ResponseWriter, r *http.Request) {
+		s.handler.deleteProgram(w, r, id)
+	})
+	if rec2.Code != http.StatusOK {
+		t.Errorf("delete: %d: %s", rec2.Code, rec2.Body.String())
+	}
+	if _, ok := s.progs.store[id]; ok {
+		t.Error("program still in store after delete")
+	}
+}
+
+func TestDeleteMealPlan_CascadesToMeals(t *testing.T) {
+	s := newAdminTestSetup(t)
+	_ = s.nutr.CreatePlan(context.Background(), &models.MealPlan{Name: "P"})
+	planID := s.nutr.lastPlan.ID
+	_ = s.nutr.CreateMeal(context.Background(), &models.Meal{Name: "M1", MealPlanID: planID})
+	_ = s.nutr.CreateMeal(context.Background(), &models.Meal{Name: "M2", MealPlanID: planID})
+	if len(s.nutr.meals) != 2 {
+		t.Fatalf("expected 2 meals seeded, got %d", len(s.nutr.meals))
+	}
+
+	rec := s.doAs(http.MethodDelete, "/app/api/admin/meal-plans", nil, func(w http.ResponseWriter, r *http.Request) {
+		s.handler.deleteMealPlan(w, r, planID)
+	})
+	if rec.Code != http.StatusOK {
+		t.Fatalf("delete: %d", rec.Code)
+	}
+	if _, ok := s.nutr.plans[planID]; ok {
+		t.Error("plan still present")
+	}
+	if len(s.nutr.meals) != 0 {
+		t.Errorf("expected cascade-delete of child meals, %d remain", len(s.nutr.meals))
+	}
+}
+
+func TestDeleteRehabCourse_CascadesToSessions(t *testing.T) {
+	s := newAdminTestSetup(t)
+	body := map[string]any{"name": "C", "category": "back", "access_tier": "paid"}
+	rec := s.doAs(http.MethodPost, "/app/api/admin/rehab/courses", body, s.handler.createRehabCourse)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("create course: %d", rec.Code)
+	}
+	courseID := s.rehab.lastCourse.ID
+	// Seed two sessions belonging to the course.
+	_ = s.rehab.CreateSession(context.Background(), &models.RehabSession{CourseID: courseID, Stage: 1, DayNumber: 1})
+	_ = s.rehab.CreateSession(context.Background(), &models.RehabSession{CourseID: courseID, Stage: 1, DayNumber: 2})
+
+	rec2 := s.doAs(http.MethodDelete, "/app/api/admin/rehab/courses", nil, func(w http.ResponseWriter, r *http.Request) {
+		s.handler.deleteRehabCourse(w, r, courseID)
+	})
+	if rec2.Code != http.StatusOK {
+		t.Fatalf("delete: %d", rec2.Code)
+	}
+	if _, ok := s.rehab.courses[courseID]; ok {
+		t.Error("course still present")
+	}
+	for _, sess := range s.rehab.sessions {
+		if sess.CourseID == courseID {
+			t.Error("child session not cascade-deleted")
+		}
+	}
+}
+
+func TestDeleteWorkout_OK(t *testing.T) {
+	s := newAdminTestSetup(t)
+	rec := s.doAs(http.MethodDelete, "/app/api/admin/workouts", nil, func(w http.ResponseWriter, r *http.Request) {
+		s.handler.deleteWorkout(w, r, 999)
+	})
+	// Fake repo's DeleteWorkout returns nil unconditionally; the route still
+	// must respond 200. Real repo deletes workout_exercises + the workout
+	// in a transaction.
+	if rec.Code != http.StatusOK {
+		t.Errorf("delete: %d", rec.Code)
 	}
 }
 

@@ -116,6 +116,7 @@ type ProgramRepository interface {
 	GetProgramByID(ctx context.Context, id int) (*models.Program, error)
 	CreateProgram(ctx context.Context, p *models.Program) error
 	UpdateProgram(ctx context.Context, p *models.Program) error
+	DeleteProgram(ctx context.Context, id int) error
 	EnrollUser(ctx context.Context, userID int64, programID int) error
 	GetActiveEnrollment(ctx context.Context, userID int64) (*models.UserProgramEnrollment, error)
 	ListUserEnrollments(ctx context.Context, userID int64) ([]models.UserProgramEnrollment, error)
@@ -128,6 +129,7 @@ type WorkoutRepository interface {
 	ListByProgram(ctx context.Context, programID int) ([]models.Workout, error)
 	CreateWorkout(ctx context.Context, w *models.Workout) error
 	UpdateWorkout(ctx context.Context, w *models.Workout) error
+	DeleteWorkout(ctx context.Context, id int) error
 	ListExercises(ctx context.Context, workoutID int) ([]models.WorkoutExercise, error)
 	AddExercise(ctx context.Context, we *models.WorkoutExercise) error
 }
@@ -137,6 +139,7 @@ type ExerciseRepository interface {
 	GetByID(ctx context.Context, id int) (*models.Exercise, error)
 	Create(ctx context.Context, e *models.Exercise) error
 	Update(ctx context.Context, e *models.Exercise) error
+	Delete(ctx context.Context, id int) error
 }
 
 type RehabRepository interface {
@@ -146,10 +149,12 @@ type RehabRepository interface {
 	GetCourseByID(ctx context.Context, id int) (*models.RehabCourse, error)
 	CreateCourse(ctx context.Context, c *models.RehabCourse) error
 	UpdateCourse(ctx context.Context, c *models.RehabCourse) error
+	DeleteCourse(ctx context.Context, id int) error
 	ListSessions(ctx context.Context, courseID int) ([]models.RehabSession, error)
 	GetSessionByID(ctx context.Context, id int) (*models.RehabSession, error)
 	CreateSession(ctx context.Context, s *models.RehabSession) error
 	UpdateSession(ctx context.Context, s *models.RehabSession) error
+	DeleteSession(ctx context.Context, id int) error
 	CreateProgress(ctx context.Context, p *models.UserRehabProgress) error
 	ListUserProgress(ctx context.Context, userID int64, courseID int) ([]models.UserRehabProgress, error)
 }
@@ -160,9 +165,11 @@ type NutritionRepository interface {
 	GetPlanByID(ctx context.Context, id int) (*models.MealPlan, error)
 	CreatePlan(ctx context.Context, p *models.MealPlan) error
 	UpdatePlan(ctx context.Context, p *models.MealPlan) error
+	DeletePlan(ctx context.Context, id int) error
 	ListMeals(ctx context.Context, planID int) ([]models.Meal, error)
 	CreateMeal(ctx context.Context, m *models.Meal) error
 	UpdateMeal(ctx context.Context, m *models.Meal) error
+	DeleteMeal(ctx context.Context, id int) error
 	GetMealByID(ctx context.Context, id int) (*models.Meal, error)
 }
 

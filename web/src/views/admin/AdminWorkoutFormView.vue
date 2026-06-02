@@ -127,6 +127,15 @@
           {{ saving ? 'Сохранение...' : 'Сохранить' }}
         </button>
       </div>
+
+      <AdminDangerZone
+        v-if="isEdit"
+        ref="dangerZone"
+        label="тренировку"
+        :is-active="form.is_active"
+        @delete="onDelete"
+        @toggle-active="onToggleActive"
+      />
     </form>
 
     <!-- Exercises section for edit mode -->
@@ -184,6 +193,7 @@ import { useRouter } from 'vue-router'
 import { api } from '../../api'
 import type { Program, WorkoutExercise, Exercise } from '../../types'
 import VideoUploader from '../../components/VideoUploader.vue'
+import AdminDangerZone from '../../components/AdminDangerZone.vue'
 
 const props = defineProps<{ id?: string }>()
 const router = useRouter()
@@ -287,6 +297,29 @@ async function save() {
     error.value = e.message || 'Ошибка сохранения'
   } finally {
     saving.value = false
+  }
+}
+
+const dangerZone = ref<{ reset: () => void } | null>(null)
+
+async function onDelete() {
+  if (!isEdit) return
+  try {
+    await api.deleteAdminWorkout(Number(props.id))
+    router.replace('/admin/content')
+  } catch (e: any) {
+    error.value = e.message || 'Не удалось удалить'
+    dangerZone.value?.reset()
+  }
+}
+
+async function onToggleActive(next: boolean) {
+  if (!isEdit) return
+  try {
+    await api.updateAdminWorkout(Number(props.id), { ...form, is_active: next })
+    form.is_active = next
+  } catch (e: any) {
+    error.value = e.message || 'Не удалось изменить статус'
   }
 }
 

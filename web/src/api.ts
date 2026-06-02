@@ -362,6 +362,9 @@ export const api = {
   updateAdminProgram(id: number, data: Partial<Program>): Promise<Program> {
     return request(`/app/api/admin/programs/${id}`, { method: 'PUT', body: JSON.stringify(data) })
   },
+  deleteAdminProgram(id: number): Promise<{ deleted: boolean }> {
+    return request(`/app/api/admin/programs/${id}`, { method: 'DELETE' })
+  },
 
   // Admin Workouts CRUD
   getAdminWorkouts(): Promise<Workout[]> {
@@ -376,6 +379,9 @@ export const api = {
   updateAdminWorkout(id: number, data: Partial<Workout>): Promise<Workout> {
     return request(`/app/api/admin/workouts/${id}`, { method: 'PUT', body: JSON.stringify(data) })
   },
+  deleteAdminWorkout(id: number): Promise<{ deleted: boolean }> {
+    return request(`/app/api/admin/workouts/${id}`, { method: 'DELETE' })
+  },
 
   // Admin Exercises CRUD
   getAdminExercises(): Promise<Exercise[]> {
@@ -389,6 +395,9 @@ export const api = {
   },
   updateAdminExercise(id: number, data: Partial<Exercise>): Promise<Exercise> {
     return request(`/app/api/admin/exercises/${id}`, { method: 'PUT', body: JSON.stringify(data) })
+  },
+  deleteAdminExercise(id: number): Promise<{ deleted: boolean }> {
+    return request(`/app/api/admin/exercises/${id}`, { method: 'DELETE' })
   },
 
   // Admin Workout Exercises
@@ -409,6 +418,9 @@ export const api = {
   updateAdminMealPlan(id: number, data: Partial<MealPlan>): Promise<MealPlan> {
     return request(`/app/api/admin/meal-plans/${id}`, { method: 'PUT', body: JSON.stringify(data) })
   },
+  deleteAdminMealPlan(id: number): Promise<{ deleted: boolean }> {
+    return request(`/app/api/admin/meal-plans/${id}`, { method: 'DELETE' })
+  },
 
   // Admin Meals CRUD
   getAdminMeals(planId: number): Promise<Meal[]> {
@@ -422,6 +434,9 @@ export const api = {
   },
   updateAdminMeal(id: number, data: Partial<Meal>): Promise<Meal> {
     return request(`/app/api/admin/meals/${id}`, { method: 'PUT', body: JSON.stringify(data) })
+  },
+  deleteAdminMeal(id: number): Promise<{ deleted: boolean }> {
+    return request(`/app/api/admin/meals/${id}`, { method: 'DELETE' })
   },
 
   // Admin Rehab Courses CRUD
@@ -437,6 +452,9 @@ export const api = {
   updateAdminRehabCourse(id: number, data: Partial<RehabCourse>): Promise<RehabCourse> {
     return request(`/app/api/admin/rehab/courses/${id}`, { method: 'PUT', body: JSON.stringify(data) })
   },
+  deleteAdminRehabCourse(id: number): Promise<{ deleted: boolean }> {
+    return request(`/app/api/admin/rehab/courses/${id}`, { method: 'DELETE' })
+  },
 
   // Admin Rehab Sessions CRUD
   getAdminRehabSession(id: number): Promise<RehabSession> {
@@ -447,6 +465,9 @@ export const api = {
   },
   updateAdminRehabSession(id: number, data: Partial<RehabSession>): Promise<RehabSession> {
     return request(`/app/api/admin/rehab/sessions/${id}`, { method: 'PUT', body: JSON.stringify(data) })
+  },
+  deleteAdminRehabSession(id: number): Promise<{ deleted: boolean }> {
+    return request(`/app/api/admin/rehab/sessions/${id}`, { method: 'DELETE' })
   },
 
   // Admin Pricing

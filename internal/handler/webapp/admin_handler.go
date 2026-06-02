@@ -2,6 +2,7 @@ package webapp
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,7 +11,23 @@ import (
 
 	"fitness-bot/internal/models"
 	"fitness-bot/internal/service"
+
+	"github.com/jackc/pgconn"
 )
+
+// writeDeleteError maps repo errors to HTTP responses. FK violations (the
+// resource still has children) become 409 Conflict with a helpful message
+// so the admin knows to remove children — or simply deactivate — first.
+func writeDeleteError(w http.ResponseWriter, what string, err error) {
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == "23503" {
+		jsonError(w, http.StatusConflict,
+			fmt.Sprintf("%s has dependent records; deactivate or remove them first", what))
+		return
+	}
+	log.Printf("[ADMIN] delete %s failed: %v", what, err)
+	jsonError(w, http.StatusInternalServerError, fmt.Sprintf("failed to delete %s", what))
+}
 
 // validAccessTier reports whether the value can be persisted to the
 // access_tier column. Empty is OK — the repo layer defaults empty to 'paid'.
@@ -202,6 +219,8 @@ func (h *AdminHandler) HandleProgramRoutes(w http.ResponseWriter, r *http.Reques
 		h.getProgram(w, r, id)
 	case http.MethodPut:
 		h.updateProgram(w, r, id)
+	case http.MethodDelete:
+		h.deleteProgram(w, r, id)
 	default:
 		jsonError(w, http.StatusMethodNotAllowed, "method not allowed")
 	}
@@ -319,6 +338,14 @@ func (h *AdminHandler) updateProgram(w http.ResponseWriter, r *http.Request, id 
 	jsonResponse(w, http.StatusOK, p)
 }
 
+func (h *AdminHandler) deleteProgram(w http.ResponseWriter, r *http.Request, id int) {
+	if err := h.workoutSvc.DeleteProgram(r.Context(), id); err != nil {
+		writeDeleteError(w, "program", err)
+		return
+	}
+	jsonResponse(w, http.StatusOK, map[string]bool{"deleted": true})
+}
+
 // ==================== WORKOUTS ====================
 
 func (h *AdminHandler) HandleWorkoutRoutes(w http.ResponseWriter, r *http.Request) {
@@ -348,6 +375,8 @@ func (h *AdminHandler) HandleWorkoutRoutes(w http.ResponseWriter, r *http.Reques
 		h.getWorkout(w, r, id)
 	case http.MethodPut:
 		h.updateWorkout(w, r, id)
+	case http.MethodDelete:
+		h.deleteWorkout(w, r, id)
 	default:
 		jsonError(w, http.StatusMethodNotAllowed, "method not allowed")
 	}
@@ -498,6 +527,14 @@ func (h *AdminHandler) updateWorkout(w http.ResponseWriter, r *http.Request, id 
 	jsonResponse(w, http.StatusOK, wo)
 }
 
+func (h *AdminHandler) deleteWorkout(w http.ResponseWriter, r *http.Request, id int) {
+	if err := h.workoutSvc.DeleteWorkout(r.Context(), id); err != nil {
+		writeDeleteError(w, "workout", err)
+		return
+	}
+	jsonResponse(w, http.StatusOK, map[string]bool{"deleted": true})
+}
+
 // ==================== EXERCISES ====================
 
 func (h *AdminHandler) HandleExerciseRoutes(w http.ResponseWriter, r *http.Request) {
@@ -527,6 +564,8 @@ func (h *AdminHandler) HandleExerciseRoutes(w http.ResponseWriter, r *http.Reque
 		h.getExercise(w, r, id)
 	case http.MethodPut:
 		h.updateExercise(w, r, id)
+	case http.MethodDelete:
+		h.deleteExercise(w, r, id)
 	default:
 		jsonError(w, http.StatusMethodNotAllowed, "method not allowed")
 	}
@@ -617,6 +656,14 @@ func (h *AdminHandler) updateExercise(w http.ResponseWriter, r *http.Request, id
 	jsonResponse(w, http.StatusOK, e)
 }
 
+func (h *AdminHandler) deleteExercise(w http.ResponseWriter, r *http.Request, id int) {
+	if err := h.workoutSvc.DeleteExercise(r.Context(), id); err != nil {
+		writeDeleteError(w, "exercise", err)
+		return
+	}
+	jsonResponse(w, http.StatusOK, map[string]bool{"deleted": true})
+}
+
 // ==================== WORKOUT EXERCISES ====================
 
 func (h *AdminHandler) HandleWorkoutExerciseRoutes(w http.ResponseWriter, r *http.Request) {
@@ -691,6 +738,8 @@ func (h *AdminHandler) HandleMealPlanRoutes(w http.ResponseWriter, r *http.Reque
 		h.getMealPlan(w, r, id)
 	case http.MethodPut:
 		h.updateMealPlan(w, r, id)
+	case http.MethodDelete:
+		h.deleteMealPlan(w, r, id)
 	default:
 		jsonError(w, http.StatusMethodNotAllowed, "method not allowed")
 	}
@@ -834,6 +883,14 @@ func (h *AdminHandler) updateMealPlan(w http.ResponseWriter, r *http.Request, id
 	jsonResponse(w, http.StatusOK, p)
 }
 
+func (h *AdminHandler) deleteMealPlan(w http.ResponseWriter, r *http.Request, id int) {
+	if err := h.nutritionSvc.DeletePlan(r.Context(), id); err != nil {
+		writeDeleteError(w, "meal plan", err)
+		return
+	}
+	jsonResponse(w, http.StatusOK, map[string]bool{"deleted": true})
+}
+
 // ==================== MEALS ====================
 
 func (h *AdminHandler) HandleMealRoutes(w http.ResponseWriter, r *http.Request) {
@@ -868,6 +925,8 @@ func (h *AdminHandler) HandleMealRoutes(w http.ResponseWriter, r *http.Request) 
 		h.getMeal(w, r, id)
 	case http.MethodPut:
 		h.updateMeal(w, r, id)
+	case http.MethodDelete:
+		h.deleteMeal(w, r, id)
 	default:
 		jsonError(w, http.StatusMethodNotAllowed, "method not allowed")
 	}
@@ -1000,6 +1059,14 @@ func (h *AdminHandler) updateMeal(w http.ResponseWriter, r *http.Request, id int
 	jsonResponse(w, http.StatusOK, m)
 }
 
+func (h *AdminHandler) deleteMeal(w http.ResponseWriter, r *http.Request, id int) {
+	if err := h.nutritionSvc.DeleteMeal(r.Context(), id); err != nil {
+		writeDeleteError(w, "meal", err)
+		return
+	}
+	jsonResponse(w, http.StatusOK, map[string]bool{"deleted": true})
+}
+
 // ==================== REVIEWS & STATS ====================
 
 func (h *AdminHandler) GetReviewsSummary(w http.ResponseWriter, r *http.Request) {
@@ -1066,6 +1133,8 @@ func (h *AdminHandler) HandleRehabCourseRoutes(w http.ResponseWriter, r *http.Re
 		h.getRehabCourse(w, r, id)
 	case http.MethodPut:
 		h.updateRehabCourse(w, r, id)
+	case http.MethodDelete:
+		h.deleteRehabCourse(w, r, id)
 	default:
 		jsonError(w, http.StatusMethodNotAllowed, "method not allowed")
 	}
@@ -1175,6 +1244,14 @@ func (h *AdminHandler) updateRehabCourse(w http.ResponseWriter, r *http.Request,
 	jsonResponse(w, http.StatusOK, c)
 }
 
+func (h *AdminHandler) deleteRehabCourse(w http.ResponseWriter, r *http.Request, id int) {
+	if err := h.rehabSvc.DeleteCourse(r.Context(), id); err != nil {
+		writeDeleteError(w, "rehab course", err)
+		return
+	}
+	jsonResponse(w, http.StatusOK, map[string]bool{"deleted": true})
+}
+
 // ==================== REHAB SESSIONS ====================
 
 func (h *AdminHandler) HandleRehabSessionRoutes(w http.ResponseWriter, r *http.Request) {
@@ -1201,6 +1278,8 @@ func (h *AdminHandler) HandleRehabSessionRoutes(w http.ResponseWriter, r *http.R
 		h.getRehabSession(w, r, id)
 	case http.MethodPut:
 		h.updateRehabSession(w, r, id)
+	case http.MethodDelete:
+		h.deleteRehabSession(w, r, id)
 	default:
 		jsonError(w, http.StatusMethodNotAllowed, "method not allowed")
 	}
@@ -1306,6 +1385,13 @@ func (h *AdminHandler) updateRehabSession(w http.ResponseWriter, r *http.Request
 	jsonResponse(w, http.StatusOK, s)
 }
 
+func (h *AdminHandler) deleteRehabSession(w http.ResponseWriter, r *http.Request, id int) {
+	if err := h.rehabSvc.DeleteSession(r.Context(), id); err != nil {
+		writeDeleteError(w, "rehab session", err)
+		return
+	}
+	jsonResponse(w, http.StatusOK, map[string]bool{"deleted": true})
+}
 
 // ==================== PRICING ====================
 

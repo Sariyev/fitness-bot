@@ -116,6 +116,29 @@ func (r *nutritionRepo) UpdatePlan(ctx context.Context, p *models.MealPlan) erro
 	return err
 }
 
+// DeletePlan removes the plan AND its child meals in one transaction.
+// Meals have meal_plan_id FK so a bare delete would otherwise fail.
+func (r *nutritionRepo) DeletePlan(ctx context.Context, id int) error {
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	if _, err := tx.Exec(ctx, `DELETE FROM meals WHERE meal_plan_id=$1`, id); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(ctx, `DELETE FROM meal_plans WHERE id=$1`, id); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
+}
+
+func (r *nutritionRepo) DeleteMeal(ctx context.Context, id int) error {
+	_, err := r.pool.Exec(ctx, `DELETE FROM meals WHERE id=$1`, id)
+	return err
+}
+
 func (r *nutritionRepo) ListMeals(ctx context.Context, planID int) ([]models.Meal, error) {
 	rows, err := r.pool.Query(ctx,
 		`SELECT id, meal_plan_id, meal_type, name, COALESCE(recipe,''), COALESCE(calories,0), COALESCE(protein,0), COALESCE(fat,0), COALESCE(carbs,0),

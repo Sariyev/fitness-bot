@@ -92,6 +92,15 @@
           {{ saving ? 'Сохранение...' : 'Сохранить' }}
         </button>
       </div>
+
+      <AdminDangerZone
+        v-if="isEdit"
+        ref="dangerZone"
+        label="план питания"
+        :is-active="form.is_active"
+        @delete="onDelete"
+        @toggle-active="onToggleActive"
+      />
     </form>
 
     <!-- Meals section for edit mode -->
@@ -118,6 +127,7 @@ import { useRouter } from 'vue-router'
 import { api } from '../../api'
 import type { Meal } from '../../types'
 import ImageUploader from '../../components/ImageUploader.vue'
+import AdminDangerZone from '../../components/AdminDangerZone.vue'
 
 const props = defineProps<{ id?: string }>()
 const router = useRouter()
@@ -175,6 +185,29 @@ async function save() {
     error.value = e.message || 'Ошибка сохранения'
   } finally {
     saving.value = false
+  }
+}
+
+const dangerZone = ref<{ reset: () => void } | null>(null)
+
+async function onDelete() {
+  if (!isEdit) return
+  try {
+    await api.deleteAdminMealPlan(Number(props.id))
+    router.replace('/admin/content')
+  } catch (e: any) {
+    error.value = e.message || 'Не удалось удалить'
+    dangerZone.value?.reset()
+  }
+}
+
+async function onToggleActive(next: boolean) {
+  if (!isEdit) return
+  try {
+    await api.updateAdminMealPlan(Number(props.id), { ...form, is_active: next })
+    form.is_active = next
+  } catch (e: any) {
+    error.value = e.message || 'Не удалось изменить статус'
   }
 }
 </script>

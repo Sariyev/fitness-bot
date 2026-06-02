@@ -121,6 +121,11 @@ func (r *programRepo) UpdateProgram(ctx context.Context, p *models.Program) erro
 	return err
 }
 
+func (r *programRepo) DeleteProgram(ctx context.Context, id int) error {
+	_, err := r.pool.Exec(ctx, `DELETE FROM programs WHERE id=$1`, id)
+	return err
+}
+
 func (r *programRepo) EnrollUser(ctx context.Context, userID int64, programID int) error {
 	_, err := r.pool.Exec(ctx,
 		`INSERT INTO user_program_enrollments (user_id, program_id, started_at, current_week, is_active)

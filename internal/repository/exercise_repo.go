@@ -72,3 +72,10 @@ func (r *exerciseRepo) Update(ctx context.Context, e *models.Exercise) error {
 		e.EasierModification, e.HarderModification, e.RestSeconds)
 	return err
 }
+
+// Delete fails with FK violation if any workout_exercises row still references
+// this exercise — admin must remove the dependent workouts first.
+func (r *exerciseRepo) Delete(ctx context.Context, id int) error {
+	_, err := r.pool.Exec(ctx, `DELETE FROM exercises WHERE id=$1`, id)
+	return err
+}

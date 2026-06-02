@@ -43,6 +43,13 @@
           {{ saving ? 'Сохранение...' : 'Сохранить' }}
         </button>
       </div>
+
+      <AdminDangerZone
+        v-if="isEdit"
+        ref="dangerZone"
+        label="упражнение"
+        @delete="onDelete"
+      />
     </form>
   </div>
 </template>
@@ -51,6 +58,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '../../api'
+import AdminDangerZone from '../../components/AdminDangerZone.vue'
 
 const props = defineProps<{ id?: string }>()
 const router = useRouter()
@@ -95,6 +103,19 @@ async function save() {
     error.value = e.message || 'Ошибка сохранения'
   } finally {
     saving.value = false
+  }
+}
+
+const dangerZone = ref<{ reset: () => void } | null>(null)
+
+async function onDelete() {
+  if (!isEdit) return
+  try {
+    await api.deleteAdminExercise(Number(props.id))
+    router.replace('/admin/exercises')
+  } catch (e: any) {
+    error.value = e.message || 'Не удалось удалить'
+    dangerZone.value?.reset()
   }
 }
 </script>

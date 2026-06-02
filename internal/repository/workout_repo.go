@@ -155,6 +155,24 @@ func (r *workoutRepo) UpdateWorkout(ctx context.Context, w *models.Workout) erro
 	return err
 }
 
+func (r *workoutRepo) DeleteWorkout(ctx context.Context, id int) error {
+	// workout_exercises is a pure join — clean it up so the workout delete
+	// doesn't fail on FK violation.
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	if _, err := tx.Exec(ctx, `DELETE FROM workout_exercises WHERE workout_id=$1`, id); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(ctx, `DELETE FROM workouts WHERE id=$1`, id); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
+}
+
 func (r *workoutRepo) ListExercises(ctx context.Context, workoutID int) ([]models.WorkoutExercise, error) {
 	rows, err := r.pool.Query(ctx,
 		`SELECT id, workout_id, exercise_id, COALESCE(sets,0), COALESCE(reps,''), COALESCE(duration_seconds,0), sort_order

@@ -61,10 +61,18 @@ func (s *RehabService) UpdateCourse(ctx context.Context, c *models.RehabCourse) 
 	return s.rehabRepo.UpdateCourse(ctx, c)
 }
 
+func (s *RehabService) DeleteCourse(ctx context.Context, id int) error {
+	return s.rehabRepo.DeleteCourse(ctx, id)
+}
+
 func (s *RehabService) CreateSession(ctx context.Context, sess *models.RehabSession) error {
 	return s.rehabRepo.CreateSession(ctx, sess)
 }
 
 func (s *RehabService) UpdateSession(ctx context.Context, sess *models.RehabSession) error {
 	return s.rehabRepo.UpdateSession(ctx, sess)
+}
+
+func (s *RehabService) DeleteSession(ctx context.Context, id int) error {
+	return s.rehabRepo.DeleteSession(ctx, id)
 }
