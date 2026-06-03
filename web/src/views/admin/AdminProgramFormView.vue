@@ -6,7 +6,7 @@
 
     <form v-else class="admin-form" @submit.prevent="save">
       <fieldset class="admin-section">
-        <legend class="admin-section-title">Основные данные</legend>
+        <legend class="admin-section-title"><span class="icon">📝</span>Основные данные</legend>
         <div class="field">
           <label>Название *</label>
           <input v-model="form.name" required />
@@ -18,7 +18,7 @@
       </fieldset>
 
       <fieldset class="admin-section">
-        <legend class="admin-section-title">Параметры программы</legend>
+        <legend class="admin-section-title icon-goals"><span class="icon">🎯</span>Параметры программы</legend>
         <div class="row">
           <div class="field">
             <label>Цель</label>
@@ -56,7 +56,7 @@
       </fieldset>
 
       <fieldset class="admin-section">
-        <legend class="admin-section-title">Доступ</legend>
+        <legend class="admin-section-title icon-access"><span class="icon">🔓</span>Доступ</legend>
         <div class="field">
           <label>Бакет</label>
           <div class="toggle-group">
@@ -69,7 +69,7 @@
       </fieldset>
 
       <fieldset class="admin-section">
-        <legend class="admin-section-title">Статус</legend>
+        <legend class="admin-section-title icon-status"><span class="icon">⚡️</span>Статус</legend>
         <div class="row">
           <div class="field">
             <label>Порядок</label>

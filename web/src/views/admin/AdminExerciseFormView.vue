@@ -6,7 +6,7 @@
 
     <form v-else class="admin-form" @submit.prevent="save">
       <fieldset class="admin-section">
-        <legend class="admin-section-title">Основные данные</legend>
+        <legend class="admin-section-title"><span class="icon">📝</span>Основные данные</legend>
         <div class="field">
           <label>Название *</label>
           <input v-model="form.name" required />
@@ -22,7 +22,7 @@
       </fieldset>
 
       <fieldset class="admin-section">
-        <legend class="admin-section-title">Варианты выполнения</legend>
+        <legend class="admin-section-title icon-goals"><span class="icon">🎯</span>Варианты выполнения</legend>
         <div class="field">
           <label>Упрощение</label>
           <textarea v-model="form.easier_modification" rows="2"></textarea>

@@ -6,7 +6,7 @@
 
     <form v-else class="admin-form" @submit.prevent="save">
       <fieldset class="admin-section">
-        <legend class="admin-section-title">Основные данные</legend>
+        <legend class="admin-section-title"><span class="icon">📝</span>Основные данные</legend>
         <div class="field">
           <label>Название *</label>
           <input v-model="form.name" required />
@@ -25,7 +25,7 @@
       </fieldset>
 
       <fieldset class="admin-section">
-        <legend class="admin-section-title">Параметры тренировки</legend>
+        <legend class="admin-section-title icon-goals"><span class="icon">🎯</span>Параметры тренировки</legend>
 
         <!-- When part of a program, goal/format/level are inherited; only duration stays editable. -->
         <div v-if="selectedProgram" class="inherited-meta">
@@ -93,7 +93,7 @@
       </fieldset>
 
       <fieldset class="admin-section">
-        <legend class="admin-section-title">Видео</legend>
+        <legend class="admin-section-title icon-media"><span class="icon">🎬</span>Видео</legend>
         <div class="field">
           <label>Загрузить видео (MP4 в R2)</label>
           <VideoUploader v-model="form.video_media_id" reference-type="workout_video" />
@@ -105,7 +105,7 @@
       </fieldset>
 
       <fieldset class="admin-section">
-        <legend class="admin-section-title">Статус</legend>
+        <legend class="admin-section-title icon-status"><span class="icon">⚡️</span>Статус</legend>
         <div class="row">
           <div class="field">
             <label>Порядок</label>

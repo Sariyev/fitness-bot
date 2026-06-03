@@ -6,7 +6,7 @@
 
     <form v-else class="admin-form" @submit.prevent="save">
       <fieldset class="admin-section">
-        <legend class="admin-section-title">Основные данные</legend>
+        <legend class="admin-section-title"><span class="icon">📝</span>Основные данные</legend>
         <div class="field">
           <label>Изображение</label>
           <ImageUploader v-model="form.image_media_id" reference-type="meal_image" />
@@ -42,7 +42,7 @@
       </fieldset>
 
       <fieldset class="admin-section">
-        <legend class="admin-section-title">Питательная ценность</legend>
+        <legend class="admin-section-title icon-nutrition"><span class="icon">🍴</span>Питательная ценность</legend>
         <div class="row">
           <div class="field">
             <label>Калории</label>

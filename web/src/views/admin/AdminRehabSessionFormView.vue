@@ -6,7 +6,7 @@
 
     <form v-else class="admin-form" @submit.prevent="save">
       <fieldset class="admin-section">
-        <legend class="admin-section-title">Основные данные</legend>
+        <legend class="admin-section-title"><span class="icon">📝</span>Основные данные</legend>
         <div class="field">
           <label>Курс ID *</label>
           <input v-model.number="form.course_id" type="number" required :disabled="isEdit" />
@@ -38,7 +38,7 @@
       </fieldset>
 
       <fieldset class="admin-section">
-        <legend class="admin-section-title">Видео</legend>
+        <legend class="admin-section-title icon-media"><span class="icon">🎬</span>Видео</legend>
         <div class="field">
           <label>Загрузить видео (MP4 в R2)</label>
           <VideoUploader v-model="form.video_media_id" reference-type="rehab_session_video" />
