@@ -9,8 +9,8 @@ import (
 )
 
 type Recommendation struct {
-	ProgramID       *int   `json:"program_id,omitempty"`
-	ProgramName     string `json:"program_name,omitempty"`
+	WorkoutID       *int   `json:"workout_id,omitempty"`
+	WorkoutName     string `json:"workout_name,omitempty"`
 	RehabCourseID   *int   `json:"rehab_course_id,omitempty"`
 	RehabCourseName string `json:"rehab_course_name,omitempty"`
 	Calories        int    `json:"calories"`
@@ -21,18 +21,18 @@ type Recommendation struct {
 }
 
 type RecommendationService struct {
-	programRepo   repository.ProgramRepository
+	workoutRepo   repository.WorkoutRepository
 	rehabRepo     repository.RehabRepository
 	nutritionRepo repository.NutritionRepository
 }
 
 func NewRecommendationService(
-	programRepo repository.ProgramRepository,
+	workoutRepo repository.WorkoutRepository,
 	rehabRepo repository.RehabRepository,
 	nutritionRepo repository.NutritionRepository,
 ) *RecommendationService {
 	return &RecommendationService{
-		programRepo:   programRepo,
+		workoutRepo:   workoutRepo,
 		rehabRepo:     rehabRepo,
 		nutritionRepo: nutritionRepo,
 	}
@@ -48,11 +48,11 @@ func (s *RecommendationService) GenerateRecommendations(ctx context.Context, pro
 
 	rec := &Recommendation{}
 
-	// Find a matching training program
-	programs, err := s.programRepo.ListPrograms(ctx, format, goal, level)
-	if err == nil && len(programs) > 0 {
-		rec.ProgramID = &programs[0].ID
-		rec.ProgramName = programs[0].Name
+	// Find a matching workout (was: matching program)
+	workouts, err := s.workoutRepo.ListWorkouts(ctx, format, goal, level)
+	if err == nil && len(workouts) > 0 {
+		rec.WorkoutID = &workouts[0].ID
+		rec.WorkoutName = workouts[0].Name
 	}
 
 	// If the user reports pain or has diagnoses, recommend a rehab course
@@ -108,8 +108,8 @@ func primaryGoalFromProfile(goal string) string {
 func buildRecommendationMessage(rec *Recommendation, goal string) string {
 	var parts []string
 
-	if rec.ProgramName != "" {
-		parts = append(parts, fmt.Sprintf("Рекомендуемая программа: %s.", rec.ProgramName))
+	if rec.WorkoutName != "" {
+		parts = append(parts, fmt.Sprintf("Рекомендуемая тренировка: %s.", rec.WorkoutName))
 	}
 
 	if rec.RehabCourseName != "" {

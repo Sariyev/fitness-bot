@@ -17,20 +17,6 @@
       </div>
 
       <div class="section-header">
-        <h2 class="section-title">Программы ({{ programs.length }})</h2>
-        <button class="add-btn" @click="router.push('/admin/programs/new')">+</button>
-      </div>
-      <div v-for="p in programs" :key="p.id" class="content-card" :class="{ inactive: !p.is_active }" @click="router.push(`/admin/programs/${p.id}`)">
-        <div class="content-main">
-          <span class="content-name">{{ p.name }}</span>
-          <span class="content-meta">{{ p.level }} | {{ p.format }} | {{ p.duration_weeks }} нед.</span>
-        </div>
-        <span class="badge" :class="p.is_active ? 'badge-active' : 'badge-inactive'">
-          {{ p.is_active ? 'Active' : 'Off' }}
-        </span>
-      </div>
-
-      <div class="section-header">
         <h2 class="section-title">Тренировки ({{ workouts.length }})</h2>
         <button class="add-btn" @click="router.push('/admin/workouts/new')">+</button>
       </div>
@@ -90,10 +76,9 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '../../api'
-import type { Program, Workout, MealPlan, RehabCourse } from '../../types'
+import type { Workout, MealPlan, RehabCourse } from '../../types'
 
 const router = useRouter()
-const programs = ref<Program[]>([])
 const workouts = ref<Workout[]>([])
 const mealPlans = ref<MealPlan[]>([])
 const rehabCourses = ref<RehabCourse[]>([])
@@ -102,13 +87,12 @@ const loadError = ref(false)
 
 onMounted(async () => {
   const results = await Promise.allSettled([
-    api.getAdminPrograms(),
     api.getAdminWorkouts(),
     api.getAdminMealPlans(),
     api.getAdminRehabCourses(),
   ])
-  const labels = ['programs', 'workouts', 'meal-plans', 'rehab-courses']
-  const refs = [programs, workouts, mealPlans, rehabCourses] as const
+  const labels = ['workouts', 'meal-plans', 'rehab-courses']
+  const refs = [workouts, mealPlans, rehabCourses] as const
   results.forEach((r, i) => {
     if (r.status === 'fulfilled') {
       ;(refs[i].value as unknown[]) = (r.value as unknown[]) || []

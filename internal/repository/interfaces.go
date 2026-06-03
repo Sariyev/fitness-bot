@@ -110,23 +110,10 @@ type ScoreRepository interface {
 	GetBotSummary(ctx context.Context) (*models.ReviewSummary, error)
 }
 
-type ProgramRepository interface {
-	ListPrograms(ctx context.Context, format, goal, level string) ([]models.Program, error)
-	ListAllPrograms(ctx context.Context) ([]models.Program, error)
-	GetProgramByID(ctx context.Context, id int) (*models.Program, error)
-	CreateProgram(ctx context.Context, p *models.Program) error
-	UpdateProgram(ctx context.Context, p *models.Program) error
-	DeleteProgram(ctx context.Context, id int) error
-	EnrollUser(ctx context.Context, userID int64, programID int) error
-	GetActiveEnrollment(ctx context.Context, userID int64) (*models.UserProgramEnrollment, error)
-	ListUserEnrollments(ctx context.Context, userID int64) ([]models.UserProgramEnrollment, error)
-}
-
 type WorkoutRepository interface {
 	ListWorkouts(ctx context.Context, format, goal, level string) ([]models.Workout, error)
 	ListAllWorkouts(ctx context.Context) ([]models.Workout, error)
 	GetWorkoutByID(ctx context.Context, id int) (*models.Workout, error)
-	ListByProgram(ctx context.Context, programID int) ([]models.Workout, error)
 	CreateWorkout(ctx context.Context, w *models.Workout) error
 	UpdateWorkout(ctx context.Context, w *models.Workout) error
 	DeleteWorkout(ctx context.Context, id int) error

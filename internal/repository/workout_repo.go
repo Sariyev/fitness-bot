@@ -16,11 +16,23 @@ func NewWorkoutRepo(pool *pgxpool.Pool) WorkoutRepository {
 	return &workoutRepo{pool: pool}
 }
 
+// SELECT list shared by ListWorkouts / ListAllWorkouts / GetWorkoutByID.
+// Keep in lockstep with the Scan in scanWorkout below.
+const workoutSelectCols = `id, slug, name, COALESCE(description,''), COALESCE(goal,''),
+	COALESCE(format,''), COALESCE(level,''), COALESCE(duration_minutes,0), equipment,
+	COALESCE(expected_result,''), COALESCE(video_url,''), video_media_id, access_tier,
+	sort_order, is_active, created_at, updated_at`
+
+func scanWorkout(rows interface {
+	Scan(dest ...interface{}) error
+}, w *models.Workout) error {
+	return rows.Scan(&w.ID, &w.Slug, &w.Name, &w.Description, &w.Goal, &w.Format, &w.Level,
+		&w.DurationMinutes, &w.Equipment, &w.ExpectedResult, &w.VideoURL, &w.VideoMediaID,
+		&w.AccessTier, &w.SortOrder, &w.IsActive, &w.CreatedAt, &w.UpdatedAt)
+}
+
 func (r *workoutRepo) ListWorkouts(ctx context.Context, format, goal, level string) ([]models.Workout, error) {
-	query := `SELECT id, program_id, slug, name, COALESCE(description,''), COALESCE(goal,''), COALESCE(format,''), COALESCE(level,''),
-			  COALESCE(duration_minutes,0), equipment, COALESCE(expected_result,''), COALESCE(video_url,''), video_media_id, sort_order,
-			  week_number, day_number, is_active, created_at, updated_at
-			  FROM workouts WHERE is_active = TRUE`
+	query := `SELECT ` + workoutSelectCols + ` FROM workouts WHERE is_active = TRUE`
 	args := []interface{}{}
 	idx := 1
 
@@ -37,7 +49,6 @@ func (r *workoutRepo) ListWorkouts(ctx context.Context, format, goal, level stri
 	if level != "" {
 		query += fmt.Sprintf(" AND level = $%d", idx)
 		args = append(args, level)
-		idx++
 	}
 	query += " ORDER BY sort_order"
 
@@ -50,10 +61,7 @@ func (r *workoutRepo) ListWorkouts(ctx context.Context, format, goal, level stri
 	workouts := []models.Workout{}
 	for rows.Next() {
 		var w models.Workout
-		if err := rows.Scan(&w.ID, &w.ProgramID, &w.Slug, &w.Name, &w.Description,
-			&w.Goal, &w.Format, &w.Level, &w.DurationMinutes, &w.Equipment,
-			&w.ExpectedResult, &w.VideoURL, &w.VideoMediaID, &w.SortOrder, &w.WeekNumber, &w.DayNumber,
-			&w.IsActive, &w.CreatedAt, &w.UpdatedAt); err != nil {
+		if err := scanWorkout(rows, &w); err != nil {
 			return nil, err
 		}
 		workouts = append(workouts, w)
@@ -63,10 +71,7 @@ func (r *workoutRepo) ListWorkouts(ctx context.Context, format, goal, level stri
 
 func (r *workoutRepo) ListAllWorkouts(ctx context.Context) ([]models.Workout, error) {
 	rows, err := r.pool.Query(ctx,
-		`SELECT id, program_id, slug, name, COALESCE(description,''), COALESCE(goal,''), COALESCE(format,''), COALESCE(level,''),
-			COALESCE(duration_minutes,0), equipment, COALESCE(expected_result,''), COALESCE(video_url,''), video_media_id, sort_order,
-			week_number, day_number, is_active, created_at, updated_at
-		 FROM workouts ORDER BY sort_order`)
+		`SELECT `+workoutSelectCols+` FROM workouts ORDER BY sort_order`)
 	if err != nil {
 		return nil, err
 	}
@@ -75,10 +80,7 @@ func (r *workoutRepo) ListAllWorkouts(ctx context.Context) ([]models.Workout, er
 	workouts := []models.Workout{}
 	for rows.Next() {
 		var w models.Workout
-		if err := rows.Scan(&w.ID, &w.ProgramID, &w.Slug, &w.Name, &w.Description,
-			&w.Goal, &w.Format, &w.Level, &w.DurationMinutes, &w.Equipment,
-			&w.ExpectedResult, &w.VideoURL, &w.VideoMediaID, &w.SortOrder, &w.WeekNumber, &w.DayNumber,
-			&w.IsActive, &w.CreatedAt, &w.UpdatedAt); err != nil {
+		if err := scanWorkout(rows, &w); err != nil {
 			return nil, err
 		}
 		workouts = append(workouts, w)
@@ -88,70 +90,45 @@ func (r *workoutRepo) ListAllWorkouts(ctx context.Context) ([]models.Workout, er
 
 func (r *workoutRepo) GetWorkoutByID(ctx context.Context, id int) (*models.Workout, error) {
 	w := &models.Workout{}
-	err := r.pool.QueryRow(ctx,
-		`SELECT id, program_id, slug, name, COALESCE(description,''), COALESCE(goal,''), COALESCE(format,''), COALESCE(level,''),
-			COALESCE(duration_minutes,0), equipment, COALESCE(expected_result,''), COALESCE(video_url,''), video_media_id, sort_order,
-			week_number, day_number, is_active, created_at, updated_at
-		 FROM workouts WHERE id = $1`, id,
-	).Scan(&w.ID, &w.ProgramID, &w.Slug, &w.Name, &w.Description,
-		&w.Goal, &w.Format, &w.Level, &w.DurationMinutes, &w.Equipment,
-		&w.ExpectedResult, &w.VideoURL, &w.VideoMediaID, &w.SortOrder, &w.WeekNumber, &w.DayNumber,
-		&w.IsActive, &w.CreatedAt, &w.UpdatedAt)
+	err := scanWorkout(r.pool.QueryRow(ctx,
+		`SELECT `+workoutSelectCols+` FROM workouts WHERE id = $1`, id), w)
 	if err != nil {
 		return nil, err
 	}
 	return w, nil
 }
 
-func (r *workoutRepo) ListByProgram(ctx context.Context, programID int) ([]models.Workout, error) {
-	rows, err := r.pool.Query(ctx,
-		`SELECT id, program_id, slug, name, COALESCE(description,''), COALESCE(goal,''), COALESCE(format,''), COALESCE(level,''),
-			COALESCE(duration_minutes,0), equipment, COALESCE(expected_result,''), COALESCE(video_url,''), video_media_id, sort_order,
-			week_number, day_number, is_active, created_at, updated_at
-		 FROM workouts WHERE program_id = $1 AND is_active = TRUE
-		 ORDER BY week_number, day_number, sort_order`, programID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	workouts := []models.Workout{}
-	for rows.Next() {
-		var w models.Workout
-		if err := rows.Scan(&w.ID, &w.ProgramID, &w.Slug, &w.Name, &w.Description,
-			&w.Goal, &w.Format, &w.Level, &w.DurationMinutes, &w.Equipment,
-			&w.ExpectedResult, &w.VideoURL, &w.VideoMediaID, &w.SortOrder, &w.WeekNumber, &w.DayNumber,
-			&w.IsActive, &w.CreatedAt, &w.UpdatedAt); err != nil {
-			return nil, err
-		}
-		workouts = append(workouts, w)
-	}
-	return workouts, nil
-}
-
 func (r *workoutRepo) CreateWorkout(ctx context.Context, w *models.Workout) error {
+	tier := w.AccessTier
+	if tier == "" {
+		tier = models.AccessPaid
+	}
 	return r.pool.QueryRow(ctx,
-		`INSERT INTO workouts (program_id, slug, name, description, goal, format, level,
-			duration_minutes, equipment, expected_result, video_url, video_media_id, sort_order,
-			week_number, day_number, is_active)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+		`INSERT INTO workouts (slug, name, description, goal, format, level,
+			duration_minutes, equipment, expected_result, video_url, video_media_id,
+			access_tier, sort_order, is_active)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 		 RETURNING id, created_at, updated_at`,
-		w.ProgramID, w.Slug, w.Name, w.Description, w.Goal, w.Format, w.Level,
-		w.DurationMinutes, w.Equipment, w.ExpectedResult, w.VideoURL, w.VideoMediaID, w.SortOrder,
-		w.WeekNumber, w.DayNumber, w.IsActive,
+		w.Slug, w.Name, w.Description, w.Goal, w.Format, w.Level,
+		w.DurationMinutes, w.Equipment, w.ExpectedResult, w.VideoURL, w.VideoMediaID,
+		tier, w.SortOrder, w.IsActive,
 	).Scan(&w.ID, &w.CreatedAt, &w.UpdatedAt)
 }
 
 func (r *workoutRepo) UpdateWorkout(ctx context.Context, w *models.Workout) error {
+	tier := w.AccessTier
+	if tier == "" {
+		tier = models.AccessPaid
+	}
 	_, err := r.pool.Exec(ctx,
-		`UPDATE workouts SET program_id=$2, slug=$3, name=$4, description=$5, goal=$6, format=$7,
-			level=$8, duration_minutes=$9, equipment=$10, expected_result=$11, video_url=$12,
-			video_media_id=$13, sort_order=$14, week_number=$15, day_number=$16, is_active=$17,
+		`UPDATE workouts SET slug=$2, name=$3, description=$4, goal=$5, format=$6,
+			level=$7, duration_minutes=$8, equipment=$9, expected_result=$10, video_url=$11,
+			video_media_id=$12, access_tier=$13, sort_order=$14, is_active=$15,
 			updated_at=NOW()
 		 WHERE id=$1`,
-		w.ID, w.ProgramID, w.Slug, w.Name, w.Description, w.Goal, w.Format,
+		w.ID, w.Slug, w.Name, w.Description, w.Goal, w.Format,
 		w.Level, w.DurationMinutes, w.Equipment, w.ExpectedResult, w.VideoURL,
-		w.VideoMediaID, w.SortOrder, w.WeekNumber, w.DayNumber, w.IsActive)
+		w.VideoMediaID, tier, w.SortOrder, w.IsActive)
 	return err
 }
 

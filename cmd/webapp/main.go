@@ -41,7 +41,6 @@ func main() {
 	moduleRepo := repository.NewModuleRepo(db.Pool)
 	paymentRepo := repository.NewPaymentRepo(db.Pool)
 	scoreRepo := repository.NewScoreRepo(db.Pool)
-	programRepo := repository.NewProgramRepo(db.Pool)
 	workoutRepo := repository.NewWorkoutRepo(db.Pool)
 	exerciseRepo := repository.NewExerciseRepo(db.Pool)
 	completionRepo := repository.NewCompletionRepo(db.Pool)
@@ -83,12 +82,12 @@ func main() {
 
 	scoreSvc := service.NewScoreService(scoreRepo)
 	paymentSvc := service.NewPaymentService(paymentRepo, userRepo, accessSvc, paymentProvider, 5000)
-	workoutSvc := service.NewWorkoutService(programRepo, workoutRepo, exerciseRepo, completionRepo)
+	workoutSvc := service.NewWorkoutService(workoutRepo, exerciseRepo, completionRepo)
 	rehabSvc := service.NewRehabService(rehabRepo)
 	nutritionSvc := service.NewNutritionService(nutritionRepo, foodLogRepo)
 	progressSvc := service.NewProgressService(progressRepo, completionRepo, achievementRepo)
 	dashboardSvc := service.NewDashboardService(userSvc, workoutSvc, rehabSvc, nutritionSvc)
-	recommendSvc := service.NewRecommendationService(programRepo, rehabRepo, nutritionRepo)
+	recommendSvc := service.NewRecommendationService(workoutRepo, rehabRepo, nutritionRepo)
 
 	// Media (R2) — optional. Empty AccessKeyID disables; routes won't register.
 	var mediaSvc *service.MediaService

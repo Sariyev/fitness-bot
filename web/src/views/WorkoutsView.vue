@@ -49,8 +49,7 @@
 
     <!-- Loading -->
     <div v-if="loading" class="skeleton-list">
-      <div class="skeleton-card" style="height: 100px" v-for="i in 2" :key="'p-' + i"></div>
-      <div class="skeleton-card" style="height: 80px" v-for="i in 4" :key="'w-' + i"></div>
+      <div class="skeleton-card" style="height: 80px" v-for="i in 5" :key="'w-' + i"></div>
     </div>
 
     <!-- Error -->
@@ -60,42 +59,8 @@
     </div>
 
     <template v-else>
-      <!-- Programs section -->
-      <section v-if="programs.length > 0" class="section">
-        <h2 class="section-title">Программы</h2>
-        <p class="section-hint">Многонедельные курсы с прогрессией</p>
-        <div class="programs-list">
-          <router-link
-            v-for="(program, index) in programs"
-            :key="program.id"
-            :to="`/workouts/program/${program.id}`"
-            class="program-card"
-            :class="{ locked: program.locked }"
-            :style="{ animationDelay: (index * 80) + 'ms' }"
-          >
-            <div class="program-card-top">
-              <span class="program-name">{{ program.name }}</span>
-              <span v-if="program.locked" class="lock-badge">🔒</span>
-              <span v-else-if="program.access_tier === 'free'" class="tier-badge tier-free">Бесплатно</span>
-              <span v-else-if="program.access_tier === 'trial'" class="tier-badge tier-trial">Триал</span>
-              <span v-else class="level-badge">{{ levelLabel(program.level) }}</span>
-            </div>
-            <div class="program-meta">
-              <span v-if="program.duration_weeks" class="meta-item">
-                {{ program.duration_weeks }} {{ weeksLabel(program.duration_weeks) }}
-              </span>
-              <span v-if="program.goal" class="meta-item">
-                {{ goalLabel(program.goal) }}
-              </span>
-            </div>
-          </router-link>
-        </div>
-      </section>
-
-      <!-- Workouts library section -->
       <section class="section">
-        <h2 class="section-title">Отдельные тренировки</h2>
-        <p class="section-hint">Самостоятельные занятия вне программ</p>
+        <h2 class="section-title">Тренировки</h2>
 
         <div v-if="workouts.length > 0" class="workouts-list">
           <router-link
@@ -103,12 +68,20 @@
             :key="workout.id"
             :to="`/workouts/session/${workout.id}`"
             class="workout-card"
+            :class="{ locked: workout.locked }"
             :style="{ animationDelay: (index * 60) + 'ms' }"
           >
             <div class="workout-card-body">
-              <span class="workout-name">{{ workout.name }}</span>
+              <div class="workout-card-top">
+                <span class="workout-name">{{ workout.name }}</span>
+                <span v-if="workout.locked" class="lock-badge">🔒</span>
+                <span v-else-if="workout.access_tier === 'free'" class="tier-badge tier-free">Бесплатно</span>
+                <span v-else-if="workout.access_tier === 'trial'" class="tier-badge tier-trial">Триал</span>
+                <span v-else-if="workout.level" class="level-badge">{{ levelLabel(workout.level) }}</span>
+              </div>
               <div class="workout-meta">
                 <span v-if="workout.duration_minutes" class="meta-tag">{{ workout.duration_minutes }} мин</span>
+                <span v-if="workout.goal" class="meta-tag">{{ goalLabel(workout.goal) }}</span>
                 <span
                   v-for="eq in (workout.equipment || []).slice(0, 3)"
                   :key="eq"
@@ -132,11 +105,10 @@
 <script setup lang="ts">
 import { ref, reactive, watch, onMounted } from 'vue'
 import { api } from '../api'
-import type { Program, Workout } from '../types'
+import type { Workout } from '../types'
 
 const loading = ref(true)
 const error = ref('')
-const programs = ref<Program[]>([])
 const workouts = ref<Workout[]>([])
 
 const filters = reactive({
@@ -167,12 +139,6 @@ function levelLabel(key: string): string {
   return levelLabels[key] || key
 }
 
-function weeksLabel(n: number): string {
-  if (n % 10 === 1 && n % 100 !== 11) return 'неделя'
-  if (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20)) return 'недели'
-  return 'недель'
-}
-
 function setFormat(format: string) {
   filters.format = format
 }
@@ -197,16 +163,9 @@ async function loadData() {
   loading.value = true
   error.value = ''
   try {
-    const filterParams = buildFilters()
-    const [programsData, workoutsData] = await Promise.all([
-      api.getPrograms(filterParams),
-      api.getWorkouts(filterParams),
-    ])
-    programs.value = programsData
-    workouts.value = workoutsData
+    workouts.value = await api.getWorkouts(buildFilters())
   } catch (e: any) {
     error.value = e.message || 'Ошибка загрузки'
-    programs.value = []
     workouts.value = []
   } finally {
     loading.value = false
@@ -347,50 +306,12 @@ onMounted(() => {
   margin-bottom: 4px;
 }
 
-.section-hint {
-  font-size: 13px;
-  color: var(--hint-color);
-  margin: 0 0 12px 0;
-}
-
-/* ===== Programs ===== */
-.programs-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.program-card {
-  background: var(--secondary-bg);
-  border-radius: 12px;
-  padding: 16px;
-  text-decoration: none;
-  color: var(--text-color);
-  transition: transform 0.15s ease;
-  opacity: 0;
-  animation: fadeSlideUp 0.35s ease forwards;
-}
-
-.program-card:active {
-  transform: scale(0.98);
-}
-
-.program-card-top {
+/* ===== Workouts ===== */
+.workout-card-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 8px;
-}
-
-.program-name {
-  font-size: 15px;
-  font-weight: 600;
-  flex: 1;
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .level-badge {
@@ -420,19 +341,9 @@ onMounted(() => {
   opacity: 0.6;
 }
 
-.program-card.locked .program-name { opacity: 0.65; }
+.workout-card.locked .workout-name { opacity: 0.65; }
 
-.program-meta {
-  display: flex;
-  gap: 12px;
-}
-
-.meta-item {
-  font-size: 13px;
-  color: var(--hint-color);
-}
-
-/* ===== Workouts library ===== */
+/* ===== Workouts list ===== */
 .workouts-list {
   display: flex;
   flex-direction: column;

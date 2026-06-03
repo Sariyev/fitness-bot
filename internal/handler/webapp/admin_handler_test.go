@@ -28,81 +28,47 @@ func (n *notFoundErr) Error() string { return "not found" }
 //  rest exist to satisfy the interface and return zero values).
 // ============================================================================
 
-type fakeProgramRepo struct {
-	store      map[int]*models.Program
+type fakeWorkoutRepo struct {
+	store      map[int]*models.Workout
 	nextID     int
-	lastCreate *models.Program
+	lastCreate *models.Workout
 }
 
-func newFakeProgramRepo() *fakeProgramRepo {
-	return &fakeProgramRepo{store: map[int]*models.Program{}, nextID: 100}
+func newFakeWorkoutRepo() *fakeWorkoutRepo {
+	return &fakeWorkoutRepo{store: map[int]*models.Workout{}, nextID: 100}
 }
-func (r *fakeProgramRepo) ListPrograms(context.Context, string, string, string) ([]models.Program, error) {
-	return nil, nil
-}
-func (r *fakeProgramRepo) ListAllPrograms(context.Context) ([]models.Program, error) {
-	out := []models.Program{}
-	for _, p := range r.store {
-		out = append(out, *p)
-	}
-	return out, nil
-}
-func (r *fakeProgramRepo) GetProgramByID(_ context.Context, id int) (*models.Program, error) {
-	if p, ok := r.store[id]; ok {
-		return p, nil
-	}
-	return nil, errNotFound
-}
-func (r *fakeProgramRepo) CreateProgram(_ context.Context, p *models.Program) error {
-	p.ID = r.nextID
-	r.nextID++
-	now := time.Now()
-	p.CreatedAt, p.UpdatedAt = now, now
-	cp := *p
-	r.store[p.ID] = &cp
-	r.lastCreate = &cp
-	return nil
-}
-func (r *fakeProgramRepo) UpdateProgram(_ context.Context, p *models.Program) error {
-	if _, ok := r.store[p.ID]; !ok {
-		return errNotFound
-	}
-	cp := *p
-	r.store[p.ID] = &cp
-	return nil
-}
-func (r *fakeProgramRepo) DeleteProgram(_ context.Context, id int) error {
-	delete(r.store, id)
-	return nil
-}
-func (r *fakeProgramRepo) EnrollUser(context.Context, int64, int) error { return nil }
-func (r *fakeProgramRepo) GetActiveEnrollment(context.Context, int64) (*models.UserProgramEnrollment, error) {
-	return nil, errNotFound
-}
-func (r *fakeProgramRepo) ListUserEnrollments(context.Context, int64) ([]models.UserProgramEnrollment, error) {
-	return nil, nil
-}
-
-type fakeWorkoutRepo struct{}
 
 func (r *fakeWorkoutRepo) ListWorkouts(context.Context, string, string, string) ([]models.Workout, error) {
 	return nil, nil
 }
 func (r *fakeWorkoutRepo) ListAllWorkouts(context.Context) ([]models.Workout, error) {
-	return nil, nil
+	out := []models.Workout{}
+	for _, w := range r.store {
+		out = append(out, *w)
+	}
+	return out, nil
 }
-func (r *fakeWorkoutRepo) GetWorkoutByID(context.Context, int) (*models.Workout, error) {
+func (r *fakeWorkoutRepo) GetWorkoutByID(_ context.Context, id int) (*models.Workout, error) {
+	if w, ok := r.store[id]; ok {
+		return w, nil
+	}
 	return nil, errNotFound
 }
-func (r *fakeWorkoutRepo) ListByProgram(context.Context, int) ([]models.Workout, error) {
-	return nil, nil
-}
 func (r *fakeWorkoutRepo) CreateWorkout(_ context.Context, w *models.Workout) error {
-	w.ID = 1
+	w.ID = r.nextID
+	r.nextID++
+	now := time.Now()
+	w.CreatedAt, w.UpdatedAt = now, now
+	cp := *w
+	r.store[w.ID] = &cp
+	r.lastCreate = &cp
 	return nil
 }
 func (r *fakeWorkoutRepo) UpdateWorkout(context.Context, *models.Workout) error { return nil }
-func (r *fakeWorkoutRepo) DeleteWorkout(context.Context, int) error               { return nil }
+func (r *fakeWorkoutRepo) DeleteWorkout(_ context.Context, id int) error {
+	delete(r.store, id)
+	return nil
+}
 func (r *fakeWorkoutRepo) ListExercises(context.Context, int) ([]models.WorkoutExercise, error) {
 	return nil, nil
 }
@@ -400,23 +366,23 @@ func (r *fakeAccessRepoH) ListGranted(context.Context, int64) ([]models.Category
 // ============================================================================
 
 type adminTestSetup struct {
-	handler *AdminHandler
-	admin   *models.User
-	progs   *fakeProgramRepo
-	rehab   *fakeRehabRepo
-	nutr    *fakeNutritionRepo
+	handler  *AdminHandler
+	admin    *models.User
+	workouts *fakeWorkoutRepo
+	rehab    *fakeRehabRepo
+	nutr     *fakeNutritionRepo
 }
 
 func newAdminTestSetup(t *testing.T) *adminTestSetup {
 	t.Helper()
 	admin := &models.User{ID: 17, TelegramID: 525578774, Role: "admin", IsRegistered: true}
 
-	progs := newFakeProgramRepo()
+	workouts := newFakeWorkoutRepo()
 	rehab := newFakeRehabRepo()
 	nutr := newFakeNutritionRepo()
 
 	userSvc := service.NewUserService(&fakeUserRepo{admin: admin})
-	workoutSvc := service.NewWorkoutService(progs, &fakeWorkoutRepo{}, &fakeExerciseRepo{}, &fakeDailyCompletionRepo{})
+	workoutSvc := service.NewWorkoutService(workouts, &fakeExerciseRepo{}, &fakeDailyCompletionRepo{})
 	rehabSvc := service.NewRehabService(rehab)
 	nutrSvc := service.NewNutritionService(nutr, &fakeFoodLogRepo{})
 	scoreSvc := service.NewScoreService(&fakeScoreRepo{})
@@ -428,7 +394,7 @@ func newAdminTestSetup(t *testing.T) *adminTestSetup {
 	)
 
 	h := NewAdminHandler(userSvc, workoutSvc, rehabSvc, nutrSvc, scoreSvc, accessSvc)
-	return &adminTestSetup{handler: h, admin: admin, progs: progs, rehab: rehab, nutr: nutr}
+	return &adminTestSetup{handler: h, admin: admin, workouts: workouts, rehab: rehab, nutr: nutr}
 }
 
 // doAs invokes the handler method with `admin` in the request context,
@@ -449,85 +415,86 @@ func (s *adminTestSetup) doAs(method, path string, body any, fn func(http.Respon
 //  Tests
 // ============================================================================
 
-func TestCreateProgram_EmptySlugAutoFills(t *testing.T) {
+// The "Program" entity was removed in migration 028 — admin only edits
+// workouts directly now. These tests target createWorkout instead, which
+// inherited the slug/access_tier/name validation that used to live on
+// the program create path.
+
+func TestCreateWorkout_EmptySlugAutoFills(t *testing.T) {
 	s := newAdminTestSetup(t)
 	body := map[string]any{
-		"name":           "Test Program",
-		"slug":           "",
-		"goal":           "weight_loss",
-		"format":         "home",
-		"level":          "beginner",
-		"duration_weeks": 4,
-		"access_tier":    "paid",
-		"is_active":      false,
+		"name":             "Test Workout",
+		"slug":             "",
+		"goal":             "weight_loss",
+		"format":           "home",
+		"level":            "beginner",
+		"duration_minutes": 30,
+		"access_tier":      "paid",
+		"is_active":        false,
 	}
-	rec := s.doAs(http.MethodPost, "/app/api/admin/programs", body, s.handler.createProgram)
+	rec := s.doAs(http.MethodPost, "/app/api/admin/workouts", body, s.handler.createWorkout)
 
 	if rec.Code != http.StatusCreated {
 		t.Fatalf("expected 201, got %d: %s", rec.Code, rec.Body.String())
 	}
-	if s.progs.lastCreate == nil {
-		t.Fatal("repo CreateProgram never called")
+	if s.workouts.lastCreate == nil {
+		t.Fatal("repo CreateWorkout never called")
 	}
-	if s.progs.lastCreate.Slug == "" {
+	if s.workouts.lastCreate.Slug == "" {
 		t.Errorf("expected auto-generated slug, got empty string")
 	}
 }
 
-func TestCreateProgram_TwoEmptySlugsDontCollide(t *testing.T) {
-	// Regression test for the user's bug: second create with empty slug
-	// used to violate programs_slug_key UNIQUE constraint.
+func TestCreateWorkout_TwoEmptySlugsDontCollide(t *testing.T) {
 	s := newAdminTestSetup(t)
 	body := map[string]any{"name": "Same Name", "access_tier": "paid"}
 
-	rec1 := s.doAs(http.MethodPost, "/app/api/admin/programs", body, s.handler.createProgram)
+	rec1 := s.doAs(http.MethodPost, "/app/api/admin/workouts", body, s.handler.createWorkout)
 	if rec1.Code != http.StatusCreated {
 		t.Fatalf("first create: expected 201, got %d", rec1.Code)
 	}
-	slug1 := s.progs.lastCreate.Slug
+	slug1 := s.workouts.lastCreate.Slug
 
-	// Ensure clock ticks at least 1 millisecond (UnixMilli granularity)
 	time.Sleep(2 * time.Millisecond)
 
-	rec2 := s.doAs(http.MethodPost, "/app/api/admin/programs", body, s.handler.createProgram)
+	rec2 := s.doAs(http.MethodPost, "/app/api/admin/workouts", body, s.handler.createWorkout)
 	if rec2.Code != http.StatusCreated {
 		t.Fatalf("second create: expected 201, got %d", rec2.Code)
 	}
-	slug2 := s.progs.lastCreate.Slug
+	slug2 := s.workouts.lastCreate.Slug
 
 	if slug1 == slug2 {
 		t.Errorf("auto-generated slugs collided: %q == %q", slug1, slug2)
 	}
 }
 
-func TestCreateProgram_BogusAccessTierIs400(t *testing.T) {
+func TestCreateWorkout_BogusAccessTierIs400(t *testing.T) {
 	s := newAdminTestSetup(t)
 	body := map[string]any{"name": "X", "access_tier": "freemium"}
-	rec := s.doAs(http.MethodPost, "/app/api/admin/programs", body, s.handler.createProgram)
+	rec := s.doAs(http.MethodPost, "/app/api/admin/workouts", body, s.handler.createWorkout)
 
 	if rec.Code != http.StatusBadRequest {
 		t.Errorf("expected 400 for bogus access_tier, got %d: %s", rec.Code, rec.Body.String())
 	}
-	if s.progs.lastCreate != nil {
-		t.Error("repo CreateProgram should NOT have been called for invalid access_tier")
+	if s.workouts.lastCreate != nil {
+		t.Error("repo CreateWorkout should NOT have been called for invalid access_tier")
 	}
 }
 
-func TestCreateProgram_EmptyAccessTierAccepted(t *testing.T) {
-	// Empty access_tier is allowed at the handler; the repo defaults it to 'paid'.
+func TestCreateWorkout_EmptyAccessTierAccepted(t *testing.T) {
 	s := newAdminTestSetup(t)
 	body := map[string]any{"name": "X", "access_tier": ""}
-	rec := s.doAs(http.MethodPost, "/app/api/admin/programs", body, s.handler.createProgram)
+	rec := s.doAs(http.MethodPost, "/app/api/admin/workouts", body, s.handler.createWorkout)
 
 	if rec.Code != http.StatusCreated {
 		t.Errorf("expected 201 for empty access_tier, got %d: %s", rec.Code, rec.Body.String())
 	}
 }
 
-func TestCreateProgram_EmptyNameIs400(t *testing.T) {
+func TestCreateWorkout_EmptyNameIs400(t *testing.T) {
 	s := newAdminTestSetup(t)
 	body := map[string]any{"name": "", "access_tier": "paid"}
-	rec := s.doAs(http.MethodPost, "/app/api/admin/programs", body, s.handler.createProgram)
+	rec := s.doAs(http.MethodPost, "/app/api/admin/workouts", body, s.handler.createWorkout)
 
 	if rec.Code != http.StatusBadRequest {
 		t.Errorf("expected 400 for empty name, got %d", rec.Code)
@@ -672,42 +639,9 @@ func TestGuardRangeFloat(t *testing.T) {
 	}
 }
 
-func TestCreateProgram_DurationWeeksOutOfRange(t *testing.T) {
-	s := newAdminTestSetup(t)
-	body := map[string]any{"name": "X", "access_tier": "paid", "duration_weeks": 999}
-	rec := s.doAs(http.MethodPost, "/app/api/admin/programs", body, s.handler.createProgram)
-
-	if rec.Code != http.StatusBadRequest {
-		t.Errorf("expected 400 for duration_weeks=999, got %d: %s", rec.Code, rec.Body.String())
-	}
-	if s.progs.lastCreate != nil {
-		t.Error("repo CreateProgram should not be called for out-of-range duration_weeks")
-	}
-}
-
-func TestCreateProgram_DurationWeeksWithinRange(t *testing.T) {
-	s := newAdminTestSetup(t)
-	body := map[string]any{"name": "X", "access_tier": "paid", "duration_weeks": 12}
-	rec := s.doAs(http.MethodPost, "/app/api/admin/programs", body, s.handler.createProgram)
-
-	if rec.Code != http.StatusCreated {
-		t.Errorf("expected 201 for duration_weeks=12, got %d: %s", rec.Code, rec.Body.String())
-	}
-}
-
-func TestCreateProgram_SortOrderNegativeIs400(t *testing.T) {
-	s := newAdminTestSetup(t)
-	body := map[string]any{"name": "X", "access_tier": "paid", "sort_order": -1}
-	rec := s.doAs(http.MethodPost, "/app/api/admin/programs", body, s.handler.createProgram)
-
-	if rec.Code != http.StatusBadRequest {
-		t.Errorf("expected 400 for sort_order=-1, got %d", rec.Code)
-	}
-}
-
 func TestCreateWorkout_DurationMinutesOutOfRange(t *testing.T) {
 	s := newAdminTestSetup(t)
-	body := map[string]any{"name": "Wk", "duration_minutes": 9999}
+	body := map[string]any{"name": "Wk", "access_tier": "paid", "duration_minutes": 9999}
 	rec := s.doAs(http.MethodPost, "/app/api/admin/workouts", body, s.handler.createWorkout)
 
 	if rec.Code != http.StatusBadRequest {
@@ -715,26 +649,13 @@ func TestCreateWorkout_DurationMinutesOutOfRange(t *testing.T) {
 	}
 }
 
-func TestCreateWorkout_DayNumberOutOfRange(t *testing.T) {
+func TestCreateWorkout_SortOrderNegativeIs400(t *testing.T) {
 	s := newAdminTestSetup(t)
-	// day_number must be 1..7 when set (workouts within a program week).
-	day := 8
-	body := map[string]any{"name": "Wk", "day_number": day}
+	body := map[string]any{"name": "Wk", "access_tier": "paid", "sort_order": -1}
 	rec := s.doAs(http.MethodPost, "/app/api/admin/workouts", body, s.handler.createWorkout)
 
 	if rec.Code != http.StatusBadRequest {
-		t.Errorf("expected 400 for day_number=%d, got %d: %s", day, rec.Code, rec.Body.String())
-	}
-}
-
-func TestCreateWorkout_WeekNumberOutOfRange(t *testing.T) {
-	s := newAdminTestSetup(t)
-	week := 53
-	body := map[string]any{"name": "Wk", "week_number": week}
-	rec := s.doAs(http.MethodPost, "/app/api/admin/workouts", body, s.handler.createWorkout)
-
-	if rec.Code != http.StatusBadRequest {
-		t.Errorf("expected 400 for week_number=%d, got %d: %s", week, rec.Code, rec.Body.String())
+		t.Errorf("expected 400 for sort_order=-1, got %d", rec.Code)
 	}
 }
 
@@ -838,23 +759,23 @@ func TestCreateMealPlan_NoImageMediaID(t *testing.T) {
 //  meal-plan and rehab-course transactional deletes.
 // ============================================================================
 
-func TestDeleteProgram_RemovesFromStore(t *testing.T) {
+func TestDeleteWorkout_RemovesFromStore(t *testing.T) {
 	s := newAdminTestSetup(t)
-	body := map[string]any{"name": "P", "access_tier": "paid"}
-	rec := s.doAs(http.MethodPost, "/app/api/admin/programs", body, s.handler.createProgram)
+	body := map[string]any{"name": "W", "access_tier": "paid"}
+	rec := s.doAs(http.MethodPost, "/app/api/admin/workouts", body, s.handler.createWorkout)
 	if rec.Code != http.StatusCreated {
 		t.Fatalf("create: %d", rec.Code)
 	}
-	id := s.progs.lastCreate.ID
+	id := s.workouts.lastCreate.ID
 
-	rec2 := s.doAs(http.MethodDelete, "/app/api/admin/programs", nil, func(w http.ResponseWriter, r *http.Request) {
-		s.handler.deleteProgram(w, r, id)
+	rec2 := s.doAs(http.MethodDelete, "/app/api/admin/workouts", nil, func(w http.ResponseWriter, r *http.Request) {
+		s.handler.deleteWorkout(w, r, id)
 	})
 	if rec2.Code != http.StatusOK {
 		t.Errorf("delete: %d: %s", rec2.Code, rec2.Body.String())
 	}
-	if _, ok := s.progs.store[id]; ok {
-		t.Error("program still in store after delete")
+	if _, ok := s.workouts.store[id]; ok {
+		t.Error("workout still in store after delete")
 	}
 }
 

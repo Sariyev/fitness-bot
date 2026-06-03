@@ -190,162 +190,6 @@ func (h *AdminHandler) UpdateUser(w http.ResponseWriter, r *http.Request, id int
 	jsonResponse(w, http.StatusOK, map[string]bool{"success": true})
 }
 
-// ==================== PROGRAMS ====================
-
-func (h *AdminHandler) HandleProgramRoutes(w http.ResponseWriter, r *http.Request) {
-	path := strings.TrimPrefix(r.URL.Path, "/app/api/admin/programs")
-	path = strings.TrimPrefix(path, "/")
-
-	if path == "" {
-		switch r.Method {
-		case http.MethodGet:
-			h.listPrograms(w, r)
-		case http.MethodPost:
-			h.createProgram(w, r)
-		default:
-			jsonError(w, http.StatusMethodNotAllowed, "method not allowed")
-		}
-		return
-	}
-
-	id, err := strconv.Atoi(path)
-	if err != nil {
-		jsonError(w, http.StatusBadRequest, "invalid program id")
-		return
-	}
-
-	switch r.Method {
-	case http.MethodGet:
-		h.getProgram(w, r, id)
-	case http.MethodPut:
-		h.updateProgram(w, r, id)
-	case http.MethodDelete:
-		h.deleteProgram(w, r, id)
-	default:
-		jsonError(w, http.StatusMethodNotAllowed, "method not allowed")
-	}
-}
-
-func (h *AdminHandler) listPrograms(w http.ResponseWriter, r *http.Request) {
-	programs, err := h.workoutSvc.ListAllPrograms(r.Context())
-	if err != nil {
-		jsonError(w, http.StatusInternalServerError, "failed to list programs")
-		return
-	}
-	jsonResponse(w, http.StatusOK, programs)
-}
-
-func (h *AdminHandler) getProgram(w http.ResponseWriter, r *http.Request, id int) {
-	p, err := h.workoutSvc.GetProgram(r.Context(), id)
-	if err != nil {
-		jsonError(w, http.StatusNotFound, "program not found")
-		return
-	}
-	jsonResponse(w, http.StatusOK, p)
-}
-
-type programRequest struct {
-	Slug          string            `json:"slug"`
-	Name          string            `json:"name"`
-	Description   string            `json:"description"`
-	Goal          string            `json:"goal"`
-	Format        string            `json:"format"`
-	Level         string            `json:"level"`
-	DurationWeeks int               `json:"duration_weeks"`
-	AccessTier    models.AccessTier `json:"access_tier"`
-	IsActive      bool              `json:"is_active"`
-	SortOrder     int               `json:"sort_order"`
-}
-
-func (h *AdminHandler) createProgram(w http.ResponseWriter, r *http.Request) {
-	var req programRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		jsonError(w, http.StatusBadRequest, "invalid request body")
-		return
-	}
-	if req.Name == "" {
-		jsonError(w, http.StatusBadRequest, "name is required")
-		return
-	}
-	if !validAccessTier(req.AccessTier) {
-		jsonError(w, http.StatusBadRequest, "invalid access_tier")
-		return
-	}
-	if msg := guardRangeInt("duration_weeks", req.DurationWeeks, 0, 52); msg != "" {
-		jsonError(w, http.StatusBadRequest, msg)
-		return
-	}
-	if msg := guardRangeInt("sort_order", req.SortOrder, 0, 9999); msg != "" {
-		jsonError(w, http.StatusBadRequest, msg)
-		return
-	}
-
-	p := &models.Program{
-		Slug: ensureSlug(req.Slug, req.Name), Name: req.Name, Description: req.Description,
-		Goal: req.Goal, Format: req.Format, Level: req.Level,
-		DurationWeeks: req.DurationWeeks, AccessTier: req.AccessTier,
-		IsActive: req.IsActive, SortOrder: req.SortOrder,
-	}
-	if err := h.workoutSvc.CreateProgram(r.Context(), p); err != nil {
-		log.Printf("[ADMIN] create program failed: %v", err)
-		jsonError(w, http.StatusInternalServerError, "failed to create program")
-		return
-	}
-	jsonResponse(w, http.StatusCreated, p)
-}
-
-func (h *AdminHandler) updateProgram(w http.ResponseWriter, r *http.Request, id int) {
-	p, err := h.workoutSvc.GetProgram(r.Context(), id)
-	if err != nil {
-		jsonError(w, http.StatusNotFound, "program not found")
-		return
-	}
-
-	var req programRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		jsonError(w, http.StatusBadRequest, "invalid request body")
-		return
-	}
-	if !validAccessTier(req.AccessTier) {
-		jsonError(w, http.StatusBadRequest, "invalid access_tier")
-		return
-	}
-	if msg := guardRangeInt("duration_weeks", req.DurationWeeks, 0, 52); msg != "" {
-		jsonError(w, http.StatusBadRequest, msg)
-		return
-	}
-	if msg := guardRangeInt("sort_order", req.SortOrder, 0, 9999); msg != "" {
-		jsonError(w, http.StatusBadRequest, msg)
-		return
-	}
-
-	p.Slug = ensureSlug(req.Slug, req.Name)
-	p.Name = req.Name
-	p.Description = req.Description
-	p.Goal = req.Goal
-	p.Format = req.Format
-	p.Level = req.Level
-	p.DurationWeeks = req.DurationWeeks
-	p.AccessTier = req.AccessTier
-	p.IsActive = req.IsActive
-	p.SortOrder = req.SortOrder
-
-	if err := h.workoutSvc.UpdateProgram(r.Context(), p); err != nil {
-		log.Printf("[ADMIN] update program %d failed: %v", id, err)
-		jsonError(w, http.StatusInternalServerError, "failed to update program")
-		return
-	}
-	jsonResponse(w, http.StatusOK, p)
-}
-
-func (h *AdminHandler) deleteProgram(w http.ResponseWriter, r *http.Request, id int) {
-	if err := h.workoutSvc.DeleteProgram(r.Context(), id); err != nil {
-		writeDeleteError(w, "program", err)
-		return
-	}
-	jsonResponse(w, http.StatusOK, map[string]bool{"deleted": true})
-}
-
 // ==================== WORKOUTS ====================
 
 func (h *AdminHandler) HandleWorkoutRoutes(w http.ResponseWriter, r *http.Request) {
@@ -407,22 +251,20 @@ func (h *AdminHandler) getWorkout(w http.ResponseWriter, r *http.Request, id int
 }
 
 type workoutRequest struct {
-	ProgramID       *int     `json:"program_id"`
-	Slug            string   `json:"slug"`
-	Name            string   `json:"name"`
-	Description     string   `json:"description"`
-	Goal            string   `json:"goal"`
-	Format          string   `json:"format"`
-	Level           string   `json:"level"`
-	DurationMinutes int      `json:"duration_minutes"`
-	Equipment       []string `json:"equipment"`
-	ExpectedResult  string   `json:"expected_result"`
-	VideoURL        string   `json:"video_url"`
-	VideoMediaID    *int64   `json:"video_media_id"`
-	SortOrder       int      `json:"sort_order"`
-	WeekNumber      *int     `json:"week_number"`
-	DayNumber       *int     `json:"day_number"`
-	IsActive        bool     `json:"is_active"`
+	Slug            string            `json:"slug"`
+	Name            string            `json:"name"`
+	Description     string            `json:"description"`
+	Goal            string            `json:"goal"`
+	Format          string            `json:"format"`
+	Level           string            `json:"level"`
+	DurationMinutes int               `json:"duration_minutes"`
+	Equipment       []string          `json:"equipment"`
+	ExpectedResult  string            `json:"expected_result"`
+	VideoURL        string            `json:"video_url"`
+	VideoMediaID    *int64            `json:"video_media_id"`
+	AccessTier      models.AccessTier `json:"access_tier"`
+	SortOrder       int               `json:"sort_order"`
+	IsActive        bool              `json:"is_active"`
 }
 
 // validateRanges returns the first range-violation message for the request,
@@ -433,16 +275,6 @@ func (req *workoutRequest) validateRanges() string {
 	}
 	if msg := guardRangeInt("sort_order", req.SortOrder, 0, 9999); msg != "" {
 		return msg
-	}
-	if req.WeekNumber != nil {
-		if msg := guardRangeInt("week_number", *req.WeekNumber, 1, 52); msg != "" {
-			return msg
-		}
-	}
-	if req.DayNumber != nil {
-		if msg := guardRangeInt("day_number", *req.DayNumber, 1, 7); msg != "" {
-			return msg
-		}
 	}
 	return ""
 }
@@ -457,6 +289,10 @@ func (h *AdminHandler) createWorkout(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, http.StatusBadRequest, "name is required")
 		return
 	}
+	if !validAccessTier(req.AccessTier) {
+		jsonError(w, http.StatusBadRequest, "invalid access_tier")
+		return
+	}
 	if msg := req.validateRanges(); msg != "" {
 		jsonError(w, http.StatusBadRequest, msg)
 		return
@@ -466,13 +302,13 @@ func (h *AdminHandler) createWorkout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	wo := &models.Workout{
-		ProgramID: req.ProgramID, Slug: ensureSlug(req.Slug, req.Name), Name: req.Name,
+		Slug: ensureSlug(req.Slug, req.Name), Name: req.Name,
 		Description: req.Description, Goal: req.Goal, Format: req.Format,
 		Level: req.Level, DurationMinutes: req.DurationMinutes,
 		Equipment: req.Equipment, ExpectedResult: req.ExpectedResult,
 		VideoURL: req.VideoURL, VideoMediaID: req.VideoMediaID,
-		SortOrder: req.SortOrder,
-		WeekNumber: req.WeekNumber, DayNumber: req.DayNumber, IsActive: req.IsActive,
+		AccessTier: req.AccessTier,
+		SortOrder:  req.SortOrder, IsActive: req.IsActive,
 	}
 	if err := h.workoutSvc.CreateWorkout(r.Context(), wo); err != nil {
 		log.Printf("[ADMIN] create workout failed: %v", err)
@@ -494,6 +330,10 @@ func (h *AdminHandler) updateWorkout(w http.ResponseWriter, r *http.Request, id 
 		jsonError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
+	if !validAccessTier(req.AccessTier) {
+		jsonError(w, http.StatusBadRequest, "invalid access_tier")
+		return
+	}
 	if msg := req.validateRanges(); msg != "" {
 		jsonError(w, http.StatusBadRequest, msg)
 		return
@@ -502,7 +342,6 @@ func (h *AdminHandler) updateWorkout(w http.ResponseWriter, r *http.Request, id 
 		req.Equipment = []string{}
 	}
 
-	wo.ProgramID = req.ProgramID
 	wo.Slug = ensureSlug(req.Slug, req.Name)
 	wo.Name = req.Name
 	wo.Description = req.Description
@@ -514,9 +353,8 @@ func (h *AdminHandler) updateWorkout(w http.ResponseWriter, r *http.Request, id 
 	wo.ExpectedResult = req.ExpectedResult
 	wo.VideoURL = req.VideoURL
 	wo.VideoMediaID = req.VideoMediaID
+	wo.AccessTier = req.AccessTier
 	wo.SortOrder = req.SortOrder
-	wo.WeekNumber = req.WeekNumber
-	wo.DayNumber = req.DayNumber
 	wo.IsActive = req.IsActive
 
 	if err := h.workoutSvc.UpdateWorkout(r.Context(), wo); err != nil {

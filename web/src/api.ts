@@ -11,7 +11,6 @@ import type {
   PaymentResult,
   UserProfile,
   DashboardData,
-  Program,
   Workout,
   WorkoutWithExercises,
   WorkoutExercise,
@@ -180,22 +179,6 @@ export const api = {
     return request('/app/api/dashboard')
   },
 
-  // ====== PROGRAMS ======
-  getPrograms(filters?: { format?: string; goal?: string; level?: string }): Promise<Program[]> {
-    const params = new URLSearchParams()
-    if (filters?.format) params.set('format', filters.format)
-    if (filters?.goal) params.set('goal', filters.goal)
-    if (filters?.level) params.set('level', filters.level)
-    const qs = params.toString()
-    return request(`/app/api/programs${qs ? '?' + qs : ''}`)
-  },
-  getProgram(id: number): Promise<Program> {
-    return request(`/app/api/programs/${id}`)
-  },
-  enrollProgram(id: number): Promise<{ success: boolean }> {
-    return request(`/app/api/programs/${id}/enroll`, { method: 'POST' })
-  },
-
   // ====== WORKOUTS ======
   getWorkouts(filters?: { format?: string; goal?: string; level?: string }): Promise<Workout[]> {
     const params = new URLSearchParams()
@@ -349,23 +332,6 @@ export const api = {
       body: JSON.stringify(data),
     })
   },
-  // Admin Programs CRUD
-  getAdminPrograms(): Promise<Program[]> {
-    return request('/app/api/admin/programs')
-  },
-  getAdminProgram(id: number): Promise<Program> {
-    return request(`/app/api/admin/programs/${id}`)
-  },
-  createAdminProgram(data: Partial<Program>): Promise<Program> {
-    return request('/app/api/admin/programs', { method: 'POST', body: JSON.stringify(data) })
-  },
-  updateAdminProgram(id: number, data: Partial<Program>): Promise<Program> {
-    return request(`/app/api/admin/programs/${id}`, { method: 'PUT', body: JSON.stringify(data) })
-  },
-  deleteAdminProgram(id: number): Promise<{ deleted: boolean }> {
-    return request(`/app/api/admin/programs/${id}`, { method: 'DELETE' })
-  },
-
   // Admin Workouts CRUD
   getAdminWorkouts(): Promise<Workout[]> {
     return request('/app/api/admin/workouts')

@@ -8,40 +8,21 @@ import (
 )
 
 type WorkoutService struct {
-	programRepo    repository.ProgramRepository
 	workoutRepo    repository.WorkoutRepository
 	exerciseRepo   repository.ExerciseRepository
 	completionRepo repository.DailyCompletionRepository
 }
 
 func NewWorkoutService(
-	programRepo repository.ProgramRepository,
 	workoutRepo repository.WorkoutRepository,
 	exerciseRepo repository.ExerciseRepository,
 	completionRepo repository.DailyCompletionRepository,
 ) *WorkoutService {
 	return &WorkoutService{
-		programRepo:    programRepo,
 		workoutRepo:    workoutRepo,
 		exerciseRepo:   exerciseRepo,
 		completionRepo: completionRepo,
 	}
-}
-
-func (s *WorkoutService) ListPrograms(ctx context.Context, format, goal, level string) ([]models.Program, error) {
-	return s.programRepo.ListPrograms(ctx, format, goal, level)
-}
-
-func (s *WorkoutService) GetProgram(ctx context.Context, id int) (*models.Program, error) {
-	return s.programRepo.GetProgramByID(ctx, id)
-}
-
-func (s *WorkoutService) EnrollInProgram(ctx context.Context, userID int64, programID int) error {
-	return s.programRepo.EnrollUser(ctx, userID, programID)
-}
-
-func (s *WorkoutService) GetActiveEnrollment(ctx context.Context, userID int64) (*models.UserProgramEnrollment, error) {
-	return s.programRepo.GetActiveEnrollment(ctx, userID)
 }
 
 func (s *WorkoutService) ListWorkouts(ctx context.Context, format, goal, level string) ([]models.Workout, error) {
@@ -76,22 +57,6 @@ func (s *WorkoutService) GetWorkoutExercisesWithDetails(ctx context.Context, wor
 		result = append(result, detail)
 	}
 	return result, nil
-}
-
-func (s *WorkoutService) ListAllPrograms(ctx context.Context) ([]models.Program, error) {
-	return s.programRepo.ListAllPrograms(ctx)
-}
-
-func (s *WorkoutService) CreateProgram(ctx context.Context, p *models.Program) error {
-	return s.programRepo.CreateProgram(ctx, p)
-}
-
-func (s *WorkoutService) UpdateProgram(ctx context.Context, p *models.Program) error {
-	return s.programRepo.UpdateProgram(ctx, p)
-}
-
-func (s *WorkoutService) DeleteProgram(ctx context.Context, id int) error {
-	return s.programRepo.DeleteProgram(ctx, id)
 }
 
 func (s *WorkoutService) ListAllWorkouts(ctx context.Context) ([]models.Workout, error) {

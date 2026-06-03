@@ -151,10 +151,6 @@ func (r *WebAppRouter) setupRoutes() {
 	// Dashboard
 	r.mux.Handle("/app/api/dashboard", auth(http.HandlerFunc(dashboardHandler.GetDashboard)))
 
-	// Programs
-	r.mux.Handle("/app/api/programs", auth(http.HandlerFunc(workoutHandler.HandleProgramRoutes)))
-	r.mux.Handle("/app/api/programs/", auth(http.HandlerFunc(workoutHandler.HandleProgramRoutes)))
-
 	// Workouts
 	r.mux.Handle("/app/api/workouts", auth(http.HandlerFunc(workoutHandler.HandleWorkoutRoutes)))
 	r.mux.Handle("/app/api/workouts/", auth(http.HandlerFunc(workoutHandler.HandleWorkoutRoutes)))
@@ -195,8 +191,6 @@ func (r *WebAppRouter) setupRoutes() {
 	}
 	r.mux.Handle("/app/api/admin/users", adminAuth(http.HandlerFunc(adminHandler.HandleUserRoutes)))
 	r.mux.Handle("/app/api/admin/users/", adminAuth(http.HandlerFunc(adminHandler.HandleUserRoutes)))
-	r.mux.Handle("/app/api/admin/programs", adminAuth(http.HandlerFunc(adminHandler.HandleProgramRoutes)))
-	r.mux.Handle("/app/api/admin/programs/", adminAuth(http.HandlerFunc(adminHandler.HandleProgramRoutes)))
 	r.mux.Handle("/app/api/admin/workouts", adminAuth(http.HandlerFunc(adminHandler.HandleWorkoutRoutes)))
 	r.mux.Handle("/app/api/admin/workouts/", adminAuth(http.HandlerFunc(adminHandler.HandleWorkoutRoutes)))
 	r.mux.Handle("/app/api/admin/exercises", adminAuth(http.HandlerFunc(adminHandler.HandleExerciseRoutes)))

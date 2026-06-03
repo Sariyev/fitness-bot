@@ -157,29 +157,13 @@ export interface DashboardItem {
   done: boolean
 }
 
-// ====== WORKOUTS & PROGRAMS ======
+// ====== WORKOUTS ======
 
 export type AccessTier = 'free' | 'trial' | 'paid'
 export type ContentCategory = 'workouts' | 'lfk' | 'nutrition'
 
-export interface Program {
-  id: number
-  slug: string
-  name: string
-  description: string
-  goal: string
-  format: string
-  level: string
-  duration_weeks: number
-  access_tier?: AccessTier
-  locked?: boolean
-  is_active: boolean
-  sort_order: number
-}
-
 export interface Workout {
   id: number
-  program_id?: number
   slug: string
   name: string
   description: string
@@ -191,9 +175,9 @@ export interface Workout {
   expected_result: string
   video_url: string
   video_media_id?: number | null
+  access_tier?: AccessTier
+  locked?: boolean
   sort_order: number
-  week_number?: number
-  day_number?: number
   is_active: boolean
 }
 

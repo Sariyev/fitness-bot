@@ -57,15 +57,6 @@ func (s *DashboardService) GetDashboard(ctx context.Context, user *models.User) 
 		dashboard.Goals = parseGoals(profile.Goal)
 	}
 
-	// Determine today's workout from active program enrollment
-	enrollment, err := s.workoutSvc.GetActiveEnrollment(ctx, user.ID)
-	if err == nil && enrollment != nil {
-		todayWorkout := findTodayWorkout(ctx, s.workoutSvc, enrollment)
-		if todayWorkout != nil {
-			dashboard.TodayWorkout = todayWorkout
-		}
-	}
-
 	// Check for rehab sessions if the user has pain
 	if profile != nil && profile.HasPain && len(profile.PainLocations) > 0 {
 		courses, err := s.rehabSvc.ListCourses(ctx, profile.PainLocations[0])
@@ -100,40 +91,6 @@ func (s *DashboardService) GetDashboard(ctx context.Context, user *models.User) 
 	}
 
 	return dashboard, nil
-}
-
-// findTodayWorkout locates the workout scheduled for today based on the
-// enrollment start date, current week, and day of week.
-func findTodayWorkout(ctx context.Context, svc *WorkoutService, enrollment *models.UserProgramEnrollment) *DashboardItem {
-	workouts, err := svc.workoutRepo.ListByProgram(ctx, enrollment.ProgramID)
-	if err != nil || len(workouts) == 0 {
-		return nil
-	}
-
-	daysSinceStart := int(time.Since(enrollment.StartedAt).Hours() / 24)
-	currentWeek := daysSinceStart/7 + 1
-	currentDay := daysSinceStart%7 + 1
-
-	for _, w := range workouts {
-		if w.WeekNumber != nil && w.DayNumber != nil {
-			if *w.WeekNumber == currentWeek && *w.DayNumber == currentDay {
-				return &DashboardItem{
-					ID:    w.ID,
-					Title: w.Name,
-					Type:  "workout",
-					Done:  false,
-				}
-			}
-		}
-	}
-
-	// Fall back to the first workout if no schedule match
-	return &DashboardItem{
-		ID:    workouts[0].ID,
-		Title: workouts[0].Name,
-		Type:  "workout",
-		Done:  false,
-	}
 }
 
 // buildTrainerMessage returns a motivational message from the virtual coach.
